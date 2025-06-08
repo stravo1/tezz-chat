@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
     compatibilityDate: "2025-05-15",
     devtools: { enabled: true },
-    modules: ["@nuxt/icon"],
+    modules: ["@nuxt/icon", "@pinia/nuxt"],
     runtimeConfig: {
         geminiApiKey: process.env.GEMINI_API_KEY || "",
     },
