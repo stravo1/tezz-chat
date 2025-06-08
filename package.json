@@ -22,7 +22,6 @@
     "@tailwindcss/vite": "^4.1.8",
     "ai": "^4.3.16",
     "dexie": "^4.0.11",
-    "marked": "^15.0.12",
     "tailwindcss": "^4.1.8",
     "tailwindcss-scoped-preflight": "^3.4.12",
     "uuid": "^11.1.0",
