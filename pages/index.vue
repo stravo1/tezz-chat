@@ -4,6 +4,9 @@ import {v4 as uuid} from 'uuid';
 const { messages, append } = useChat(
   {
     id: uuid(),
+    body: {
+      chatId: uuid(),
+    }
   }
 );
 watch(messages, (newMessages) => {

@@ -30,8 +30,6 @@ export default defineLazyEventHandler(async () => {
 
             const body = await readBody(event);
 
-            console.log("Body", body);
-
             const validation = chatInputSchema.safeParse(body);
 
             if (!validation.success) {
