@@ -27,6 +27,7 @@ export const insertChatMessage = async (message: any) => {
         id: message.id,
         chatId: message.chatId,
         role: message.role,
+        attachments: message.attachments,
         content: message.content,
         createdAt: message.createdAt
     });

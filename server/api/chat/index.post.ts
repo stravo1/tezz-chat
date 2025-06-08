@@ -12,9 +12,10 @@ const chatInputSchema = z.object({
             id: z.string().optional(),
             role: z.enum(['user', 'assistant', 'system']),
             content: z.string(),
+            experimental_attachments: z.array(z.any()).optional(),
         }).passthrough()
     ).min(1, 'At least one message is required'),
-    chatId: z.string().optional(), // Only required for authenticated users
+    chatId: z.string().optional(),
 });
 
 export default defineLazyEventHandler(async () => {
@@ -75,6 +76,7 @@ export default defineLazyEventHandler(async () => {
                         chatId: chatSession.id,
                         role: 'user',
                         content: lastMessage.content,
+                        attachments: lastMessage.experimental_attachments ?? [],
                         createdAt: new Date().toISOString()
                     });
                 }
@@ -128,6 +130,7 @@ export default defineLazyEventHandler(async () => {
                                 chatId: chatSession.id,
                                 role: 'assistant',
                                 content: assistantResponse,
+                                attachments: lastMessage.experimental_attachments ?? [],
                                 createdAt: new Date().toISOString()
                             });
                         }
