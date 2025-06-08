@@ -40,26 +40,19 @@ export default defineLazyEventHandler(async () => {
             let chatSession;
 
             if (isAuthenticated) {
-                // For authenticated users, chatId is required
                 if (!chatId) {
                     throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required for authenticated users');
                 }
 
-                // Find or create chat for authenticated user
                 chatSession = await findChatSession(chatId, userId);
 
                 if (!chatSession) {
-                    // Create new chat for authenticated user
-                    const chatTitle = await generateChatTitle({
-                        message: lastMessage,
-                    });
-                    if (!lastMessage.id) {
-                        lastMessage.id = uuidv4();
-                    }
+                    const chatTitle = await generateChatTitle({ message: lastMessage });
+                    if (!lastMessage.id) lastMessage.id = uuidv4();
 
                     chatSession = {
                         id: chatId,
-                        userId: userId,
+                        userId,
                         title: chatTitle,
                         visibility: 'private',
                         createdAt: new Date().toISOString(),
@@ -69,7 +62,6 @@ export default defineLazyEventHandler(async () => {
                     await insertChat(chatSession);
                 }
 
-                // Store user message for authenticated users
                 if (lastMessage.role === 'user') {
                     await insertChatMessage({
                         id: uuidv4(),
@@ -81,7 +73,6 @@ export default defineLazyEventHandler(async () => {
                     });
                 }
             } else {
-                // For unauthenticated users, don't require or use chatId
                 chatSession = {
                     id: `temp-${Date.now()}`,
                     userId: null,
@@ -92,7 +83,7 @@ export default defineLazyEventHandler(async () => {
                 };
             }
 
-            const result = streamText({
+            const result = await streamText({
                 model,
                 messages,
                 temperature: 0.7,
@@ -100,49 +91,25 @@ export default defineLazyEventHandler(async () => {
                     chunking: 'word',
                     delayInMs: 1,
                 }),
-                // maxTokens: 2000
-            });
-
-            const response = result.toDataStreamResponse();
-
-            let responseToSend: Response;
-            if (response.body) {
-                const [stream1, stream2] = response.body.tee();
-
-                responseToSend = new Response(stream1, {
-                    headers: response.headers
-                });
-
-                const reader = stream2.getReader();
-                let assistantResponse = '';
-
-                const processStream = async () => {
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            assistantResponse += new TextDecoder().decode(value);
-                        }
-
-                        if (assistantResponse && isAuthenticated) {
-                            await insertChatMessage({
-                                id: uuidv4(),
-                                chatId: chatSession.id,
-                                role: 'assistant',
-                                content: assistantResponse,
-                                attachments: lastMessage.experimental_attachments ?? [],
-                                createdAt: new Date().toISOString()
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error processing stream:', error);
+                // Streaming callback
+                onFinish: async (event) => {
+                    const fullAssistantMessage = event.text;
+                    if (fullAssistantMessage && isAuthenticated) {
+                        await insertChatMessage({
+                            id: uuidv4(),
+                            chatId: chatSession.id,
+                            role: 'assistant',
+                            content: fullAssistantMessage,
+                            attachments: lastMessage.experimental_attachments ?? [],
+                            createdAt: new Date().toISOString()
+                        });
                     }
                 }
+            });
 
-                processStream();
+            // Return streamed response to client
+            return result.toDataStreamResponse();
 
-                return responseToSend;
-            }
         } catch (error) {
             console.error('Chat error:', error);
 
