@@ -1,11 +1,9 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, generateText, UIMessage } from 'ai';
+import { streamText, smoothStream } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
-import { chat, chatMessage } from '~/server/db/schema';
-import { db } from '~/server/db';
 import { v4 as uuidv4 } from 'uuid';
-import { eq, and } from 'drizzle-orm';
+import { findChatSession, insertChat, insertChatMessage } from '~/server/db/queries';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 
 const chatInputSchema = z.object({
@@ -14,9 +12,10 @@ const chatInputSchema = z.object({
             id: z.string().optional(),
             role: z.enum(['user', 'assistant', 'system']),
             content: z.string(),
+            experimental_attachments: z.array(z.any()).optional(),
         }).passthrough()
     ).min(1, 'At least one message is required'),
-    chatId: z.string().optional(), // Only required for authenticated users
+    chatId: z.string().optional(),
 });
 
 export default defineLazyEventHandler(async () => {
@@ -41,102 +40,75 @@ export default defineLazyEventHandler(async () => {
             let chatSession;
 
             if (isAuthenticated) {
-                // For authenticated users, chatId is required
                 if (!chatId) {
                     throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required for authenticated users');
                 }
 
-                // Find or create chat for authenticated user
-                chatSession = await db.query.chat.findFirst({
-                    where: and(
-                        eq(chat.id, chatId),
-                        eq(chat.userId, userId)
-                    )
-                });
+                chatSession = await findChatSession(chatId, userId);
 
                 if (!chatSession) {
-                    // Create new chat for authenticated user
-                    const chatTitle = await generateChatTitle({
-                        message: lastMessage,
-                    });
+                    const chatTitle = await generateChatTitle({ message: lastMessage });
+                    if (!lastMessage.id) lastMessage.id = uuidv4();
 
                     chatSession = {
                         id: chatId,
-                        userId: userId,
+                        userId,
                         title: chatTitle,
                         visibility: 'private',
-                        createdAt: new Date(),
-                        updatedAt: new Date()
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
                     };
 
-                    await db.insert(chat).values(chatSession);
+                    await insertChat(chatSession);
                 }
-                
-                // Store user message for authenticated users
+
                 if (lastMessage.role === 'user') {
-                    await db.insert(chatMessage).values({
+                    await insertChatMessage({
                         id: uuidv4(),
                         chatId: chatSession.id,
                         role: 'user',
                         content: lastMessage.content,
-                        createdAt: new Date()
+                        attachments: lastMessage.experimental_attachments ?? [],
+                        createdAt: new Date().toISOString()
                     });
                 }
             } else {
-                // For unauthenticated users, don't require or use chatId
                 chatSession = {
                     id: `temp-${Date.now()}`,
                     userId: null,
                     title: 'Temporary Chat',
                     visibility: 'temporary',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
             }
 
-            const result = streamText({
+            const result = await streamText({
                 model,
                 messages,
                 temperature: 0.7,
-                maxTokens: 2000
-            });
-
-            const response = result.toDataStreamResponse();
-
-            const [stream1, stream2] = response.body.tee();
-
-            const responseToSend = new Response(stream1, {
-                headers: response.headers
-            });
-
-            const reader = stream2.getReader();
-            let assistantResponse = '';
-
-            const processStream = async () => {
-                try {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-                        assistantResponse += new TextDecoder().decode(value);
-                    }
-
-                    if (assistantResponse && isAuthenticated) {
-                        await db.insert(chatMessage).values({
+                experimental_transform: smoothStream({
+                    chunking: 'word',
+                    delayInMs: 1,
+                }),
+                // Streaming callback
+                onFinish: async (event) => {
+                    const fullAssistantMessage = event.text;
+                    if (fullAssistantMessage && isAuthenticated) {
+                        await insertChatMessage({
                             id: uuidv4(),
                             chatId: chatSession.id,
                             role: 'assistant',
-                            content: assistantResponse,
-                            createdAt: new Date()
+                            content: fullAssistantMessage,
+                            attachments: lastMessage.experimental_attachments ?? [],
+                            createdAt: new Date().toISOString()
                         });
                     }
-                } catch (error) {
-                    console.error('Error processing stream:', error);
                 }
-            };
+            });
 
-            processStream();
-
-            return responseToSend;
+            // Return streamed response to client
+            return result.toDataStreamResponse();
 
         } catch (error) {
             console.error('Chat error:', error);

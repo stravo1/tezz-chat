@@ -6,7 +6,7 @@ export async function generateChatTitle({
   message,
   model = google('gemini-2.5-flash-preview-04-17')
 }: {
-  message: UIMessage;
+  message: UIMessage | any;
   model?: any;
 }) {
 
