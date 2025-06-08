@@ -3,9 +3,9 @@ import { useChat } from '@ai-sdk/vue';
 import {v4 as uuid} from 'uuid';
 const { messages, append } = useChat(
   {
-    id: uuid(),
+    id: "c0ec810d-9a0b-4a92-baa8-60e455e68e76",
     body: {
-      chatId: uuid(),
+      chatId: "c0ec810d-9a0b-4a92-baa8-60e455e68e76",
     }
   }
 );

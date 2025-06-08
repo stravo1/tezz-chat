@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
       where: eq(chat.id, chatId),
       columns: {
         id: true,
+        title: true,
         userId: true,
         visibility: true
       }
@@ -83,6 +84,7 @@ export default defineEventHandler(async (event) => {
       data: messages,
       chat: {
         id: chatRecord.id,
+        title: chatRecord.title,
         isOwner,
         visibility: chatRecord.visibility,
       },
