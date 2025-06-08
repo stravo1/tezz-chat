@@ -16,21 +16,21 @@ const chatInputSchema = z.object({
             content: z.string(),
         }).passthrough()
     ).min(1, 'At least one message is required'),
-    chatId: z.string().uuid().optional(),
+    chatId: z.string().optional(), // Only required for authenticated users
 });
 
 export default defineLazyEventHandler(async () => {
     const model = google('gemini-2.5-flash-preview-04-17');
 
     return defineEventHandler(async (event) => {
-        console.log("event",event)
         try {
             const session = event.context.session;
             const isAuthenticated = !!session?.userId;
             const userId = session?.userId;
 
             const body = await readBody(event);
-            console.log("body",body)
+
+            console.log("Body", body);
 
             const validation = chatInputSchema.safeParse(body);
 
@@ -40,28 +40,30 @@ export default defineLazyEventHandler(async () => {
 
             const { messages, chatId } = validation.data;
             const lastMessage = messages[messages.length - 1];
-
             let chatSession;
-            if (isAuthenticated) {
-                if (chatId) {
-                    chatSession = await db.query.chat.findFirst({
-                        where: and(
-                            eq(chat.id, chatId),
-                            eq(chat.userId, userId)
-                        )
-                    });
 
-                    if (!chatSession) {
-                        throw createAppError(ErrorCode.RESOURCE_NOT_FOUND, 'Chat not found or access denied');
-                    }
-                } else {
-                    const newChatId = uuidv4();
+            if (isAuthenticated) {
+                // For authenticated users, chatId is required
+                if (!chatId) {
+                    throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required for authenticated users');
+                }
+
+                // Find or create chat for authenticated user
+                chatSession = await db.query.chat.findFirst({
+                    where: and(
+                        eq(chat.id, chatId),
+                        eq(chat.userId, userId)
+                    )
+                });
+
+                if (!chatSession) {
+                    // Create new chat for authenticated user
                     const chatTitle = await generateChatTitle({
                         message: lastMessage,
                     });
 
                     chatSession = {
-                        id: newChatId,
+                        id: chatId,
                         userId: userId,
                         title: chatTitle,
                         visibility: 'private',
@@ -71,8 +73,8 @@ export default defineLazyEventHandler(async () => {
 
                     await db.insert(chat).values(chatSession);
                 }
-
-
+                
+                // Store user message for authenticated users
                 if (lastMessage.role === 'user') {
                     await db.insert(chatMessage).values({
                         id: uuidv4(),
@@ -82,11 +84,10 @@ export default defineLazyEventHandler(async () => {
                         createdAt: new Date()
                     });
                 }
-            } else if (chatId) {
-                throw createAppError(ErrorCode.UNAUTHORIZED, 'Please log in to access chat history');
             } else {
+                // For unauthenticated users, don't require or use chatId
                 chatSession = {
-                    id: 'temp-' + Date.now(),
+                    id: `temp-${Date.now()}`,
                     userId: null,
                     title: 'Temporary Chat',
                     visibility: 'temporary',
