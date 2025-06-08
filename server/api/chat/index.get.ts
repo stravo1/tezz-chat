@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     // Get query parameters with defaults
     const query = getQuery(event);
     const page = query.page ? Math.max(1, parseInt(query.page as string, 10)) : DEFAULT_PAGE;
-    const limit = query.limit 
+    const limit = query.limit
       ? Math.min(MAX_LIMIT, Math.max(1, parseInt(query.limit as string, 10)))
       : DEFAULT_LIMIT;
     const offset = (page - 1) * limit;
@@ -61,9 +61,9 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('Error fetching chats:', error);
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Internal Server Error',
-      message: error.message || 'An error occurred while fetching chats'
+      statusCode: (error instanceof Error && (error as any).statusCode) || 500,
+      statusMessage: (error instanceof Error && (error as any).statusMessage) || 'Internal Server Error',
+      message: (error instanceof Error && error.message) || 'An error occurred while fetching chats'
     });
   }
 });

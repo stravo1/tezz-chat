@@ -1,11 +1,9 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, generateText, UIMessage } from 'ai';
+import { streamText, smoothStream } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
-import { chat, chatMessage } from '~/server/db/schema';
-import { db } from '~/server/db';
 import { v4 as uuidv4 } from 'uuid';
-import { eq, and } from 'drizzle-orm';
+import { findChatSession, insertChat, insertChatMessage } from '~/server/db/queries';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 
 const chatInputSchema = z.object({
@@ -47,39 +45,37 @@ export default defineLazyEventHandler(async () => {
                 }
 
                 // Find or create chat for authenticated user
-                chatSession = await db.query.chat.findFirst({
-                    where: and(
-                        eq(chat.id, chatId),
-                        eq(chat.userId, userId)
-                    )
-                });
+                chatSession = await findChatSession(chatId, userId);
 
                 if (!chatSession) {
                     // Create new chat for authenticated user
                     const chatTitle = await generateChatTitle({
                         message: lastMessage,
                     });
+                    if (!lastMessage.id) {
+                        lastMessage.id = uuidv4();
+                    }
 
                     chatSession = {
                         id: chatId,
                         userId: userId,
                         title: chatTitle,
                         visibility: 'private',
-                        createdAt: new Date(),
-                        updatedAt: new Date()
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
                     };
 
-                    await db.insert(chat).values(chatSession);
+                    await insertChat(chatSession);
                 }
-                
+
                 // Store user message for authenticated users
                 if (lastMessage.role === 'user') {
-                    await db.insert(chatMessage).values({
+                    await insertChatMessage({
                         id: uuidv4(),
                         chatId: chatSession.id,
                         role: 'user',
                         content: lastMessage.content,
-                        createdAt: new Date()
+                        createdAt: new Date().toISOString()
                     });
                 }
             } else {
@@ -89,8 +85,8 @@ export default defineLazyEventHandler(async () => {
                     userId: null,
                     title: 'Temporary Chat',
                     visibility: 'temporary',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
             }
 
@@ -98,46 +94,52 @@ export default defineLazyEventHandler(async () => {
                 model,
                 messages,
                 temperature: 0.7,
-                maxTokens: 2000
+                experimental_transform: smoothStream({
+                    chunking: 'word',
+                    delayInMs: 1,
+                }),
+                // maxTokens: 2000
             });
 
             const response = result.toDataStreamResponse();
 
-            const [stream1, stream2] = response.body.tee();
+            let responseToSend: Response;
+            if (response.body) {
+                const [stream1, stream2] = response.body.tee();
 
-            const responseToSend = new Response(stream1, {
-                headers: response.headers
-            });
+                responseToSend = new Response(stream1, {
+                    headers: response.headers
+                });
 
-            const reader = stream2.getReader();
-            let assistantResponse = '';
+                const reader = stream2.getReader();
+                let assistantResponse = '';
 
-            const processStream = async () => {
-                try {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-                        assistantResponse += new TextDecoder().decode(value);
+                const processStream = async () => {
+                    try {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            assistantResponse += new TextDecoder().decode(value);
+                        }
+
+                        if (assistantResponse && isAuthenticated) {
+                            await insertChatMessage({
+                                id: uuidv4(),
+                                chatId: chatSession.id,
+                                role: 'assistant',
+                                content: assistantResponse,
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error processing stream:', error);
                     }
-
-                    if (assistantResponse && isAuthenticated) {
-                        await db.insert(chatMessage).values({
-                            id: uuidv4(),
-                            chatId: chatSession.id,
-                            role: 'assistant',
-                            content: assistantResponse,
-                            createdAt: new Date()
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error processing stream:', error);
                 }
-            };
 
-            processStream();
+                processStream();
 
-            return responseToSend;
-
+                return responseToSend;
+            }
         } catch (error) {
             console.error('Chat error:', error);
 

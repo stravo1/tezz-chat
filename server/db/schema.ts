@@ -11,7 +11,7 @@ export const user = table("user", {
     plan: text("plan", { enum: ["FREE", "BASIC", "PREMIUM", "UNLIMITED"] }).notNull().default("FREE"),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}) 
+})
 
 export const chat = table("chat", {
     id: text("id").primaryKey().$defaultFn(uuid),
@@ -27,6 +27,7 @@ export const chatMessage = table("chat_message", {
     chatId: text("chat_id").notNull().references(() => chat.id, { onDelete: 'cascade' }),
     role: text("role", { enum: ['user', 'assistant', 'tool', 'system'] }).notNull(),
     content: text("content").notNull(),
+    attachments: text('attachments').notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 })
 
