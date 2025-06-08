@@ -1,0 +1,109 @@
+import { H3Event } from 'h3';
+import { z } from 'zod';
+import { createError, readMultipartFormData } from 'h3';
+import { put } from '@vercel/blob';
+import { ErrorCode, createAppError } from '~/server/utils/errors';
+
+// This function helps convert the multipart form data to a Blob
+const fileToBlob = (file: { data: Uint8Array; mimetype: string }): Blob => {
+  return new Blob([file.data], { type: file.mimetype });
+};
+
+// File validation schema
+const FileSchema = z.object({
+  data: z.instanceof(Uint8Array, { message: 'Invalid file data' }),
+  filename: z.string().min(1, 'Filename is required'),
+  mimetype: z.string().min(1, 'Mimetype is required'),
+  size: z.number().max(5 * 1024 * 1024, 'File size should be less than 5MB'),
+});
+
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
+
+export default defineEventHandler(async (event: H3Event) => {
+  try {
+    const isAuthenticated = !!event.context.session?.userId;
+    const formData = await readMultipartFormData(event);
+    
+    if (!formData || !formData.length) {
+      throw createAppError(ErrorCode.INVALID_REQUEST, 'No file uploaded');
+    }
+
+    const file = formData.find(field => field.name === 'file');
+    if (!file) {
+      throw createAppError(ErrorCode.INVALID_REQUEST, 'No file field found in form data');
+    }
+
+    // Validate file
+    if (!file.data || !file.filename || !file.mimetype) {
+      throw createAppError(ErrorCode.INVALID_REQUEST, 'Invalid file data');
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw createAppError(
+        ErrorCode.INVALID_REQUEST,
+        `Invalid file type. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+      );
+    }
+
+    // Create a unique filename with path
+    const fileExt = file.filename.split('.').pop();
+    const prefix = isAuthenticated ? 'auth' : 'public';
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const fileName = `${prefix}-${uniqueSuffix}.${fileExt}`;
+    const path = `uploads/${fileName}`;
+
+    // Convert the file to a Blob
+    const blob = fileToBlob(file);
+
+    // Upload to Vercel Blob
+    const { url, downloadUrl, pathname, contentType } = await put(
+      path,
+      blob,
+      {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: file.mimetype,
+      }
+    );
+
+    return {
+      success: true,
+      data: {
+        name: file.filename,
+        mimeType: file.mimetype,
+        size: file.data.length,
+        url,
+        downloadUrl,
+        pathname,
+        contentType,
+        uploadedAt: new Date().toISOString(),
+        authenticated: isAuthenticated,
+      },
+    };
+  } catch (error: any) {
+    if (error.statusCode) {
+      throw error;
+    }
+    
+    console.error('File upload error:', error);
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to process file upload',
+      data: {
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'An unexpected error occurred during file upload',
+      },
+    });
+  }
+});
