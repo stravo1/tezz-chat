@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useChat } from '@ai-sdk/vue';
-
-const { messages, append } = useChat();
+import {v4 as uuid} from 'uuid';
+const { messages, append } = useChat(
+  {
+    id: uuid(),
+  }
+);
 watch(messages, (newMessages) => {
   console.log('Messages updated:', newMessages);
 }, { deep: true });

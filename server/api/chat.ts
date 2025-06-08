@@ -23,12 +23,14 @@ export default defineLazyEventHandler(async () => {
     const model = google('gemini-2.5-flash-preview-04-17');
 
     return defineEventHandler(async (event) => {
+        console.log("event",event)
         try {
             const session = event.context.session;
             const isAuthenticated = !!session?.userId;
             const userId = session?.userId;
 
             const body = await readBody(event);
+            console.log("body",body)
 
             const validation = chatInputSchema.safeParse(body);
 
