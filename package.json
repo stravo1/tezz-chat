@@ -6,23 +6,31 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio --port=9169",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/vue": "^1.2.12",
+    "@libsql/client": "^0.15.8",
     "@nuxt/icon": "1.13.0",
     "@tailwindcss/vite": "^4.1.8",
     "ai": "^4.3.16",
     "dexie": "^4.0.11",
     "marked": "^15.0.12",
-    "nuxt": "^3.17.5",
-    "supertokens-node": "^22.1.0",
-    "supertokens-web-js": "^0.15.0",
     "tailwindcss": "^4.1.8",
     "tailwindcss-scoped-preflight": "^3.4.12",
     "uuid": "^11.1.0",
+    "drizzle-orm": "^0.44.2",
+    "drizzle-zod": "^0.8.2",
+    "nuxt": "^3.17.5",
+    "supertokens-node": "^22.1.0",
+    "supertokens-web-js": "^0.15.0",
+    "unique-names-generator": "^4.7.1",
     "vue": "^3.5.16",
     "vue-router": "^4.5.1",
     "zod": "^3.25.56"
@@ -30,6 +38,7 @@
   "packageManager": "pnpm@9.15.5+sha256.8472168c3e1fd0bff287e694b053fccbbf20579a3ff9526b6333beab8df65a8d",
   "devDependencies": {
     "prettier": "^3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.12"
+    "prettier-plugin-tailwindcss": "^0.6.12",
+    "drizzle-kit": "^0.31.1"
   }
 }
