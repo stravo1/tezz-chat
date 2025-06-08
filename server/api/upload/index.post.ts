@@ -5,15 +5,15 @@ import { put } from '@vercel/blob';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 
 // This function helps convert the multipart form data to a Blob
-const fileToBlob = (file: { data: Uint8Array; mimetype: string }): Blob => {
-  return new Blob([file.data], { type: file.mimetype });
+const fileToBlob = (file: { data: Uint8Array; type?: string }): Blob => {
+  return new Blob([file.data], { type: file.type || '' });
 };
 
 // File validation schema
 const FileSchema = z.object({
   data: z.instanceof(Uint8Array, { message: 'Invalid file data' }),
   filename: z.string().min(1, 'Filename is required'),
-  mimetype: z.string().min(1, 'Mimetype is required'),
+  type: z.string().min(1, 'Type is required'),
   size: z.number().max(5 * 1024 * 1024, 'File size should be less than 5MB'),
 });
 
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event: H3Event) => {
   try {
     const isAuthenticated = !!event.context.session?.userId;
     const formData = await readMultipartFormData(event);
-    
+
     if (!formData || !formData.length) {
       throw createAppError(ErrorCode.INVALID_REQUEST, 'No file uploaded');
     }
@@ -45,11 +45,11 @@ export default defineEventHandler(async (event: H3Event) => {
     }
 
     // Validate file
-    if (!file.data || !file.filename || !file.mimetype) {
+    if (!file.data || !file.filename || !file.type) {
       throw createAppError(ErrorCode.INVALID_REQUEST, 'Invalid file data');
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    if (!file.type || !ALLOWED_MIME_TYPES.includes(file.type)) {
       throw createAppError(
         ErrorCode.INVALID_REQUEST,
         `Invalid file type. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event: H3Event) => {
       {
         access: 'public',
         addRandomSuffix: false,
-        contentType: file.mimetype,
+        contentType: file.type || '',
       }
     );
 
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event: H3Event) => {
       success: true,
       data: {
         name: file.filename,
-        mimeType: file.mimetype,
+        mimeType: file.type || '',
         size: file.data.length,
         url,
         downloadUrl,
@@ -95,13 +95,13 @@ export default defineEventHandler(async (event: H3Event) => {
     if (error.statusCode) {
       throw error;
     }
-    
+
     console.error('File upload error:', error);
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to process file upload',
       data: {
-        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
         message: 'An unexpected error occurred during file upload',
       },
     });
