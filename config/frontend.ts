@@ -22,9 +22,15 @@ export function initSuperTokensUI() {
     });
 }
 
+let isInitialized = false;
+
 export function initSuperTokensWebJS() {
+    console.log("here");
+    if (isInitialized) return;
+    console.log("not here");
     SuperTokens.init({
         appInfo,
         recipeList: [Session.init()],
     });
+    isInitialized = true;
 }

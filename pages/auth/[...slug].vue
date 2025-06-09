@@ -1,5 +1,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, onUnmounted } from 'vue';
+import { initSuperTokensUI, initSuperTokensWebJS } from '~/config/frontend';
+
 export default defineComponent({
   setup() {
     const loadScript = (src: string) => {
@@ -8,35 +10,8 @@ export default defineComponent({
       script.src = src;
       script.id = 'supertokens-script';
       script.onload = () => {
-        (window as any).supertokensUIInit('supertokensui', {
-          appInfo: {
-            // learn more about this on https://supertokens.com/docs/references/frontend-sdks/reference#sdk-configuration
-            appName: 'Khub-Chaton',
-            apiDomain: "http://localhost:3000",
-            websiteDomain: "http://localhost:3000",
-            apiBasePath: '/api/auth',
-            websiteBasePath: '/auth',
-          },
-          style: `
-              [data-supertokens~="container"] {
-                 font-family: "Inter", sans-serif; 
-              }
-          `,
-          recipeList: [
-            (window as any).supertokensUIPasswordless.init({
-              contactMethod: 'EMAIL_OR_PHONE',
-            }),
-            (window as any).supertokensUIThirdParty.init({
-              signInAndUpFeature: {
-                providers: [
-                  (window as any).supertokensUIThirdParty.Github.init(),
-                  (window as any).supertokensUIThirdParty.Google.init(),
-                ],
-              },
-            }),
-            (window as any).supertokensUISession.init(),
-          ],
-        });
+        initSuperTokensWebJS();
+        initSuperTokensUI();
       };
       document.body.appendChild(script);
     };

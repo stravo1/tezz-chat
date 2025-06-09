@@ -1,8 +1,10 @@
 import Session from 'supertokens-web-js/recipe/session';
+import { initSuperTokensWebJS } from '~/config/frontend';
 
 export const useAuthGuard = () => {
   onMounted(async () => {
     try {
+      initSuperTokensWebJS();
       if (!Session.doesSessionExist()) {
         console.log('No session found, redirecting to auth page');
         // navigateTo('/auth');
