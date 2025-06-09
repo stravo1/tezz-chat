@@ -2,6 +2,7 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
+  "version": "0.0.1-alpha.0",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -22,12 +23,14 @@
     "@tailwindcss/vite": "^4.1.8",
     "@vercel/blob": "^1.1.1",
     "ai": "^4.3.16",
+    "appwrite": "^18.1.1",
     "drizzle-orm": "^0.44.2",
     "drizzle-zod": "^0.8.2",
     "highlight.js": "^11.11.1",
     "lucide-vue-next": "^0.513.0",
     "marked": "^15.0.12",
     "marked-highlight": "^2.2.1",
+    "node-appwrite": "^17.0.0",
     "nuxt": "^3.17.5",
     "pinia": "^3.0.3",
     "rxdb": "^16.13.0",
@@ -43,6 +46,14 @@
     "zod": "^3.25.56"
   },
   "packageManager": "pnpm@9.15.5+sha256.8472168c3e1fd0bff287e694b053fccbbf20579a3ff9526b6333beab8df65a8d",
+  "deprecatedPackages": {
+    "@libsql/client": "Deprecated - Will be removed in v0.0.1. Consider alternatives like @prisma/client or direct database drivers.",
+    "@vercel/blob": "Deprecated - Will be removed in v0.0.1. Consider using direct cloud storage SDKs or alternative file storage solutions.",
+    "dexie": "Deprecated - Will be removed in v0.0.1. Consider using IndexedDB directly or alternative client-side databases.",
+    "drizzle-orm": "Deprecated - Will be removed in v0.0.1. Consider alternatives like Prisma, TypeORM, or Kysely.",
+    "drizzle-zod": "Deprecated - Will be removed in v0.0.1. No longer maintained with the deprecation of drizzle-orm.",
+    "uuid": "Deprecated - Will be removed in v0.0.1. Consider using appwrite uuid or other modern alternatives."
+  },
   "devDependencies": {
     "drizzle-kit": "^0.31.1",
     "prettier": "^3.5.3",
