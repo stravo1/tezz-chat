@@ -1,7 +1,8 @@
 import { defineEventHandler, getQuery, createError } from 'h3';
-import { and, eq, desc, sql } from 'drizzle-orm';
-import { chat } from '~/server/db/schema';
-import { db } from '~/server/db';
+import { Query } from 'node-appwrite';
+import { databases } from '~/server/appwrite/config';
+import { appwriteConfig } from '~/server/appwrite/config';
+import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 
 // Default pagination values
 const DEFAULT_PAGE = 1;
@@ -28,26 +29,64 @@ export default defineEventHandler(async (event) => {
       : DEFAULT_LIMIT;
     const offset = (page - 1) * limit;
 
-    // Fetch paginated chats for the user
-    const [chats, totalCountResult] = await Promise.all([
-      // Get paginated chats
-      db.query.chat.findMany({
-        where: eq(chat.userId, session.userId),
-        orderBy: [desc(chat.updatedAt)],
-        limit,
-        offset,
-      }),
-      // Get total count for pagination
-      db.select({ count: sql<number>`count(*)` })
-        .from(chat)
-        .where(eq(chat.userId, session.userId))
-    ]);
+    // Fetch paginated chats for the user using Appwrite with selected fields
+    const chats = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.CHATS,
+      [
+        Query.equal('userId', session.userId),
+        Query.orderDesc('updatedAt'),
+        Query.limit(limit),
+        Query.offset(offset),
+        // Select only the fields we need
+        Query.select([
+          '$id',
+          'title',
+          'visibility',
+          'deleted',
+          'lastModifiedBy',
+          'createdAt',
+          'updatedAt'
+        ])
+      ]
+    );
 
-    const totalCount = totalCountResult[0]?.count || 0;
+    // Get user information
+    const user = await databases.getDocument(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.USERS,
+      session.userId,
+      [
+        Query.select([
+          '$id',
+          'name',
+          'profilePicture'
+        ])
+      ]
+    );
+
+    // Transform the response to a cleaner format
+    const transformedChats = chats.documents.map(chat => ({
+      id: chat.$id,
+      title: chat.title,
+      visibility: chat.visibility,
+      deleted: chat.deleted,
+      lastModifiedBy: chat.lastModifiedBy,
+      createdAt: chat.createdAt,
+      updatedAt: chat.updatedAt,
+      user: {
+        id: user.$id,
+        name: user.name,
+        profilePicture: user.profilePicture
+      }
+    }));
+
+    // Get total count for pagination
+    const totalCount = chats.total;
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      data: chats,
+      data: transformedChats,
       pagination: {
         page,
         limit,
