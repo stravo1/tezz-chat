@@ -1,7 +1,9 @@
-import { defineEventHandler, getRouterParam, createError } from 'h3';
-import { and, eq, desc, sql } from 'drizzle-orm';
-import { chat, chatMessage } from '~/server/db/schema';
-import { db } from '~/server/db';
+import { Query } from 'node-appwrite';
+import { databases } from '~/server/appwrite/config';
+import { appwriteConfig } from '~/server/appwrite/config';
+import { COLLECTION_NAMES } from '~/server/appwrite/constant';
+import { ErrorCode, createAppError } from '~/server/utils/errors';
+
 
 // Default pagination values
 const DEFAULT_PAGE = 1;
@@ -12,11 +14,7 @@ export default defineEventHandler(async (event) => {
   try {
     const chatId = getRouterParam(event, 'id');
     if (!chatId) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        message: 'Chat ID is required'
-      });
+      throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required');
     }
 
     // Get the authenticated user from the session
@@ -31,63 +29,53 @@ export default defineEventHandler(async (event) => {
       : DEFAULT_LIMIT;
     const offset = (page - 1) * limit;
 
-    // First, verify the chat exists and check permissions
-    const chatRecord = await db.query.chat.findFirst({
-      where: eq(chat.id, chatId),
-      columns: {
-        id: true,
-        title: true,
-        userId: true,
-        visibility: true
-      }
-    });
+    // Get chat by ID with permission check
+    const queries = [
+      Query.equal('$id', chatId)
+    ];
 
-    if (!chatRecord) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'Not Found',
-        message: 'Chat not found'
-      });
+    if (userId) {
+      queries.push(
+        Query.or([
+          Query.equal('userId', userId),
+          Query.equal('visibility', 'public')
+        ])
+      );
+    } else {
+      queries.push(Query.equal('visibility', 'public'));
     }
 
-    // Check if user has access to this chat
-    const isOwner = chatRecord.userId === userId;
-    const isPublic = chatRecord.visibility === 'public';
-    
-    if (!isOwner && !isPublic) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: 'You do not have permission to view this chat'
-      });
+    const chats = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.CHATS,
+      queries
+    );
+
+    if (chats.documents.length === 0) {
+      throw createAppError(ErrorCode.RESOURCE_NOT_FOUND, 'Chat not found or you do not have permission to view it');
     }
 
-    // Fetch paginated messages for the chat
-    const [messages, totalCountResult] = await Promise.all([
-      // Get paginated messages
-      db.query.chatMessage.findMany({
-        where: eq(chatMessage.chatId, chatId),
-        orderBy: [desc(chatMessage.createdAt)],
-        limit,
-        offset,
-      }),
-      // Get total count for pagination
-      db.select({ count: sql<number>`count(*)` })
-        .from(chatMessage)
-        .where(eq(chatMessage.chatId, chatId))
-    ]);
+    const chatRecord = chats.documents[0];
+    const isOwner = userId ? chatRecord.userId.$id === userId : false;
 
-    const totalCount = totalCountResult[0]?.count || 0;
+    // Fetch messages for the chat
+    const messages = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.CHAT_MESSAGES,
+      [
+        Query.equal('chatId', chatId),
+        Query.orderDesc('createdAt'),
+        Query.limit(limit),
+        Query.offset(offset)
+      ]
+    );
+
+    const totalCount = messages.total;
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      data: messages,
-      chat: {
-        id: chatRecord.id,
-        title: chatRecord.title,
-        isOwner,
-        visibility: chatRecord.visibility,
-      },
+      chat: messages.documents,
+      isOwner,
       pagination: {
         page,
         limit,
@@ -100,10 +88,6 @@ export default defineEventHandler(async (event) => {
 
   } catch (error) {
     console.error('Error fetching chat messages:', error);
-    throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Internal Server Error',
-      message: error.message || 'An error occurred while fetching chat messages'
-    });
+    throw createAppError(ErrorCode.INTERNAL_ERROR, 'An error occurred while fetching chat messages');
   }
 });

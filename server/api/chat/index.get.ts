@@ -1,8 +1,9 @@
-import { defineEventHandler, getQuery, createError } from 'h3';
 import { Query } from 'node-appwrite';
 import { databases } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
+import { ErrorCode, createAppError } from '~/server/utils/errors';
+
 
 // Default pagination values
 const DEFAULT_PAGE = 1;
@@ -14,11 +15,7 @@ export default defineEventHandler(async (event) => {
     // Get the authenticated user from the session
     const session = event.context.session;
     if (!session?.userId) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-        message: 'You must be logged in to view chats'
-      });
+      throw createAppError(ErrorCode.UNAUTHORIZED, 'You must be logged in to view chats');
     }
 
     // Get query parameters with defaults
@@ -51,19 +48,6 @@ export default defineEventHandler(async (event) => {
       ]
     );
 
-    // Get user information
-    const user = await databases.getDocument(
-      appwriteConfig.databaseId,
-      COLLECTION_NAMES.USERS,
-      session.userId,
-      [
-        Query.select([
-          '$id',
-          'name',
-          'profilePicture'
-        ])
-      ]
-    );
 
     // Transform the response to a cleaner format
     const transformedChats = chats.documents.map(chat => ({
@@ -74,11 +58,6 @@ export default defineEventHandler(async (event) => {
       lastModifiedBy: chat.lastModifiedBy,
       createdAt: chat.createdAt,
       updatedAt: chat.updatedAt,
-      user: {
-        id: user.$id,
-        name: user.name,
-        profilePicture: user.profilePicture
-      }
     }));
 
     // Get total count for pagination
@@ -99,10 +78,6 @@ export default defineEventHandler(async (event) => {
 
   } catch (error) {
     console.error('Error fetching chats:', error);
-    throw createError({
-      statusCode: (error instanceof Error && (error as any).statusCode) || 500,
-      statusMessage: (error instanceof Error && (error as any).statusMessage) || 'Internal Server Error',
-      message: (error instanceof Error && error.message) || 'An error occurred while fetching chats'
-    });
+    throw createAppError(ErrorCode.INTERNAL_ERROR, 'An error occurred while fetching chats');
   }
 });

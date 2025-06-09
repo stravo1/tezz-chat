@@ -64,11 +64,11 @@ export default defineEventHandler(async (event) => {
     
     // Don't return the response from withSession
     // This allows the endpoint handler to execute
-  } catch (err) {
+  } catch (err: any) {
     console.error('Session verification error:', err);
     
     // Use our error handling utility
-    if (err.statusCode === 401) {
+    if (err?.statusCode === 401) {
       // Keep the error as is if it's already formatted
       throw err;
     } else {
