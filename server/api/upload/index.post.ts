@@ -1,12 +1,18 @@
 import { H3Event } from 'h3';
 import { z } from 'zod';
 import { createError, readMultipartFormData } from 'h3';
-import { put } from '@vercel/blob';
+import { storage } from '~/server/appwrite/config';
+import { appwriteConfig } from '~/server/appwrite/config';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
+import { ID } from 'node-appwrite';
 
-// This function helps convert the multipart form data to a Blob
-const fileToBlob = (file: { data: Uint8Array; type?: string }): Blob => {
-  return new Blob([file.data], { type: file.type || '' });
+// This function helps convert the multipart form data to a File
+const fileToFile = (file: { data: Uint8Array; type?: string; filename?: string }): File => {
+  if (!file.filename) {
+    throw new Error('Filename is required');
+  }
+  const blob = new Blob([file.data], { type: file.type || '' });
+  return new File([blob], file.filename, { type: file.type || '' });
 };
 
 // File validation schema
@@ -29,6 +35,12 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
+
+// Storage bucket IDs
+const STORAGE_BUCKETS = {
+  AUTHENTICATED: 'authenticated-files',
+  PUBLIC: 'public-files'
+} as const;
 
 export default defineEventHandler(async (event: H3Event) => {
   try {
@@ -63,19 +75,46 @@ export default defineEventHandler(async (event: H3Event) => {
     const fileName = `${prefix}-${uniqueSuffix}.${fileExt}`;
     const path = `uploads/${fileName}`;
 
-    // Convert the file to a Blob
-    const blob = fileToBlob(file);
+    // Convert the file to a File object
+    const fileObj = fileToFile({
+      data: file.data,
+      type: file.type,
+      filename: file.filename
+    });
 
-    // Upload to Vercel Blob
-    const { url, downloadUrl, pathname, contentType } = await put(
-      path,
-      blob,
-      {
-        access: 'public',
-        addRandomSuffix: false,
-        contentType: file.type || '',
-      }
+    // Upload to Appwrite Storage
+    const bucketId = isAuthenticated ? STORAGE_BUCKETS.AUTHENTICATED : STORAGE_BUCKETS.PUBLIC;
+    const fileId = ID.unique();
+    
+    const uploadedFile = await storage.createFile(
+      bucketId,
+      fileId,
+      fileObj
     );
+
+    // Get file details
+    const fileDetails = await storage.getFile(
+      bucketId,
+      fileId
+    );
+
+    // Get file download URL
+    const downloadUrl = storage.getFileDownload(
+      bucketId,
+      fileId
+    );
+
+    // Get file preview URL (for images)
+    const previewUrl = file.type.startsWith('image/') 
+      ? storage.getFilePreview(
+          bucketId,
+          fileId,
+          800, // width
+          800, // height
+          undefined, // gravity
+          100 // quality
+        )
+      : null;
 
     return {
       success: true,
@@ -83,10 +122,10 @@ export default defineEventHandler(async (event: H3Event) => {
         name: file.filename,
         mimeType: file.type || '',
         size: file.data.length,
-        url,
+        url: previewUrl || downloadUrl,
         downloadUrl,
-        pathname,
-        contentType,
+        pathname: fileDetails.$id,
+        contentType: fileDetails.mimeType,
         uploadedAt: new Date().toISOString(),
         authenticated: isAuthenticated,
       },
