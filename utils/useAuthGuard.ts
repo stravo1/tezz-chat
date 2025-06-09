@@ -7,14 +7,14 @@ export const useAuthGuard = () => {
       initSuperTokensWebJS();
       if (!Session.doesSessionExist()) {
         console.log('No session found, redirecting to auth page');
-        // navigateTo('/auth');
+        navigateTo('/auth');
         return;
       }
       console.log('Session refreshed successfully');
     } catch (error) {
       console.error('Session refresh failed:', error);
       // Session.signOut();
-      // navigateTo('/auth');
+      navigateTo('/auth');
     }
   });
 

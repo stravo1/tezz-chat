@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { useChat } from "@ai-sdk/vue";
-
-import { v4 as uuid } from "uuid";
-
-const { checkSession } = useAuthGuard();
+useAuthGuard()
 const { messages, append } = useChat({
   id: "c34a6dfe-fb8b-4881-a5ec-daeb4b5b2170",
   body: {
