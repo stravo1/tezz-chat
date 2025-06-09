@@ -1,22 +1,15 @@
 <script setup lang="ts">
-import type { ChatRequestOptions, CreateMessage, Message } from "ai";
-
-const props = defineProps<{
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
-}>();
 const message = ref("");
+const props = defineProps<{
+  handleSubmit: (message: string) => Promise<void>;
+}>();
+
 const handleSubmit = () => {
   if (message.value.trim() === "") return;
-  let newMessage: Message | CreateMessage = {
-    role: "user",
-    content: message.value,
-  };
-  props.append(newMessage);
+  props.handleSubmit(message.value);
   message.value = "";
 };
+
 </script>
 
 <template>

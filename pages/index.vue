@@ -26,7 +26,6 @@ watch(
     </div>
     <div id="chat-view" class="relative box-border flex w-[70vw] p-2 pb-15">
       <ChatMessages :messages />
-      <ChatInput :append />
     </div>
   </div>
 </template>

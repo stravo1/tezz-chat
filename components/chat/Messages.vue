@@ -21,7 +21,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div class="flex h-full w-full flex-col overflow-y-auto overflow-x-hidden">
+  <div class="flex h-full w-full flex-col overflow-y-auto overflow-x-hidden" id="messages-container">
     <div v-for="message in props.messages" :key="message.id" class="p-2">
       <div v-memo="[message]" :class="`${message.role === 'user' ? 'text-gray-600' : 'text-gray-900'}`">
         <strong>{{ message.role }}:</strong>

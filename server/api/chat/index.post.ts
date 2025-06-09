@@ -15,7 +15,7 @@ const chatInputSchema = z.object({
             experimental_attachments: z.array(z.any()).optional(),
         }).passthrough()
     ).min(1, 'At least one message is required'),
-    chatId: z.string().optional(),
+    id: z.string().optional(),
 });
 
 export default defineLazyEventHandler(async () => {
@@ -23,11 +23,13 @@ export default defineLazyEventHandler(async () => {
 
     return defineEventHandler(async (event) => {
         try {
+            // console.log('Chat request received', event);
             const session = event.context.session;
             const isAuthenticated = !!session?.userId;
             const userId = session?.userId;
 
             const body = await readBody(event);
+            console.log('Request body:', body);
 
             const validation = chatInputSchema.safeParse(body);
 
@@ -35,7 +37,7 @@ export default defineLazyEventHandler(async () => {
                 throw createAppError(ErrorCode.INVALID_REQUEST, `Invalid input: ${validation.error.errors[0]?.message}`);
             }
 
-            const { messages, chatId } = validation.data;
+            const { messages, id: chatId } = validation.data;
             const lastMessage = messages[messages.length - 1];
             let chatSession;
 
