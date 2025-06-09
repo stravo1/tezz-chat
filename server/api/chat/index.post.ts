@@ -2,9 +2,12 @@ import { defineLazyEventHandler } from 'h3';
 import { streamText, smoothStream } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
-import { findChatSession, insertChat, insertChatMessage } from '~/server/db/queries';
+import { ID } from 'node-appwrite';
+import { databases } from '~/server/appwrite/config';
+import { appwriteConfig } from '~/server/appwrite/config';
+import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
+import { Query } from 'node-appwrite';
 
 const chatInputSchema = z.object({
     messages: z.array(
@@ -16,10 +19,11 @@ const chatInputSchema = z.object({
         }).passthrough()
     ).min(1, 'At least one message is required'),
     id: z.string().optional(),
+    deviceId: z.string().optional(),
 });
 
 export default defineLazyEventHandler(async () => {
-    const model = google('gemini-2.5-flash-preview-04-17');
+    const model = google('gemini-2.0-flash');
 
     return defineEventHandler(async (event) => {
         try {
@@ -29,15 +33,13 @@ export default defineLazyEventHandler(async () => {
             const userId = session?.userId;
 
             const body = await readBody(event);
-            console.log('Request body:', body);
-
             const validation = chatInputSchema.safeParse(body);
 
             if (!validation.success) {
                 throw createAppError(ErrorCode.INVALID_REQUEST, `Invalid input: ${validation.error.errors[0]?.message}`);
             }
 
-            const { messages, id: chatId } = validation.data;
+            const { messages, id: chatId, deviceId } = validation.data;
             const lastMessage = messages[messages.length - 1];
             let chatSession;
 
@@ -46,40 +48,86 @@ export default defineLazyEventHandler(async () => {
                     throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required for authenticated users');
                 }
 
-                chatSession = await findChatSession(chatId, userId);
+                // Use Appwrite's query capabilities to find the chat
+                const chats = await databases.listDocuments(
+                    appwriteConfig.databaseId,
+                    COLLECTION_NAMES.CHATS,
+                    [
+                        Query.equal('$id', chatId),
+                        Query.equal('userId', userId)
+                    ]
+                );
 
-                if (!chatSession) {
+                if (chats.documents.length > 0) {
+                    chatSession = chats.documents[0];
+                } else {
+                    // Create new chat if not found
                     const chatTitle = await generateChatTitle({ message: lastMessage });
-                    if (!lastMessage.id) lastMessage.id = uuidv4();
+                    const now = new Date().toISOString();
 
-                    chatSession = {
-                        id: chatId,
-                        userId,
-                        title: chatTitle,
-                        visibility: 'private',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    };
+                    const doc = await databases.createDocument(
+                        appwriteConfig.databaseId,
+                        COLLECTION_NAMES.CHATS,
+                        chatId,
+                        {
+                            title: chatTitle,
+                            visibility: 'private',
+                            userId,
+                            lastModifiedBy: deviceId || 'server',
+                            createdAt: now,
+                            updatedAt: now
+                        }
+                    );
 
-                    await insertChat(chatSession);
+                    chatSession = doc;
                 }
 
-                if (lastMessage.role === 'user') {
-                    await insertChatMessage({
-                        id: uuidv4(),
-                        chatId: chatSession.id,
-                        role: 'user',
-                        content: lastMessage.content,
-                        attachments: lastMessage.experimental_attachments ?? [],
-                        createdAt: new Date().toISOString()
-                    });
+                if (lastMessage.role === 'user' && chatSession) {
+                    try {
+                        // Create user message with optimized attributes
+                        const userMessage = await databases.createDocument(
+                            appwriteConfig.databaseId,
+                            COLLECTION_NAMES.CHAT_MESSAGES,
+                            ID.unique(),
+                            {
+                                chatId: chatSession.$id,
+                                role: 'user',
+                                content: lastMessage.content,
+                                attachments: JSON.stringify(lastMessage.experimental_attachments || []),
+                                lastModifiedBy: deviceId || 'server',
+                                deleted: false,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            }
+                        );
+
+                        // Update chat's lastModifiedBy and updatedAt
+                        await databases.updateDocument(
+                            appwriteConfig.databaseId,
+                            COLLECTION_NAMES.CHATS,
+                            chatSession.$id,
+                            {
+                                lastModifiedBy: deviceId || 'server',
+                                updatedAt: new Date().toISOString()
+                            }
+                        );
+
+                        if (!userMessage || !userMessage.$id) {
+                            throw new Error('Failed to create user message');
+                        }
+
+                    } catch (messageError) {
+                        console.error('Error creating user message:', messageError);
+                        throw createAppError(ErrorCode.INTERNAL_ERROR, 'Failed to save user message');
+                    }
                 }
             } else {
                 chatSession = {
-                    id: `temp-${Date.now()}`,
-                    userId: null,
+                    $id: `temp-${Date.now()}`,
+                    userId: 'anonymous',
                     title: 'Temporary Chat',
                     visibility: 'temporary',
+                    lastModifiedBy: deviceId || 'anonymous',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
@@ -96,15 +144,38 @@ export default defineLazyEventHandler(async () => {
                 // Streaming callback
                 onFinish: async (event) => {
                     const fullAssistantMessage = event.text;
-                    if (fullAssistantMessage && isAuthenticated) {
-                        await insertChatMessage({
-                            id: uuidv4(),
-                            chatId: chatSession.id,
-                            role: 'assistant',
-                            content: fullAssistantMessage,
-                            attachments: lastMessage.experimental_attachments ?? [],
-                            createdAt: new Date().toISOString()
-                        });
+                    if (fullAssistantMessage && isAuthenticated && chatSession) {
+                        try {
+                            // Create assistant message with optimized attributes
+                            await databases.createDocument(
+                                appwriteConfig.databaseId,
+                                COLLECTION_NAMES.CHAT_MESSAGES,
+                                ID.unique(),
+                                {
+                                    chatId: chatSession.$id,
+                                    role: 'assistant',
+                                    content: fullAssistantMessage,
+                                    attachments: JSON.stringify(lastMessage.experimental_attachments || []),
+                                    lastModifiedBy: 'assistant',
+                                    deleted: false,
+                                    createdAt: new Date().toISOString(),
+                                    updatedAt: new Date().toISOString()
+                                }
+                            );
+
+                            // Update chat's lastModifiedBy and updatedAt
+                            await databases.updateDocument(
+                                appwriteConfig.databaseId,
+                                COLLECTION_NAMES.CHATS,
+                                chatSession.$id,
+                                {
+                                    lastModifiedBy: 'assistant',
+                                    updatedAt: new Date().toISOString()
+                                }
+                            );
+                        } catch (error) {
+                            console.error('Error creating assistant message:', error);
+                        }
                     }
                 }
             });

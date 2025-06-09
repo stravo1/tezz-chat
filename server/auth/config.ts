@@ -7,17 +7,11 @@ import { appInfo } from "#shared/config/appInfo";
 import { type TypeInput } from "supertokens-node/types";
 import SuperTokens from "supertokens-node";
 import { uniqueNamesGenerator, Config, adjectives, colors, animals, names } from 'unique-names-generator';
-
-import { db } from '../db';
-import { user } from '../db/schema';
-import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { databases } from '../appwrite/config';
+import { appwriteConfig } from '../appwrite/config';
+import { COLLECTION_NAMES } from '../appwrite/constant';
 
 
-
-/**
- * Configuration for username generator
- */
 const nameGeneratorConfig: Config = {
   dictionaries: [colors, names, animals],
   separator: '',
@@ -25,10 +19,6 @@ const nameGeneratorConfig: Config = {
   length: 2
 };
 
-/**
- * Generate a friendly, memorable username
- * @returns A unique username like "PurplePanda" or "SkyMango"
- */
 function generateFriendlyUsername(): string {
   return uniqueNamesGenerator(nameGeneratorConfig);
 }
@@ -52,45 +42,56 @@ async function createOrUpdateUser(userId: string, email: string, providedName?: 
             : generateFriendlyUsername();
             
         const profilePicture = generateProfilePicture(userName);
+        
+        // Use UTC for all timestamps to ensure consistency across timezones
         const now = new Date().toISOString();
         
-        const userData = {
-            id: userId,
-            email,
-            name: userName,
-            profilePicture,
-            plan: "FREE" as const,
-            createdAt: now,
-            updatedAt: now
-        };
-    
-        const existingUser = await db.query.user.findFirst({
-            where: (user, { eq }) => eq(user.id, userId)
-        });
-    
-        if (existingUser) {
-            await db.update(user)
-                .set({
-                    updatedAt: userData.updatedAt
-                })
-                .where(eq(user.id, userId));
-        } else {
-            await db.insert(user).values(userData);
+        try {
+            // Try to get existing user
+            await databases.getDocument(
+                appwriteConfig.databaseId,
+                COLLECTION_NAMES.USERS,
+                userId
+            );
+            
+            // If user exists, only update the timestamp
+            await databases.updateDocument(
+                appwriteConfig.databaseId,
+                COLLECTION_NAMES.USERS,
+                userId,
+                {
+                    updatedAt: now
+                }
+            );
+        } catch (error) {
+            // If user doesn't exist, create new with all fields
+            const userData = {
+                email,
+                name: userName,
+                profilePicture,
+                plan: "FREE",
+                createdAt: now,
+                updatedAt: now
+            };
+            
+            await databases.createDocument(
+                appwriteConfig.databaseId,
+                COLLECTION_NAMES.USERS,
+                userId,
+                userData
+            );
         }
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          console.error('Validation error creating/updating user:', error.errors);
-        } else {
-          console.error('Database error creating/updating user:', error);
-        }
-      }
+    } catch (error) {
+        console.error('Error creating/updating user in Appwrite:', error);
+        throw error;
+    }
 }
 
 export let backendConfig = (): TypeInput => {
     return {
         isInServerlessEnv: true,
         supertokens: {
-            connectionURI: "https://st-dev-8b0aad20-da7b-11ef-8c4b-53905c1f8f99.aws.supertokens.io",
+            connectionURI: "https://st-dev-8c544bc0-4545-11f0-aa58-a50f51899035.aws.supertokens.io",
             apiKey: process.env.NUXT_SUPERTOKENS_API_KEY,
         },
         appInfo,
@@ -114,8 +115,8 @@ export let backendConfig = (): TypeInput => {
                                 thirdPartyId: "github",
                                 clients: [
                                     {
-                                        clientId: process.env.NUXT_GITHUB_CLIENT_ID,
-                                        clientSecret: process.env.NUXT_GITHUB_AUTH_SECRET_KEY,
+                                        clientId: process.env.NUXT_GITHUB_CLIENT_ID || "",
+                                        clientSecret: process.env.NUXT_GITHUB_AUTH_SECRET_KEY || "",
                                     },
                                 ],
                             },

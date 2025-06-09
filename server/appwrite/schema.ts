@@ -144,10 +144,11 @@ async function createChatMessage() {
         65535,
         true,
     );
-    await databases.createUrlAttribute(
+    await databases.createStringAttribute(
         appwriteConfig.databaseId,
         COLLECTION_NAMES.CHAT_MESSAGES,
         'attachments',
+        2000,
         false
     );
     // Offline sync attribute
