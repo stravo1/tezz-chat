@@ -1,5 +1,12 @@
 import { Client, Account, Databases, Storage, Avatars } from 'appwrite';
 
+// Create instances outside the composable
+let client: Client | null = null;
+let account: Account | null = null;
+let databases: Databases | null = null;
+let storage: Storage | null = null;
+let avatars: Avatars | null = null;
+
 export const useAppwrite = () => {
   const config = useRuntimeConfig();
   
@@ -11,17 +18,23 @@ export const useAppwrite = () => {
     storageId: config.public.appwrite.storageId,
   };
 
-  const client = new Client();
-  
-  client
-    .setEndpoint(appwriteConfig.url)
-    .setEndpointRealtime(appwriteConfig.realtimeUrl)
-    .setProject(appwriteConfig.projectId);
+  // Initialize client only once
+  if (!client) {
+    client = new Client();
+    console.log("Appwrite client initialized with config:", appwriteConfig);
+    
+    client
+      .setEndpoint(appwriteConfig.url)
+      .setEndpointRealtime(appwriteConfig.realtimeUrl)
+      .setProject(appwriteConfig.projectId);
 
-  const account = new Account(client);
-  const databases = new Databases(client);
-  const storage = new Storage(client);
-  const avatars = new Avatars(client);
+    account = new Account(client);
+    databases = new Databases(client);
+    storage = new Storage(client);
+    avatars = new Avatars(client);
+  } else {
+    console.log("Using existing Appwrite client instance.");
+  }
 
   return {
     appwriteConfig,

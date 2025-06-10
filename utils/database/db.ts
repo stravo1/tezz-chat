@@ -43,7 +43,11 @@ const threadSchema = {
     createdAt: { type: "string" },
     updatedAt: { type: "string" },
     // lastMessageAt: { type: "string" }
-    visibility: { type: "string", enum: ["private", "public"], default: "private" },
+    visibility: {
+      type: "string",
+      enum: ["private", "public"],
+      default: "private",
+    },
     lastModifiedBy: { type: "string", maxLength: 36, default: "server" },
     userId: { type: "object" },
     streamId: { type: "array" },
@@ -83,6 +87,19 @@ const messageSummarySchema = {
   indexes: ["threadId", ["threadId", "createdAt"]],
 };
 
+const aSimpleSchema = {
+  version: 0,
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 36 },
+    name: { type: "string", maxLength: 100 },
+    userId: { type: "string", maxLength: 36 },
+  },
+  required: ["id", "name", "userId"],
+  indexes: ["name"],
+};
+
 // First create the db instance
 let dbInstance: Awaited<ReturnType<typeof createRxDatabase>> | null = null;
 let collectionsInstance: any | null = null;
@@ -107,6 +124,9 @@ export const useDatabase = async () => {
       messageSummaries: {
         schema: messageSummarySchema,
       },
+      aSimpleCollection: {
+        schema: aSimpleSchema,
+      },
     });
     // const { Client } = await import("appwrite");
 
@@ -118,13 +138,10 @@ export const useDatabase = async () => {
       replicationIdentifier: "my-appwrite-replication",
       client,
       databaseId: appwriteConfig.databaseId,
-      collectionId: "chats",
+      collectionId: "simpleCollection",
       deletedField: "deleted", // Field that represents deletion in Appwrite
-      collection: collectionsInstance.threads,
+      collection: collectionsInstance.aSimpleCollection,
       pull: {
-        batchSize: 10,
-      },
-      push: {
         batchSize: 10,
       },
       /*
