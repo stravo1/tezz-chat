@@ -5,6 +5,8 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { addRxPlugin } from "rxdb/plugins/core";
 import { wrappedValidateAjvStorage } from "rxdb/plugins/validate-ajv";
+import { replicateAppwrite } from "rxdb/plugins/replication-appwrite";
+import { useAppwrite } from "../appwrite";
 
 interface Thread {
   id: string;
@@ -40,9 +42,14 @@ const threadSchema = {
     title: { type: "string" },
     createdAt: { type: "string" },
     updatedAt: { type: "string" },
-    lastMessageAt: { type: "string" },
+    // lastMessageAt: { type: "string" }
+    visibility: { type: "string", enum: ["private", "public"], default: "private" },
+    lastModifiedBy: { type: "string", maxLength: 36, default: "server" },
+    userId: { type: "object" },
+    streamId: { type: "array" },
+    chatMessageId: { type: "array" },
   },
-  required: ["id", "title", "createdAt", "updatedAt", "lastMessageAt"],
+  required: ["id", "title", "createdAt", "updatedAt", "visibility"],
 };
 
 const messageSchema = {
@@ -58,7 +65,7 @@ const messageSchema = {
     createdAt: { type: "string", maxLength: 24 },
   },
   required: ["id", "threadId", "content", "role", "createdAt"],
-  indexes: ["threadId", ["threadId","createdAt"]],
+  indexes: ["threadId", ["threadId", "createdAt"]],
 };
 
 const messageSummarySchema = {
@@ -82,6 +89,7 @@ let collectionsInstance: any | null = null;
 
 export const useDatabase = async () => {
   if (!dbInstance) {
+    const { client, appwriteConfig } = useAppwrite();
     addRxPlugin(RxDBDevModePlugin);
     dbInstance = await createRxDatabase({
       name: "tezz-local",
@@ -100,6 +108,47 @@ export const useDatabase = async () => {
         schema: messageSummarySchema,
       },
     });
+    // const { Client } = await import("appwrite");
+
+    // const client = new Client();
+    // client.setEndpoint("https://nyc.cloud.appwrite.io/v1");
+    // client.setEndpointRealtime("https://nyc.cloud.appwrite.io/v1");
+    // client.setProject(appwriteConfig.projectId);
+    const replicationState = replicateAppwrite({
+      replicationIdentifier: "my-appwrite-replication",
+      client,
+      databaseId: appwriteConfig.databaseId,
+      collectionId: "chats",
+      deletedField: "deleted", // Field that represents deletion in Appwrite
+      collection: collectionsInstance.threads,
+      pull: {
+        batchSize: 10,
+      },
+      push: {
+        batchSize: 10,
+      },
+      /*
+       * ...
+       * You can set all other options for RxDB replication states
+       * like 'live' or 'retryTime'
+       * ...
+       */
+    });
+    const myRxReplicationState = replicationState;
+    // emits each document that was received from the remote
+    myRxReplicationState.received$.subscribe((doc) => console.dir(doc));
+
+    // emits each document that was send to the remote
+    myRxReplicationState.sent$.subscribe((doc) => console.dir(doc));
+
+    // emits all errors that happen when running the push- & pull-handlers.
+    myRxReplicationState.error$.subscribe((error) => console.dir(error));
+
+    // emits true when the replication was canceled, false when not.
+    myRxReplicationState.canceled$.subscribe((bool) => console.dir(bool));
+
+    // emits true when a replication cycle is running, false when not.
+    myRxReplicationState.active$.subscribe((bool) => console.dir(bool));
   }
 
   return {

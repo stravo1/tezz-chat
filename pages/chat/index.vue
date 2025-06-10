@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { v4 as uuid } from "uuid";
+import { ID } from 'appwrite';
 useAuthGuard();
 </script>
 
 <template>
-  <Chat :chatId="uuid()" />
+  <Chat :chatId="ID.unique()" />
 </template>

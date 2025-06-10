@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
-import { v4 as uuidv4 } from "uuid";
 import useDatabase from "./db";
+import { ID } from "node-appwrite";
 
 let dbCollections: any = null;
 
@@ -23,7 +23,8 @@ export const createThread = async (id: string) => {
     title: "New Chat",
     createdAt: Date.now().toString(),
     updatedAt: Date.now().toString(),
-    lastMessageAt: Date.now().toString(),
+    visibility: "private",
+    deleted: false,
   });
 };
 
@@ -129,7 +130,7 @@ export const createMessageSummary = async (
 ) => {
   const db = await initDb();
   return await db.messageSummaries.insert({
-    id: uuidv4(),
+    id: ID.unique(),
     threadId,
     messageId,
     content,
