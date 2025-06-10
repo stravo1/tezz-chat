@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Query } from 'node-appwrite';
-import { databases } from '~/server/appwrite/config';
+import { createSessionClient } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
@@ -16,6 +16,7 @@ const visibilitySchema = z.object({
 
 export default defineEventHandler(async (event) => {
     try {
+        const { databases } = createSessionClient(event);
         const session = event.context.session;
         if (!session?.userId) {
             throw createAppError(ErrorCode.UNAUTHORIZED, 'You must be logged in to change chat visibility');
@@ -29,22 +30,6 @@ export default defineEventHandler(async (event) => {
         }
 
         const { chatId, visibility } = validation.data;
-
-        // Find the chat and verify ownership
-        const chats = await databases.listDocuments<Chat>(
-            appwriteConfig.databaseId,
-            COLLECTION_NAMES.CHATS,
-            [
-                Query.equal('$id', chatId),
-                Query.equal('userId', session.userId)
-            ]
-        );
-
-        if (chats.documents.length === 0) {
-            throw createAppError(ErrorCode.RESOURCE_NOT_FOUND, 'Chat not found or you do not have permission to modify it');
-        }
-
-        const chat = chats.documents[0];
 
         // Update chat visibility
         const updatedChat = await databases.updateDocument<Chat>(

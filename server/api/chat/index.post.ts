@@ -3,7 +3,7 @@ import { streamText, smoothStream, convertToCoreMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { ID, Permission, Role } from 'node-appwrite';
-import { databases } from '~/server/appwrite/config';
+import { createSessionClient } from "~/server/appwrite/config";
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
@@ -26,6 +26,7 @@ export default defineLazyEventHandler(async () => {
 
     return defineEventHandler(async (event) => {
         try {
+            const { databases } = createSessionClient(event);
             const session = event.context.session;
             const isAuthenticated = !!session?.userId;
             const userId = session?.userId;

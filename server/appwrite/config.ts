@@ -48,6 +48,9 @@ export function createSessionClient(event:any) {
     .setProject(config.public.appwrite.projectId);
 
   const session = getCookie(event, SESSION_COOKIE);
+
+  const databases = new Databases(client); 
+
   if (session) {
     client.setSession(session);
   }
@@ -56,5 +59,8 @@ export function createSessionClient(event:any) {
     get account() {
       return new Account(client);
     },
+    get databases() {
+      return databases;
+    }
   };
 }
