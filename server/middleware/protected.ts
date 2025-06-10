@@ -33,10 +33,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Get session token from request headers
-    const sessionToken = getHeader(event, 'x-appwrite-session');
+    const sessionToken = getHeader(event, 'X-Fallback-Cookies');
     
     if (!sessionToken) {
-      throw new Error('No session token provided');
+      // No session token, continue with default unauthenticated context
+      return;
     }
 
     // Initialize Appwrite client
@@ -51,7 +52,8 @@ export default defineEventHandler(async (event) => {
     const session = await account.getSession('current');
     
     if (!session) {
-      throw new Error('Invalid session');
+      // Invalid session, continue with default unauthenticated context
+      return;
     }
 
     // Get user details
@@ -67,10 +69,7 @@ export default defineEventHandler(async (event) => {
 
   } catch (err: any) {
     console.error('Session verification error:', err);
-    // Return 401 Unauthorized if session verification fails
-    throw createError({
-      statusCode: 401,
-      message: 'Authentication failed'
-    });
+    // Log error but continue with default unauthenticated context
+    return;
   }
 });
