@@ -37,7 +37,7 @@ export const useAppwrite = () => {
   }
 
   return {
-    appwriteConfig,
+    config: appwriteConfig,
     client,
     account,
     databases,

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useChat, type UIMessage } from "@ai-sdk/vue";
 import { ID } from "appwrite";
-useAuthGuard();
+definePageMeta({
+  layout: "chat"
+})
 const route = useRoute();
 const chatId = ref((route.params.id as string) || "");
 const tempChatId = ID.unique();

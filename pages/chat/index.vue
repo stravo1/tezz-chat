@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ID } from 'appwrite';
-useAuthGuard();
+definePageMeta({
+  layout: 'chat',
+});
 </script>
 
 <template>

@@ -6,7 +6,6 @@ import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { addRxPlugin } from "rxdb/plugins/core";
 import { wrappedValidateAjvStorage } from "rxdb/plugins/validate-ajv";
 import { replicateAppwrite } from "rxdb/plugins/replication-appwrite";
-import { useAppwrite } from "../appwrite";
 
 interface Thread {
   id: string;
@@ -106,7 +105,7 @@ let collectionsInstance: any | null = null;
 
 export const useDatabase = async () => {
   if (!dbInstance) {
-    const { client, appwriteConfig } = useAppwrite();
+    const { client, config } = useAppwrite();
     addRxPlugin(RxDBDevModePlugin);
     dbInstance = await createRxDatabase({
       name: "tezz-local",
@@ -137,7 +136,7 @@ export const useDatabase = async () => {
     const replicationState = replicateAppwrite({
       replicationIdentifier: "my-appwrite-replication",
       client,
-      databaseId: appwriteConfig.databaseId,
+      databaseId: config.databaseId,
       collectionId: "simpleCollection",
       deletedField: "deleted", // Field that represents deletion in Appwrite
       collection: collectionsInstance.aSimpleCollection,
