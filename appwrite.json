@@ -127,7 +127,10 @@
         {
             "$id": "chats",
             "$permissions": [
-                "read(\"any\")"
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
             ],
             "databaseId": "6846ad30003030d86061",
             "name": "Chats",

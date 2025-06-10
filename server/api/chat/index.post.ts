@@ -1,5 +1,5 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream } from 'ai';
+import { streamText, smoothStream, convertToCoreMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { ID } from 'node-appwrite';
@@ -135,13 +135,53 @@ export default defineLazyEventHandler(async () => {
 
             const result = await streamText({
                 model,
-                messages,
+                messages: convertToCoreMessages(messages),
                 temperature: 0.7,
                 experimental_transform: smoothStream({
                     chunking: 'word',
                     delayInMs: 1,
                 }),
                 // Streaming callback
+                tools: {
+                    web_search: tool({
+                        description: 'Search the web for information with 5-10 queries, max results and search depth.',
+                        parameters: z.object({
+                            queries: z.array(z.string().describe('Array of search queries to look up on the web. Default is 5 to 10 queries.')),
+                            maxResults: z.array(
+                                z.number().describe('Array of maximum number of results to return per query. Default is 10.'),
+                            ),
+                            topics: z.array(
+                                z.enum(['general', 'news', 'finance']).describe('Array of topic types to search for. Default is general.'),
+                            ),
+                            searchDepth: z.array(
+                                z.enum(['basic', 'advanced']).describe('Array of search depths to use. Default is basic. Use advanced for more detailed results.'),
+                            ),
+                            include_domains: z
+                                .array(z.string())
+                                .describe('A list of domains to include in all search results. Default is an empty list.'),
+                            exclude_domains: z
+                                .array(z.string())
+                                .describe('A list of domains to exclude from all search results. Default is an empty list.'),
+                        }),
+                        execute: async ({
+                            queries,
+                            maxResults,
+                            topics,
+                            searchDepth,
+                            include_domains,
+                            exclude_domains,
+                        }: {
+                            queries: string[];
+                            maxResults: number[];
+                            topics: ('general' | 'news' | 'finance')[];
+                            searchDepth: ('basic' | 'advanced')[];
+                            include_domains?: string[];
+                            exclude_domains?: string[];
+                        }) => {
+
+                        }
+                    })
+                },
                 onFinish: async (event) => {
                     const fullAssistantMessage = event.text;
                     if (fullAssistantMessage && isAuthenticated && chatSession) {
