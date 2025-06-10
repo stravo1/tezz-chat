@@ -2,12 +2,11 @@ import { defineLazyEventHandler } from 'h3';
 import { streamText, smoothStream, convertToCoreMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
-import { ID } from 'node-appwrite';
+import { ID, Permission, Role } from 'node-appwrite';
 import { databases } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
-import { Query } from 'node-appwrite';
 
 const chatInputSchema = z.object({
     messages: z.array(
@@ -32,6 +31,10 @@ export default defineLazyEventHandler(async () => {
             const userId = session?.userId;
 
             const body = await readBody(event);
+            
+            console.log("=============body")
+            console.log(event.context); 
+            console.log("=================")
             const validation = chatInputSchema.safeParse(body);
 
             if (!validation.success) {
@@ -47,20 +50,16 @@ export default defineLazyEventHandler(async () => {
                     throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required for authenticated users');
                 }
 
-                // Use Appwrite's query capabilities to find the chat
-                const chats = await databases.listDocuments(
-                    appwriteConfig.databaseId,
-                    COLLECTION_NAMES.CHATS,
-                    [
-                        Query.equal('$id', chatId),
-                        Query.equal('userId', userId)
-                    ]
-                );
-
-                if (chats.documents.length > 0) {
-                    chatSession = chats.documents[0];
-                } else {
-                    // Create new chat if not found
+                try {
+                    // Try to get the chat - Appwrite will handle permission checks
+                    const chat = await databases.getDocument(
+                        appwriteConfig.databaseId,
+                        COLLECTION_NAMES.CHATS,
+                        chatId
+                    );
+                    chatSession = chat;
+                } catch (error) {
+                    // If chat doesn't exist or user doesn't have access, create a new one
                     const chatTitle = await generateChatTitle({ message: lastMessage });
                     const now = new Date().toISOString();
 
@@ -71,11 +70,15 @@ export default defineLazyEventHandler(async () => {
                         {
                             title: chatTitle,
                             visibility: 'private',
-                            userId,
                             lastModifiedBy: deviceId || 'server',
                             createdAt: now,
                             updatedAt: now
-                        }
+                        },
+                        [
+                            Permission.read(Role.user(userId)),
+                            Permission.update(Role.user(userId)),
+                            Permission.delete(Role.user(userId))
+                        ]
                     );
 
                     chatSession = doc;
@@ -83,7 +86,6 @@ export default defineLazyEventHandler(async () => {
 
                 if (lastMessage.role === 'user' && chatSession) {
                     try {
-                        // Create user message with optimized attributes
                         const userMessage = await databases.createDocument(
                             appwriteConfig.databaseId,
                             COLLECTION_NAMES.CHAT_MESSAGES,
@@ -97,7 +99,12 @@ export default defineLazyEventHandler(async () => {
                                 deleted: false,
                                 createdAt: new Date().toISOString(),
                                 updatedAt: new Date().toISOString()
-                            }
+                            },
+                            [
+                                Permission.read(Role.user(userId)),
+                                Permission.update(Role.user(userId)),
+                                Permission.delete(Role.user(userId))
+                            ]
                         );
 
                         // Update chat's lastModifiedBy and updatedAt
@@ -173,7 +180,7 @@ export default defineLazyEventHandler(async () => {
                                         q: query,
                                         location,
                                         gl,
-                                        num: Math.min(num, 30), // Ensure num doesn't exceed 20
+                                        num: Math.min(num, 30),
                                         page
                                     }
                                 }) as {
@@ -217,7 +224,6 @@ export default defineLazyEventHandler(async () => {
                                     }>;
                                 };
 
-                                // Format the response for the AI
                                 const searchResults = {
                                     summary: response.knowledgeGraph?.description || '',
                                     organic: response.organic?.map((result) => ({
@@ -238,7 +244,6 @@ export default defineLazyEventHandler(async () => {
                                     totalResults: response.organic?.length || 0
                                 };
 
-                                // Format the response in a way that's easy for the LLM to understand and use
                                 const formattedResponse = {
                                     success: true,
                                     data: {
@@ -290,7 +295,7 @@ export default defineLazyEventHandler(async () => {
                     const fullAssistantMessage = event.text;
                     if (fullAssistantMessage && isAuthenticated && chatSession) {
                         try {
-                            // Create assistant message with optimized attributes
+                            // Create assistant message with document-level permissions
                             await databases.createDocument(
                                 appwriteConfig.databaseId,
                                 COLLECTION_NAMES.CHAT_MESSAGES,
@@ -304,7 +309,12 @@ export default defineLazyEventHandler(async () => {
                                     deleted: false,
                                     createdAt: new Date().toISOString(),
                                     updatedAt: new Date().toISOString()
-                                }
+                                },
+                                [
+                                    Permission.read(Role.user(userId)),
+                                    Permission.update(Role.user(userId)),
+                                    Permission.delete(Role.user(userId))
+                                ]
                             );
 
                             // Update chat's lastModifiedBy and updatedAt

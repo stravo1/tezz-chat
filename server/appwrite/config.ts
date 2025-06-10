@@ -29,3 +29,32 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 export const avatars = new Avatars(client);
+
+export const SESSION_COOKIE = "tezz";
+
+export function createAdminClient() {
+  return {
+    get account() {
+      return account;
+    },
+  };
+}
+
+export function createSessionClient(event:any) {
+  const config = useRuntimeConfig();
+
+  const client = new Client()
+    .setEndpoint(config.public.appwrite.url)
+    .setProject(config.public.appwrite.projectId);
+
+  const session = getCookie(event, SESSION_COOKIE);
+  if (session) {
+    client.setSession(session);
+  }
+
+  return {
+    get account() {
+      return new Account(client);
+    },
+  };
+}

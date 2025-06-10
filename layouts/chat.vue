@@ -18,69 +18,12 @@
         id="chat-view"
         class="relative box-border flex w-[70vw] shrink-0 p-2 pb-15"
       >
-        <slot />
+        <NuxtPage />
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-// You can dynamically set metadata if needed
-const route = useRoute();
-import Session from "supertokens-web-js/recipe/session";
-import { onMounted, watch, ref } from "vue";
-import { useUserStore } from "~/stores/user";
-import { LoaderCircle } from "lucide-vue-next";
 
-const userStore = useUserStore();
-const { isAuthenticated, isAuthChecked, isLoadingAuth } = useAuth();
-
-// Local loading state for the layout itself
-const layoutLoading = ref(true);
-
-// --- Client-side authentication check on layout mount ---
-onMounted(async () => {
-  console.log("Authenticated layout mounted. Checking auth...");
-  // Only fetch user if the check hasn't been performed yet
-  if (!userStore.isAuthChecked) {
-    await userStore.fetchUser();
-  }
-  layoutLoading.value = false; // Initial auth check initiated or already done
-});
-
-// Watch for changes in authentication status and redirect if necessary
-watch(
-  [isAuthenticated, isAuthChecked],
-  ([newIsAuthenticated, newIsAuthChecked]) => {
-    // Only redirect if the check has completed and the user is NOT authenticated
-    // Also, ensure we're not currently in a loading state that might change the outcome
-    if (newIsAuthChecked && !newIsAuthenticated && !isLoadingAuth.value) {
-      console.log(
-        "User not authenticated, redirecting to /login from authenticated layout.",
-      );
-      // Use navigateTo for client-side redirect
-      navigateTo("/auth/login");
-    }
-  },
-  { immediate: true },
-); // immediate: true ensures the watch runs on initial component setup
-
-async function logout() {
-  const {logout} = useAuth();
-  try {
-    await logout();
-    console.log("User logged out successfully.");
-  } catch (error) {
-    console.error("Logout failed:", error);
-  }
-}
-useHead({
-  title: route?.meta?.title || "My Nuxt App",
-  meta: [
-    {
-      name: "description",
-      content: route?.meta?.description || "Default site description",
-    },
-  ],
-});
 </script>

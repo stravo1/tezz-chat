@@ -33,21 +33,25 @@
 </template>
 
 <script setup>
-import { OAuthProvider } from "appwrite";
+
+
 onMounted(() => {
-  // This is a good place to initialize any global state or perform side effects
-  console.log("Login page mounted");
-  if (useAuth().account) {
-    console.log("Appwrite account is available");
-    navigateTo("/chat"); // Redirect to chat page if already logged in
-  } else {
-    console.warn("Appwrite account is not available");
-  }
+  
 });
-const loginWithGithub = () => {
-  // TODO: Implement GitHub OAuth login
-  const { login } = useAuth();
-  login();
-  console.log("GitHub login clicked");
+
+const loginWithGithub = async () => {
+  try {
+    // Call our OAuth endpoint using $fetch
+    const { redirectURL } = await $fetch('/api/auth/oauth', {
+      method: 'POST'
+    });
+
+    // Redirect to GitHub
+    if (redirectURL) {
+      window.location.href = redirectURL;
+    }
+  } catch (error) {
+    console.error('Failed to initiate GitHub login:', error);
+  }
 };
 </script>

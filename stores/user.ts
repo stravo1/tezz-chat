@@ -1,50 +1,53 @@
-import type { Models } from "appwrite";
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
-export const useUserStore = defineStore("user", {
-  state: () => ({
-    currentUser: null as Models.User<Models.Preferences> | null,
-    isAuthChecked: false, // Flag to indicate if auth check has run
-    isLoading: true, // For initial loading state
+interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
+interface UserState {
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  isAuthChecked: boolean;
+  isLoading: boolean;
+}
+
+export const useUserStore = defineStore('user', {
+  state: (): UserState => ({
+    currentUser: null,
+    isAuthenticated: false,
+    isAuthChecked: false,
+    isLoading: false,
   }),
+
   actions: {
     async fetchUser() {
-      if (this.isAuthChecked && this.currentUser) {
-        // Already checked and user exists, no need to re-fetch
-        return this.currentUser;
-      }
-
-      this.isLoading = true; // Set loading to true before fetching
-      const { account } = useAppwrite(); // Get the Appwrite account instance
-      if (!account) {
-        console.error("Appwrite account instance is not available.");
-        this.isLoading = false; // Set loading to false if account is not available
-        return null;
-      }
+      this.isLoading = true;
       try {
-        const user = await account.get();
-        this.currentUser = user;
-        return user;
+        const { data } = await useFetch('/api/auth/session');
+        
+        if (data.value?.isAuthenticated && data.value?.user) {
+          this.currentUser = data.value.user;
+          this.isAuthenticated = true;
+        } else {
+          this.currentUser = null;
+          this.isAuthenticated = false;
+        }
       } catch (error) {
+        console.error('Error fetching user:', error);
         this.currentUser = null;
-        console.warn("User not authenticated or session expired:", error);
+        this.isAuthenticated = false;
       } finally {
-        this.isAuthChecked = true; // Mark as checked
-        this.isLoading = false; // Set loading to false after check
+        this.isLoading = false;
+        this.isAuthChecked = true;
       }
     },
-    setUser(user: any) {
-      this.currentUser = user;
-      this.isAuthChecked = true;
-      this.isLoading = false;
-    },
+
     clearUser() {
       this.currentUser = null;
-      this.isAuthChecked = true;
-      this.isLoading = false;
+      this.isAuthenticated = false;
+      this.isAuthChecked = false;
     },
-  },
-  getters: {
-    isAuthenticated: (state) => !!state.currentUser,
   },
 });

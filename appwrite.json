@@ -127,15 +127,12 @@
         {
             "$id": "chats",
             "$permissions": [
-                "create(\"any\")",
-                "read(\"any\")",
-                "update(\"any\")",
-                "delete(\"any\")"
+                "create(\"users\")"
             ],
             "databaseId": "6846ad30003030d86061",
             "name": "Chats",
-            "enabled": false,
-            "documentSecurity": false,
+            "enabled": true,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "title",
@@ -165,14 +162,6 @@
                     "default": false
                 },
                 {
-                    "key": "lastModifiedBy",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 255,
-                    "default": null
-                },
-                {
                     "key": "createdAt",
                     "type": "datetime",
                     "required": true,
@@ -187,18 +176,6 @@
                     "array": false,
                     "format": "",
                     "default": null
-                },
-                {
-                    "key": "userId",
-                    "type": "relationship",
-                    "required": false,
-                    "array": false,
-                    "relatedCollection": "users",
-                    "relationType": "manyToOne",
-                    "twoWay": true,
-                    "twoWayKey": "chatId",
-                    "onDelete": "cascade",
-                    "side": "parent"
                 },
                 {
                     "key": "chatMessageId",
@@ -223,6 +200,14 @@
                     "twoWayKey": "chatId",
                     "onDelete": "cascade",
                     "side": "child"
+                },
+                {
+                    "key": "lastModifiedBy",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null
                 }
             ],
             "indexes": []
@@ -230,12 +215,12 @@
         {
             "$id": "chat_messages",
             "$permissions": [
-                "read(\"any\")"
+                "create(\"users\")"
             ],
             "databaseId": "6846ad30003030d86061",
             "name": "ChatMessages",
-            "enabled": false,
-            "documentSecurity": false,
+            "enabled": true,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "role",
@@ -320,7 +305,7 @@
             ],
             "databaseId": "6846ad30003030d86061",
             "name": "Streams",
-            "enabled": false,
+            "enabled": true,
             "documentSecurity": false,
             "attributes": [
                 {

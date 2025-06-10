@@ -3,7 +3,7 @@
       <button @click="logout" class="cursor-pointer">Logout</button>
     </header>
     <main class="h-screen w-screen">
-      <slot />
+      <NuxtPage />
     </main>
 </template>
 

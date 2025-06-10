@@ -137,7 +137,7 @@ export const useDatabase = async () => {
       replicationIdentifier: "my-appwrite-replication",
       client,
       databaseId: config.databaseId,
-      collectionId: "simpleCollection",
+      collectionId: "chats",
       deletedField: "deleted", // Field that represents deletion in Appwrite
       collection: collectionsInstance.aSimpleCollection,
       pull: {
