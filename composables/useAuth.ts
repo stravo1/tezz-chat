@@ -22,7 +22,7 @@ export default function useAuth() {
       const session = account.createOAuth2Session(
         OAuthProvider.Github, // provider
         "http://localhost:3000/chat", // redirect here on success
-        "http://localhost:3000/chat", // redirect here on success
+        "http://localhost:3000/chat", // redirect here on failure
         ["user"], // scopes (optional)
       );
       return session;

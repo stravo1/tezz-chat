@@ -1,1 +1,0 @@
-ALTER TABLE `chat_message` ALTER COLUMN "attachments" TO "attachments" text NOT NULL DEFAULT '';
