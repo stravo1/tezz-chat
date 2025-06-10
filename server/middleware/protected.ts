@@ -1,12 +1,11 @@
-import { withSession } from "supertokens-node/custom";
-import { convertToRequest } from '../utils/convertToRequest';
-import { createAppError, ErrorCode } from '../utils/errors';
+import { Client, Account } from 'node-appwrite';
+import { appwriteConfig } from '../appwrite/config';
 
 // Define interface for the session context
 export interface SessionContext {
   userId: string;
-  sessionHandle: string;
-  accessTokenPayload: Record<string, any>;
+  email: string;
+  name: string;
   isAuthenticated: boolean;
 }
 
@@ -16,67 +15,62 @@ const protectedRoutes = [
 ];
 
 export default defineEventHandler(async (event) => {
+  // Initialize session context with default values
+  event.context.session = {
+    userId: '',
+    email: '',
+    name: '',
+    isAuthenticated: false,
+  } as SessionContext;
+
   // Skip for auth routes
   const url = event.node.req.url || '';
-  
+
   // Skip authentication check for non-protected routes
   if (!protectedRoutes.some(route => url.startsWith(route))) {
     return;
   }
-  
+
   try {
-    const request = await convertToRequest(event);
+    // Get session token from request headers
+    const sessionToken = getHeader(event, 'x-appwrite-session');
     
-    // Use withSession with proper error handling and session verification
-    const response = await withSession(
-      request,
-      async (err, session) => {
-        if (err) {
-          console.error('Session error:', err);
-          throw createAppError(
-            ErrorCode.UNAUTHORIZED,
-            { originalError: err }
-          );
-        }
+    if (!sessionToken) {
+      throw new Error('No session token provided');
+    }
 
-        if (!session) {
-          throw createAppError(ErrorCode.INVALID_SESSION);
-        }
+    // Initialize Appwrite client
+    const client = new Client()
+      .setEndpoint(appwriteConfig.url)
+      .setProject(appwriteConfig.projectId)
+      .setSession(sessionToken);
 
-        // Store session info in event context for route handlers
-        event.context.session = {
-          userId: session.getUserId(),
-          sessionHandle: session.getHandle(),
-          accessTokenPayload: session.getAccessTokenPayload(),
-          isAuthenticated: true,
-        } as SessionContext;
+    const account = new Account(client);
 
-        // Don't return a response - this is important!
-        // Just return undefined so the handler can continue
-        return undefined;
-      },
-      {
-        sessionRequired: true,
-        antiCsrfCheck: true,
-        checkDatabase: true
-      }
-    );
+    // Get current user session
+    const session = await account.getSession('current');
     
-    // Don't return the response from withSession
-    // This allows the endpoint handler to execute
+    if (!session) {
+      throw new Error('Invalid session');
+    }
+
+    // Get user details
+    const user = await account.get();
+
+    // Store session info in event context for route handlers
+    event.context.session = {
+      userId: user.$id,
+      email: user.email,
+      name: user.name,
+      isAuthenticated: true,
+    } as SessionContext;
+
   } catch (err: any) {
     console.error('Session verification error:', err);
-    
-    // Use our error handling utility
-    if (err?.statusCode === 401) {
-      // Keep the error as is if it's already formatted
-      throw err;
-    } else {
-      throw createAppError(
-        ErrorCode.UNAUTHORIZED,
-        { originalError: err },
-        'Authentication failed'
-      );
-    }
+    // Return 401 Unauthorized if session verification fails
+    throw createError({
+      statusCode: 401,
+      message: 'Authentication failed'
+    });
   }
-}); 
+});
