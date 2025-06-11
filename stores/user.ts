@@ -52,7 +52,7 @@ export const useUserStore = defineStore("user", {
     async logOut() {
       this.isLoading = true;
       try {
-        await $fetch("/api/auth/logout", {
+        await $fetch("/api/auth/oauth/logout", {
           method: "POST",
         });
         this.clearUser();

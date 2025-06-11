@@ -44,14 +44,14 @@ onMounted(async () => {
 
 watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
   if (checked && !authenticated) {
-    router.push('/login');
+    router.push('/auth');
   }
 });
 
 const logout = async () => {
   console.log('Logging out...');
   await userStore.logOut();
-  router.push('/login');
+  router.push('/auth');
 };
 
 </script>
