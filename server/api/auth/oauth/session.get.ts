@@ -14,6 +14,15 @@ export default defineEventHandler(async (event) => {
     } catch (error: unknown) {
         console.error('Session check failed:', error);
 
+        // Check if the error is due to missing authentication
+        if (error instanceof Error && 
+            (error.message.includes('missing scope') || 
+             error.message.includes('User (role: guests)'))) {
+            throw createAppError(ErrorCode.UNAUTHORIZED, {
+                details: 'User is not authenticated'
+            });
+        }
+
         if (error instanceof Error) {
             if (error.message.includes('session')) {
                 throw createAppError(ErrorCode.INVALID_SESSION, {
