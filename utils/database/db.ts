@@ -105,7 +105,10 @@ let collectionsInstance: any | null = null;
 
 export const useDatabase = async () => {
   if (!dbInstance) {
-    const { client, config } = useAppwrite();
+    const appwrite = useAppwrite();
+    await appwrite.init();
+    const { client, config } = appwrite;
+
     addRxPlugin(RxDBDevModePlugin);
     dbInstance = await createRxDatabase({
       name: "tezz-local",
@@ -114,58 +117,27 @@ export const useDatabase = async () => {
     });
 
     collectionsInstance = await dbInstance.addCollections({
-      threads: {
-        schema: threadSchema,
-      },
-      messages: {
-        schema: messageSchema,
-      },
-      messageSummaries: {
-        schema: messageSummarySchema,
-      },
-      aSimpleCollection: {
-        schema: aSimpleSchema,
-      },
+      threads: { schema: threadSchema },
+      messages: { schema: messageSchema },
+      messageSummaries: { schema: messageSummarySchema },
+      aSimpleCollection: { schema: aSimpleSchema },
     });
-    // const { Client } = await import("appwrite");
 
-    // const client = new Client();
-    // client.setEndpoint("https://nyc.cloud.appwrite.io/v1");
-    // client.setEndpointRealtime("https://nyc.cloud.appwrite.io/v1");
-    // client.setProject(appwriteConfig.projectId);
     const replicationState = replicateAppwrite({
       replicationIdentifier: "my-appwrite-replication",
       client,
       databaseId: config.databaseId,
       collectionId: "chats",
-      deletedField: "deleted", // Field that represents deletion in Appwrite
+      deletedField: "deleted",
       collection: collectionsInstance.threads,
-      pull: {
-        batchSize: 10,
-      },
-      /*
-       * ...
-       * You can set all other options for RxDB replication states
-       * like 'live' or 'retryTime'
-       * ...
-       */
+      pull: { batchSize: 10 },
     });
-    console.log("Replication state created:", replicationState);
-    const myRxReplicationState = replicationState;
-    // emits each document that was received from the remote
-    myRxReplicationState.received$.subscribe((doc) => console.dir(doc));
 
-    // emits each document that was send to the remote
-    myRxReplicationState.sent$.subscribe((doc) => console.dir(doc));
-
-    // emits all errors that happen when running the push- & pull-handlers.
-    myRxReplicationState.error$.subscribe((error) => console.dir(error));
-
-    // emits true when the replication was canceled, false when not.
-    myRxReplicationState.canceled$.subscribe((bool) => console.dir(bool));
-
-    // emits true when a replication cycle is running, false when not.
-    myRxReplicationState.active$.subscribe((bool) => console.dir(bool));
+    replicationState.received$.subscribe((doc) => console.dir(doc));
+    replicationState.sent$.subscribe((doc) => console.dir(doc));
+    replicationState.error$.subscribe((error) => console.dir(error));
+    replicationState.canceled$.subscribe((bool) => console.dir(bool));
+    replicationState.active$.subscribe((bool) => console.dir(bool));
   }
 
   return {
@@ -173,6 +145,7 @@ export const useDatabase = async () => {
     dbCollections: collectionsInstance,
   };
 };
+
 
 export type { Thread, DBMessage };
 export { useDatabase as default };

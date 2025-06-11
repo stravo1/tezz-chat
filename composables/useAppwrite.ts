@@ -1,15 +1,10 @@
 import { Client, Account, Databases, Storage, Avatars } from 'appwrite';
 
-// Create instances outside the composable
 let client: Client | null = null;
-let account: Account | null = null;
-let databases: Databases | null = null;
-let storage: Storage | null = null;
-let avatars: Avatars | null = null;
 
 export const useAppwrite = () => {
   const config = useRuntimeConfig();
-  
+
   const appwriteConfig = {
     url: config.public.appwrite.url,
     realtimeUrl: config.public.appwrite.realtimeUrl,
@@ -18,30 +13,47 @@ export const useAppwrite = () => {
     storageId: config.public.appwrite.storageId,
   };
 
-  // Initialize client only once
-  if (!client) {
-    client = new Client();
-    console.log("Appwrite client initialized with config:", appwriteConfig);
-    
-    client
+  const init = async () => {
+    if (client) return; // Already initialized
+
+    client = new Client()
       .setEndpoint(appwriteConfig.url)
       .setEndpointRealtime(appwriteConfig.realtimeUrl)
       .setProject(appwriteConfig.projectId);
 
-    account = new Account(client);
-    databases = new Databases(client);
-    storage = new Storage(client);
-    avatars = new Avatars(client);
-  } else {
-    console.log("Using existing Appwrite client instance.");
-  }
+    try {
+      const { session } = await $fetch<{ session: string | null }>('/api/auth/oauth/session-token');
+      if (session) {
+        console.log(session);
+        client.setSession(session);
+      }
+    } catch (error) {
+      console.error('Failed to fetch session:', error);
+    }
+  };
 
   return {
-    config: appwriteConfig,
-    client,
-    account,
-    databases,
-    storage,
-    avatars
+    init,
+    get client() {
+      if (!client) throw new Error("Appwrite client not initialized. Call init() first.");
+      return client;
+    },
+    get account() {
+      if (!client) throw new Error("Appwrite not initialized");
+      return new Account(client);
+    },
+    get databases() {
+      if (!client) throw new Error("Appwrite not initialized");
+      return new Databases(client);
+    },
+    get storage() {
+      if (!client) throw new Error("Appwrite not initialized");
+      return new Storage(client);
+    },
+    get avatars() {
+      if (!client) throw new Error("Appwrite not initialized");
+      return new Avatars(client);
+    },
+    config: appwriteConfig
   };
 };
