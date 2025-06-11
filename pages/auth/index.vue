@@ -33,17 +33,28 @@
 </template>
 
 <script setup>
-
-
-onMounted(() => {
-  
+onMounted(async () => {
+  // Check if the user is already authenticated
+  const userStore = useUserStore();
+  if (userStore.isAuthChecked && userStore.isAuthenticated) {
+    // Redirect to the home page if already authenticated
+    console.log("User is already authenticated, redirecting to home.");
+    navigateTo("/");
+  } else {
+    console.log("User is not already authenticated, redirecting to home.");
+    await userStore.fetchUser()
+    if (userStore.isAuthenticated) {
+      // If authenticated after fetching, redirect to home
+      navigateTo("/");
+    }
+  }
 });
 
 const loginWithGithub = async () => {
   try {
     // Call our OAuth endpoint using $fetch
-    const { redirectURL } = await $fetch('/api/auth/oauth', {
-      method: 'POST'
+    const { redirectURL } = await $fetch("/api/auth/oauth", {
+      method: "POST",
     });
 
     // Redirect to GitHub
@@ -51,7 +62,7 @@ const loginWithGithub = async () => {
       window.location.href = redirectURL;
     }
   } catch (error) {
-    console.error('Failed to initiate GitHub login:', error);
+    console.error("Failed to initiate GitHub login:", error);
   }
 };
 </script>

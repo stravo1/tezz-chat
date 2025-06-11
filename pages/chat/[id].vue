@@ -2,7 +2,7 @@
 import { useChat, type UIMessage } from "@ai-sdk/vue";
 import { ID } from "appwrite";
 definePageMeta({
-  layout: "chat"
+  layout: "chat-auth",
 })
 const route = useRoute();
 const chatId = ref((route.params.id as string) || "");

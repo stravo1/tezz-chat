@@ -27,11 +27,10 @@ export default defineEventHandler(async (event) => {
             sameSite: "strict",
         });
 
-        // Return success response
-        return {
-            success: true,
-            message: 'Session created successfully'
-        };
+        // Redirect to the frontend application
+        const redirectUrl = new URL('/auth/success', event.node.req.headers.origin || process.env.NUXT_APP_DOMAIN || 'http://localhost:3000');
+        return sendRedirect(event, redirectUrl.toString());
+        
     } catch (error: unknown) {
         // Log the error for debugging
         console.error('OAuth session creation failed:', error);

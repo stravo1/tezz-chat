@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 
 interface User {
   id: string;
@@ -13,34 +13,53 @@ interface UserState {
   isLoading: boolean;
 }
 
-export const useUserStore = defineStore('user', {
+export const useUserStore = defineStore("user", {
   state: (): UserState => ({
     currentUser: null,
     isAuthenticated: false,
     isAuthChecked: false,
-    isLoading: false,
+    isLoading: true,
   }),
 
   actions: {
     async fetchUser() {
       this.isLoading = true;
       try {
-        const { data } = await useFetch('/api/auth/session');
-        
-        if (data.value?.isAuthenticated && data.value?.user) {
-          this.currentUser = data.value.user;
+        // const res = await useFetch('/api/auth/sample');
+        const data = await $fetch("/api/auth/oauth/session");
+
+        if (data.isAuthenticated && data.user) {
+          this.currentUser = {
+            id: data.user.$id,
+            email: data.user.email,
+            name: data.user.name
+          };
           this.isAuthenticated = true;
         } else {
           this.currentUser = null;
           this.isAuthenticated = false;
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error("Error fetching user:", error);
         this.currentUser = null;
         this.isAuthenticated = false;
       } finally {
         this.isLoading = false;
         this.isAuthChecked = true;
+      }
+    },
+
+    async logOut() {
+      this.isLoading = true;
+      try {
+        await $fetch("/api/auth/logout", {
+          method: "POST",
+        });
+        this.clearUser();
+      } catch (error) {
+        console.error("Error logging out:", error);
+      } finally {
+        this.isLoading = false;
       }
     },
 

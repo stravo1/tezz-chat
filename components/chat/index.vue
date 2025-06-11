@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useChat, type UIMessage } from "@ai-sdk/vue";
-import { createMessage, createThread } from "~/utils/database/queries";
 import { ID } from "appwrite";
 
 const props = defineProps<{
@@ -18,32 +17,15 @@ if (!chatId) {
 
 const { messages, append } = useChat({
   id: chatId,
-  onFinish: async ({ parts }) => {
-      const aiMessage: UIMessage = {
-        id: ID.unique(),
-        parts: parts as UIMessage['parts'],
-        role: 'assistant',
-        content: '',
-        createdAt: new Date(),
-      };
-
-      try {
-        await createMessage(chatId, aiMessage);
-      } catch (error) {
-        console.error(error);
-      }
-    }, 
 });
 
 const handleSubmit = async (message: string) => {
   if (!id) {
     navigateTo(`/chat/${chatId}`);
     console.log("New chat created with ID:", chatId);
-    await createThread(chatId);
   }
   const messageId = ID.unique();
   const userMessage = createUserMessage(messageId, message);
-  await createMessage(chatId, userMessage);
   append(userMessage);
 };
 

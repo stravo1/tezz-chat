@@ -139,7 +139,7 @@ export const useDatabase = async () => {
       databaseId: config.databaseId,
       collectionId: "chats",
       deletedField: "deleted", // Field that represents deletion in Appwrite
-      collection: collectionsInstance.aSimpleCollection,
+      collection: collectionsInstance.threads,
       pull: {
         batchSize: 10,
       },
@@ -150,6 +150,7 @@ export const useDatabase = async () => {
        * ...
        */
     });
+    console.log("Replication state created:", replicationState);
     const myRxReplicationState = replicationState;
     // emits each document that was received from the remote
     myRxReplicationState.received$.subscribe((doc) => console.dir(doc));

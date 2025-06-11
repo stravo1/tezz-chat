@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
         
         return {
             success: true,
+            isAuthenticated: true,
             user
         };
     } catch (error: unknown) {
