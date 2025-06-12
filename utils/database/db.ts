@@ -107,7 +107,12 @@ export const useDatabase = async () => {
   if (!dbInstance) {
     const appwrite = useAppwrite();
     await appwrite.init();
-    const { client, config } = appwrite;
+    const { client, databases, config } = appwrite;
+    const clientRealtime = await getAppwriteRealtimeClient();
+    if (!clientRealtime) {
+      throw new Error("Appwrite Realtime client not initialized");
+    }
+    
 
     addRxPlugin(RxDBDevModePlugin);
     dbInstance = await createRxDatabase({
@@ -125,7 +130,7 @@ export const useDatabase = async () => {
 
     const replicationState = replicateAppwrite({
       replicationIdentifier: "my-appwrite-replication",
-      client,
+      client: clientRealtime,
       databaseId: config.databaseId,
       collectionId: "chats",
       deletedField: "deleted",
@@ -138,6 +143,10 @@ export const useDatabase = async () => {
     replicationState.error$.subscribe((error) => console.dir(error));
     replicationState.canceled$.subscribe((bool) => console.dir(bool));
     replicationState.active$.subscribe((bool) => console.dir(bool));
+
+    // client.subscribe('documents', (res) => {
+    //   console.log('Document change detected: ', res);
+    // })
   }
 
   return {
