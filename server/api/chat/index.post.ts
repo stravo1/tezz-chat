@@ -1,5 +1,5 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream, convertToCoreMessages, tool } from 'ai';
+import { streamText, smoothStream, convertToCoreMessages, appendResponseMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { ID, Permission, Role } from 'node-appwrite';
@@ -21,13 +21,22 @@ const chatInputSchema = z.object({
     deviceId: z.string().optional(),
 });
 
+function getTrailingMessageId({
+    messages,
+}: {
+    messages: Array<ResponseMessage>;
+}): string | null { 
+    const trailingMessage = messages.at(-1);
+
+    if (!trailingMessage) return null;
+
+    return trailingMessage.id;
+}
+
 export default defineLazyEventHandler(async () => {
     const model = google('gemini-2.0-flash');
 
     return defineEventHandler(async (event) => {
-        console.log("=============event")
-        console.log(event.context);
-        console.log("=================")
         try {
             const { databases, account } = createJWTClient(event);
             
@@ -35,9 +44,6 @@ export default defineLazyEventHandler(async () => {
 
             const body = await readBody(event);
             
-            console.log("=============body")
-            console.log(event.context); 
-            console.log("=================")
             const validation = chatInputSchema.safeParse(body);
 
             if (!validation.success) {
@@ -275,6 +281,7 @@ export default defineLazyEventHandler(async () => {
                         }
                     })
                 },
+                toolChoice: 'auto',
                 onChunk(event) {
                     if (event.chunk.type === 'tool-call') {
                         console.log('Called Tool: ', event.chunk.toolName);
@@ -284,6 +291,7 @@ export default defineLazyEventHandler(async () => {
                     if (event.warnings) {
                         console.log('Warnings: ', event.warnings);
                     }
+
                 },
                 onFinish: async (event) => {
                     console.log('Chat finished successfully', JSON.stringify(event));
@@ -298,6 +306,24 @@ export default defineLazyEventHandler(async () => {
 
                     const fullAssistantMessage = event.text;
                     if (fullAssistantMessage && userId && chatSession) {
+
+                        const assistantId = getTrailingMessageId({
+                            messages: event.response.messages.filter(
+                                (message: any) => message.role === 'assistant',
+                            ),
+                        });
+
+                        if (!assistantId) {
+                            throw new Error('No assistant message found!');
+                        }
+
+                        const [, assistantMessage] = appendResponseMessages({
+                            messages: [messages[messages.length - 1]],
+                            responseMessages: event.response.messages,
+                        });
+
+                        console.log("Assistant message [annotations]:", assistantMessage.annotations);
+
                         try {
                             // Create assistant message with document-level permissions
                             await databases.createDocument(
@@ -306,8 +332,9 @@ export default defineLazyEventHandler(async () => {
                                 ID.unique(),
                                 {
                                     chatId: chatSession.$id,
-                                    role: 'assistant',
+                                    role: assistantMessage.role,
                                     content: fullAssistantMessage,
+                                    parts: JSON.stringify(assistantMessage.parts || []),
                                     attachments: JSON.stringify(lastMessage.experimental_attachments || []),
                                     lastModifiedBy: 'assistant',
                                     deleted: false,
