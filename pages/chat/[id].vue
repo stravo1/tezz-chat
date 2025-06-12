@@ -17,7 +17,7 @@ const convertToUIMessages = (messages: any) => {
     return messages?.map((message: any) => ({
       id: message.id,
       role: message.role,
-      parts: message.parts as UIMessage['parts'],
+      parts: message.parts ? JSON.parse(message.parts) : [],
       content: message.content || '',
       createdAt: message.createdAt,
     }));

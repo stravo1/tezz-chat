@@ -1,13 +1,22 @@
 import { defineLazyEventHandler } from 'h3';
 import { streamText, smoothStream, convertToCoreMessages, appendResponseMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
 import { ID, Permission, Role } from 'node-appwrite';
-import { createJWTClient, createSessionClient } from "~/server/appwrite/config";
+import { createJWTClient } from "~/server/appwrite/config";
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 
+// Constants
+const MODEL_NAME = 'gemini-2.0-flash';
+const DEFAULT_TEMPERATURE = 0.7;
+const MAX_RETRIES = 5;
+const MAX_STEPS = 5;
+const STREAM_DELAY_MS = 1;
+
+// Schema validation
 const chatInputSchema = z.object({
     messages: z.array(
         z.object({
@@ -21,37 +30,118 @@ const chatInputSchema = z.object({
     deviceId: z.string().optional(),
 });
 
-function getTrailingMessageId({
-    messages,
-}: {
-    messages: Array<ResponseMessage>;
-}): string | null { 
-    const trailingMessage = messages.at(-1);
-
-    if (!trailingMessage) return null;
-
-    return trailingMessage.id;
+// Types
+interface SerperResponse {
+    knowledgeGraph?: {
+        description?: string;
+    };
+    organic?: Array<{
+        title: string;
+        link: string;
+        snippet: string;
+        date?: string;
+    }>;
+    peopleAlsoAsk?: Array<{
+        question: string;
+        snippet: string;
+    }>;
 }
 
+interface Message {
+    id?: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    parts?: any[];
+    experimental_attachments?: any[];
+}
+
+interface ChatMessage {
+    role: string;
+    content: string;
+    parts?: any[];
+    experimental_attachments?: any[];
+}
+
+// Helper functions
+const createTimestamp = () => new Date().toISOString();
+
+const createPermissions = (userId: string) => [
+    Permission.read(Role.user(userId)),
+    Permission.update(Role.user(userId)),
+    Permission.delete(Role.user(userId))
+];
+
+const createMessageDocument = async (
+    databases: any,
+    chatId: string,
+    message: Message,
+    userId: string,
+    deviceId: string
+) => {
+    const messageId = ID.unique();
+    const now = createTimestamp();
+    
+    return await databases.createDocument(
+        appwriteConfig.databaseId,
+        COLLECTION_NAMES.CHAT_MESSAGES,
+        messageId,
+        {
+            chatId,
+            role: message.role,
+            content: message.content,
+            parts: JSON.stringify(message.parts || null),
+            attachments: JSON.stringify(message.experimental_attachments || []),
+            lastModifiedBy: deviceId || 'server',
+            deleted: false,
+            createdAt: now,
+            updatedAt: now
+        },
+        createPermissions(userId)
+    );
+};
+
+const updateChatDocument = async (
+    databases: any,
+    chatId: string,
+    updates: any
+) => {
+    return await databases.updateDocument(
+        appwriteConfig.databaseId,
+        COLLECTION_NAMES.CHATS,
+        chatId,
+        {
+            ...updates,
+            updatedAt: createTimestamp()
+        }
+    );
+};
+
 export default defineLazyEventHandler(async () => {
-    const model = google('gemini-2.0-flash');
+    // const model = google(MODEL_NAME);
+    const openrouter = createOpenRouter({
+        apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+    });
+    const model = openrouter.chat('google/gemma-3-27b-it:free');
 
     return defineEventHandler(async (event) => {
         try {
             const { databases, account } = createJWTClient(event);
+            const user = await account.get();
             
-            const userId = (await account.get()).$id;
-
+            if (!user?.$id) {
+                throw createAppError(ErrorCode.UNAUTHORIZED, 'User not authenticated');
+            }
+            
+            const userId = user.$id;
             const body = await readBody(event);
             
             const validation = chatInputSchema.safeParse(body);
-
             if (!validation.success) {
                 throw createAppError(ErrorCode.INVALID_REQUEST, `Invalid input: ${validation.error.errors[0]?.message}`);
             }
 
             const { messages, id: chatId, deviceId } = validation.data;
-            const lastMessage = messages[messages.length - 1];
+            const lastMessage = messages[messages.length - 1] as Message;
             let chatSession;
 
             if (userId) {
@@ -60,19 +150,16 @@ export default defineLazyEventHandler(async () => {
                 }
 
                 try {
-                    // Try to get the chat - Appwrite will handle permission checks
-                    const chat = await databases.getDocument(
+                    chatSession = await databases.getDocument(
                         appwriteConfig.databaseId,
                         COLLECTION_NAMES.CHATS,
                         chatId
                     );
-                    chatSession = chat;
                 } catch (error) {
-                    // If chat doesn't exist or user doesn't have access, create a new one
                     const chatTitle = await generateChatTitle({ message: lastMessage });
-                    const now = new Date().toISOString();
+                    const now = createTimestamp();
 
-                    const doc = await databases.createDocument(
+                    chatSession = await databases.createDocument(
                         appwriteConfig.databaseId,
                         COLLECTION_NAMES.CHATS,
                         chatId,
@@ -83,54 +170,27 @@ export default defineLazyEventHandler(async () => {
                             createdAt: now,
                             updatedAt: now
                         },
-                        [
-                            Permission.read(Role.user(userId)),
-                            Permission.update(Role.user(userId)),
-                            Permission.delete(Role.user(userId))
-                        ]
+                        createPermissions(userId)
                     );
-
-                    chatSession = doc;
                 }
 
                 if (lastMessage.role === 'user' && chatSession) {
                     try {
-                        const userMessage = await databases.createDocument(
-                            appwriteConfig.databaseId,
-                            COLLECTION_NAMES.CHAT_MESSAGES,
-                            ID.unique(),
-                            {
-                                chatId: chatSession.$id,
-                                role: 'user',
-                                content: lastMessage.content,
-                                attachments: JSON.stringify(lastMessage.experimental_attachments || []),
-                                lastModifiedBy: deviceId || 'server',
-                                deleted: false,
-                                createdAt: new Date().toISOString(),
-                                updatedAt: new Date().toISOString()
-                            },
-                            [
-                                Permission.read(Role.user(userId)),
-                                Permission.update(Role.user(userId)),
-                                Permission.delete(Role.user(userId))
-                            ]
-                        );
-
-                        // Update chat's lastModifiedBy and updatedAt
-                        await databases.updateDocument(
-                            appwriteConfig.databaseId,
-                            COLLECTION_NAMES.CHATS,
+                        const userMessage = await createMessageDocument(
+                            databases,
                             chatSession.$id,
-                            {
-                                lastModifiedBy: deviceId || 'server',
-                                updatedAt: new Date().toISOString()
-                            }
+                            lastMessage,
+                            userId,
+                            deviceId || 'server'
                         );
 
                         if (!userMessage || !userMessage.$id) {
                             throw new Error('Failed to create user message');
                         }
 
+                        await updateChatDocument(databases, chatSession.$id, {
+                            lastModifiedBy: deviceId || 'server'
+                        });
                     } catch (messageError) {
                         console.error('Error creating user message:', messageError);
                         throw createAppError(ErrorCode.INTERNAL_ERROR, 'Failed to save user message');
@@ -143,21 +203,21 @@ export default defineLazyEventHandler(async () => {
                     title: 'Temporary Chat',
                     visibility: 'temporary',
                     lastModifiedBy: deviceId || 'anonymous',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+                    createdAt: createTimestamp(),
+                    updatedAt: createTimestamp()
                 };
             }
 
             const result = await streamText({
                 model,
                 messages: convertToCoreMessages(messages),
-                temperature: 0.7,
+                temperature: DEFAULT_TEMPERATURE,
                 experimental_transform: smoothStream({
                     chunking: 'word',
-                    delayInMs: 1,
+                    delayInMs: STREAM_DELAY_MS,
                 }),
-                maxSteps: 5,
-                maxRetries: 5,
+                maxSteps: MAX_STEPS,
+                maxRetries: MAX_RETRIES,
                 tools: {
                     web_search: tool({
                         description: 'Search the web for information using Serper API.',
@@ -175,11 +235,8 @@ export default defineLazyEventHandler(async () => {
                             num = 30,
                             page,
                         }) => {
-                            console.log('--------------Web Search');
-                            console.log(query);
-                            console.log('------------------------');
                             try {
-                                const response = await $fetch('https://google.serper.dev/search', {
+                                const response = await $fetch<SerperResponse>('https://google.serper.dev/search', {
                                     method: 'POST',
                                     headers: {
                                         'X-API-KEY': process.env.NUXT_SERPR_API_KEY as string,
@@ -192,46 +249,7 @@ export default defineLazyEventHandler(async () => {
                                         num: Math.min(num, 30),
                                         page
                                     }
-                                }) as {
-                                    searchParameters: {
-                                        q: string;
-                                        gl: string;
-                                        type: string;
-                                        num: number;
-                                        page: number;
-                                    };
-                                    knowledgeGraph?: {
-                                        title: string;
-                                        type: string;
-                                        website: string;
-                                        imageUrl: string;
-                                        description: string;
-                                        descriptionSource: string;
-                                        descriptionLink: string;
-                                        attributes: Record<string, string>;
-                                    };
-                                    organic: Array<{
-                                        title: string;
-                                        link: string;
-                                        snippet: string;
-                                        date?: string;
-                                        attributes?: Record<string, string>;
-                                        sitelinks?: Array<{
-                                            title: string;
-                                            link: string;
-                                        }>;
-                                        position: number;
-                                    }>;
-                                    peopleAlsoAsk?: Array<{
-                                        question: string;
-                                        snippet: string;
-                                        title: string;
-                                        link: string;
-                                    }>;
-                                    relatedSearches?: Array<{
-                                        query: string;
-                                    }>;
-                                };
+                                });
 
                                 const searchResults = {
                                     summary: response.knowledgeGraph?.description || '',
@@ -253,7 +271,7 @@ export default defineLazyEventHandler(async () => {
                                     totalResults: response.organic?.length || 0
                                 };
 
-                                const formattedResponse = {
+                                return {
                                     success: true,
                                     data: {
                                         summary: searchResults.summary,
@@ -269,8 +287,6 @@ export default defineLazyEventHandler(async () => {
                                         totalResults: searchResults.totalResults
                                     }
                                 };
-
-                                return formattedResponse;
                             } catch (error) {
                                 console.error('Serper search error:', error);
                                 return {
@@ -291,89 +307,49 @@ export default defineLazyEventHandler(async () => {
                     if (event.warnings) {
                         console.log('Warnings: ', event.warnings);
                     }
-
                 },
                 onFinish: async (event) => {
-                    console.log('Chat finished successfully', JSON.stringify(event));
-                    console.log('Fin reason: ', event.finishReason);
-                    console.log('Reasoning: ', event.reasoning);
-                    console.log('reasoning details: ', event.reasoningDetails);
-                    console.log('Steps: ', event.steps);
-                    console.log('Messages: ', event.response.messages);
-                    console.log('Response Body: ', event.response.body);
-                    console.log('Provider metadata: ', event.providerMetadata);
-                    console.log("Sources: ", event.sources);
-
-                    const fullAssistantMessage = event.text;
-                    if (fullAssistantMessage && userId && chatSession) {
-
-                        const assistantId = getTrailingMessageId({
-                            messages: event.response.messages.filter(
-                                (message: any) => message.role === 'assistant',
-                            ),
-                        });
-
-                        if (!assistantId) {
-                            throw new Error('No assistant message found!');
-                        }
-
+                    if (event.text && userId && chatSession) {
                         const [, assistantMessage] = appendResponseMessages({
-                            messages: [messages[messages.length - 1]],
+                            messages: [lastMessage],
                             responseMessages: event.response.messages,
                         });
 
-                        console.log("Assistant message [annotations]:", assistantMessage.annotations);
+                        console.log(assistantMessage);
 
                         try {
-                            // Create assistant message with document-level permissions
-                            await databases.createDocument(
-                                appwriteConfig.databaseId,
-                                COLLECTION_NAMES.CHAT_MESSAGES,
-                                ID.unique(),
-                                {
-                                    chatId: chatSession.$id,
-                                    role: assistantMessage.role,
-                                    content: fullAssistantMessage,
-                                    parts: JSON.stringify(assistantMessage.parts || []),
-                                    attachments: JSON.stringify(lastMessage.experimental_attachments || []),
-                                    lastModifiedBy: 'assistant',
-                                    deleted: false,
-                                    createdAt: new Date().toISOString(),
-                                    updatedAt: new Date().toISOString()
-                                },
-                                [
-                                    Permission.read(Role.user(userId)),
-                                    Permission.update(Role.user(userId)),
-                                    Permission.delete(Role.user(userId))
-                                ]
+                            const messageData: ChatMessage = {
+                                role: assistantMessage.role === 'data' ? 'assistant' : assistantMessage.role,
+                                content: event.text,
+                                parts: assistantMessage.parts || [],
+                                experimental_attachments: lastMessage.experimental_attachments || []
+                            };
+
+                            await createMessageDocument(
+                                databases,
+                                chatSession.$id,
+                                messageData,
+                                userId,
+                                'assistant'
                             );
 
-                            // Update chat's lastModifiedBy and updatedAt
-                            await databases.updateDocument(
-                                appwriteConfig.databaseId,
-                                COLLECTION_NAMES.CHATS,
-                                chatSession.$id,
-                                {
-                                    lastModifiedBy: 'assistant',
-                                    updatedAt: new Date().toISOString()
-                                }
-                            );
+                            await updateChatDocument(databases, chatSession.$id, {
+                                lastModifiedBy: 'assistant'
+                            });
                         } catch (error) {
                             console.error('Error creating assistant message:', error);
                         }
                     }
                 },
                 onError(event) {
-                    console.log('Error: ', event.error);
+                    console.error('Chat error:', event.error);
                 },
             });
 
-            // Return streamed response to client
             return result.toDataStreamResponse();
 
         } catch (error) {
             console.error('Chat error:', error);
-
             return new Response(JSON.stringify({
                 error: error instanceof Error ? error.message : 'An error occurred'
             }), {
