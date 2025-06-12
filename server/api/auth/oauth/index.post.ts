@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
         // Create OAuth token and get redirect URL
         const redirectURL = await account.createOAuth2Token(
             OAuthProvider.Github,
-            process.env.NUXT_APP_DOMAIN + "/api/auth/oauth/success",
+            process.env.NUXT_APP_DOMAIN + "/auth/success",
             process.env.NUXT_APP_DOMAIN + "/api/auth/oauth/failure"
         );
 

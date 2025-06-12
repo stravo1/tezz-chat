@@ -106,7 +106,6 @@ let collectionsInstance: any | null = null;
 export const useDatabase = async () => {
   if (!dbInstance) {
     const appwrite = useAppwrite();
-    await appwrite.init();
     const { client, config } = appwrite;
 
     addRxPlugin(RxDBDevModePlugin);

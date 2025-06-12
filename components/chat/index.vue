@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useChat, type UIMessage } from "@ai-sdk/vue";
 import { ID } from "appwrite";
-
+const userStore = useUserStore();
 const props = defineProps<{
   chatId: string;
 }>();
@@ -17,6 +17,9 @@ if (!chatId) {
 
 const { messages, append } = useChat({
   id: chatId,
+  headers: {
+    Authorization: "Bearer " + (await userStore.getJWT()),
+  },
 });
 
 const handleSubmit = async (message: string) => {

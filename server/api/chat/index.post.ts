@@ -3,7 +3,7 @@ import { streamText, smoothStream, convertToCoreMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { ID, Permission, Role } from 'node-appwrite';
-import { createSessionClient } from "~/server/appwrite/config";
+import { createJWTClient, createSessionClient } from "~/server/appwrite/config";
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
@@ -25,11 +25,13 @@ export default defineLazyEventHandler(async () => {
     const model = google('gemini-2.0-flash');
 
     return defineEventHandler(async (event) => {
+        console.log("=============event")
+        console.log(event.context);
+        console.log("=================")
         try {
-            const { databases } = createSessionClient(event);
-            const session = event.context.session;
-            const isAuthenticated = !!session?.userId;
-            const userId = session?.userId;
+            const { databases, account } = createJWTClient(event);
+            
+            const userId = (await account.get()).$id;
 
             const body = await readBody(event);
             
@@ -46,7 +48,7 @@ export default defineLazyEventHandler(async () => {
             const lastMessage = messages[messages.length - 1];
             let chatSession;
 
-            if (isAuthenticated) {
+            if (userId) {
                 if (!chatId) {
                     throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required for authenticated users');
                 }
@@ -294,7 +296,7 @@ export default defineLazyEventHandler(async () => {
                     console.log("Sources: ", event.sources);
 
                     const fullAssistantMessage = event.text;
-                    if (fullAssistantMessage && isAuthenticated && chatSession) {
+                    if (fullAssistantMessage && userId && chatSession) {
                         try {
                             // Create assistant message with document-level permissions
                             await databases.createDocument(

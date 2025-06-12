@@ -13,7 +13,9 @@ const initDb = async () => {
 };
 export const getThreads = async () => {
   const db = await initDb();
-  return db.threads.find().sort({ lastMessageAt: "desc" });
+  return db.threads.find({
+    sort: [{ updatedAt: "desc" }],
+  });
 };
 
 export const getMessagesByThreadId = async (threadId: string) => {

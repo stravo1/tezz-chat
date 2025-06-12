@@ -11,6 +11,8 @@ interface UserState {
   isAuthenticated: boolean;
   isAuthChecked: boolean;
   isLoading: boolean;
+  jwtToken?: string; // Optional JWT token for authenticated requests
+  lastJwtCreatedAt?: number; // Timestamp of the last JWT creation
 }
 
 export const useUserStore = defineStore("user", {
@@ -19,6 +21,7 @@ export const useUserStore = defineStore("user", {
     isAuthenticated: false,
     isAuthChecked: false,
     isLoading: true,
+    jwtToken: undefined, // Initialize as undefined
   }),
 
   actions: {
@@ -26,13 +29,13 @@ export const useUserStore = defineStore("user", {
       this.isLoading = true;
       try {
         // const res = await useFetch('/api/auth/sample');
-        const data = await $fetch("/api/auth/oauth/session");
+        const data = await useAppwrite().account.get();
 
-        if (data.isAuthenticated && data.user) {
+        if (data.$id) {
           this.currentUser = {
-            id: data.user.$id,
-            email: data.user.email,
-            name: data.user.name
+            id: data.$id,
+            email: data.email,
+            name: data.name,
           };
           this.isAuthenticated = true;
         } else {
@@ -51,15 +54,42 @@ export const useUserStore = defineStore("user", {
 
     async logOut() {
       this.isLoading = true;
+      const { account } = useAppwrite();
       try {
-        await $fetch("/api/auth/oauth/logout", {
-          method: "POST",
-        });
+        try {
+          await $fetch("/api/auth/oauth/logout", {
+            method: "POST",
+          });
+        } catch (error) {
+          console.error("Error during OAuth logout:", error);
+        }
+        await account.deleteSession("current");
+        console.log("Session deleted successfully.");
         this.clearUser();
       } catch (error) {
         console.error("Error logging out:", error);
       } finally {
         this.isLoading = false;
+      }
+    },
+    async getJWT() {
+      if (
+        this.jwtToken &&
+        this.lastJwtCreatedAt &&
+        Date.now() - this.lastJwtCreatedAt < 13 * 60 * 1000
+      ) {
+        // Return cached token if it's still valid (~15 min)
+        return this.jwtToken;
+      }
+
+      try {
+        const { account } = useAppwrite();
+        this.jwtToken = (await account.createJWT()).jwt;
+        this.lastJwtCreatedAt = Date.now();
+        return this.jwtToken;
+      } catch (error) {
+        console.error("Error fetching JWT:", error);
+        throw error; // Re-throw to handle it in the component
       }
     },
 

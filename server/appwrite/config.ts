@@ -64,3 +64,34 @@ export function createSessionClient(event:any) {
     }
   };
 }
+
+
+export function createJWTClient(event:any) {
+  console.log("Creating JWT Client");
+  const config = useRuntimeConfig();
+
+  const client = new Client()
+    .setEndpoint(config.public.appwrite.url)
+    .setProject(config.public.appwrite.projectId);
+
+  const jwt = getHeader(event, "Authorization")?.replace("Bearer ", "");
+
+  if (jwt) {
+    client.setJWT(jwt);
+  }
+
+  return {
+    get account() {
+      return new Account(client);
+    },
+    get databases() {
+      return new Databases(client);
+    },
+    get storage() {
+      return new Storage(client);
+    },
+    get avatars() {
+      return new Avatars(client);
+    }
+  };
+}

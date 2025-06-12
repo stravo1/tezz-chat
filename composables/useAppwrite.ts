@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Avatars } from 'appwrite';
+import { Account, Client, Databases, Storage, Avatars } from 'appwrite';
 
 let client: Client | null = null;
 
@@ -21,19 +21,13 @@ export const useAppwrite = () => {
       .setEndpointRealtime(appwriteConfig.realtimeUrl)
       .setProject(appwriteConfig.projectId);
 
-    try {
-      const { session } = await $fetch<{ session: string | null }>('/api/auth/oauth/session-token');
-      if (session) {
-        console.log(session);
-        client.setSession(session);
-      }
-    } catch (error) {
-      console.error('Failed to fetch session:', error);
-    }
   };
-
+  try {
+    init();
+  } catch (error) {
+    console.error('Error initializing Appwrite client:', error);
+  }
   return {
-    init,
     get client() {
       if (!client) throw new Error("Appwrite client not initialized. Call init() first.");
       return client;

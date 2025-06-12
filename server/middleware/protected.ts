@@ -1,5 +1,5 @@
 import { Models } from "node-appwrite";
-import { createSessionClient } from "../appwrite/config";
+import { createJWTClient } from "../appwrite/config";
 import { createAppError, ErrorCode } from "../utils/errors";
 
 // Define interface for the session context
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Get session token from cookies
-    const { account } = createSessionClient(event);
+    const { account } = createJWTClient(event);
 
     try {
       // Get current user session
