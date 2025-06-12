@@ -294,6 +294,14 @@
                     "twoWayKey": "chatMessageId",
                     "onDelete": "cascade",
                     "side": "parent"
+                },
+                {
+                    "key": "parts",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 65535,
+                    "default": null
                 }
             ],
             "indexes": []
