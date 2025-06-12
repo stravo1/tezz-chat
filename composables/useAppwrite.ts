@@ -22,10 +22,10 @@ export const useAppwrite = () => {
       .setProject(appwriteConfig.projectId);
 
     try {
-      const { session, jwt } = await $fetch<{ session: string | null, jwt: string | null }>('/api/auth/oauth/session-token');
-      if (jwt) {
-        console.log(jwt);
-        client.setJWT(jwt);
+      const { session } = await $fetch<{ session: string | null }>('/api/auth/oauth/session-token');
+      if (session) {
+        console.log(session);
+        client.setSession(session);
       }
     } catch (error) {
       console.error('Failed to fetch session:', error);

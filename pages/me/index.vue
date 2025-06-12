@@ -33,14 +33,6 @@
             Logout
           </button>
         </div>
-        <div class="mt-8">
-          <button
-            @click="getUser"
-            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-          >
-            Get
-          </button>
-        </div>
       </div>
     </div>
 
@@ -64,23 +56,15 @@ definePageMeta({
 const userStore = useUserStore();
 const router = useRouter();
 
-const {account} = useAppwrite();
 const handleLogout = async () => {
   await userStore.logOut();
   router.push('/login');
 };
-const getUser = async () => {
-  try {
-    console.log(await account.get())
-  } catch (error) {
-    console.error('Failed to fetch user:', error);
-  }
-};
+
 // Check authentication status on page load
 onMounted(() => {
   if (!userStore.isAuthChecked) {
     userStore.fetchUser();
   }
 });
-
 </script>
