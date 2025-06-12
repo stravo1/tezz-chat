@@ -4,6 +4,7 @@ import { ID } from "appwrite";
 const userStore = useUserStore();
 const props = defineProps<{
   chatId: string;
+  initialMessages: UIMessage[];
 }>();
 
 const route = useRoute();
@@ -17,6 +18,7 @@ if (!chatId) {
 
 const { messages, append } = useChat({
   id: chatId,
+  initialMessages: props.initialMessages || [],
   headers: {
     Authorization: "Bearer " + (await userStore.getJWT()),
   },
@@ -31,6 +33,7 @@ const handleSubmit = async (message: string) => {
   const userMessage = createUserMessage(messageId, message);
   append(userMessage);
 };
+
 
 watch(
   messages,

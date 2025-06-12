@@ -20,11 +20,13 @@ export const getThreads = async () => {
 
 export const getMessagesByThreadId = async (threadId: string) => {
   const db = await initDb();
-  return db.messages
+  const query = db.threads
     .find({
-      selector: { threadId },
+      selector: { id: threadId },
     })
-    .sort({ createdAt: "asc" });
+  const result = await query.exec();
+  const messages = result[0]?.get("chatMessageId") || [];
+  return messages;
 };
 
 export const getMessageSummaries = async (threadId: string) => {

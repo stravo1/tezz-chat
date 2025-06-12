@@ -286,6 +286,7 @@ export default defineLazyEventHandler(async () => {
                     }
                 },
                 onFinish: async (event) => {
+                    console.log('Chat finished successfully', JSON.stringify(event));
                     console.log('Fin reason: ', event.finishReason);
                     console.log('Reasoning: ', event.reasoning);
                     console.log('reasoning details: ', event.reasoningDetails);

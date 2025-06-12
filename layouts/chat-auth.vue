@@ -15,15 +15,23 @@
     <main class="flex h-screen w-screen">
       <div
         id="sidebar"
-        class="flex h-full w-[30vw] shrink-0 flex-col items-center justify-center gap-10 border"
+        class="flex h-full w-[20vw] shrink-0 flex-col justify-center gap-10 border p-4"
       >
         <h1 class="text-2xl font-bold">Chat Threads</h1>
         <div class="h-[80vh] w-full max-w-md overflow-y-auto">
-          <div class="flex flex-col items-center gap-4">
+          <div class="flex flex-col gap-4">
+            <div class="mb-4">
+              <NuxtLink
+                to="/chat/"
+                class="block w-full rounded-lg bg-blue-500 p-2 text-white hover:bg-blue-600 transition-all text-center"
+              >
+                Create New Chat
+              </NuxtLink>
+            </div>
             <div v-for="chat in arrayOfChats" :key="chat.id" class="w-full">
               <NuxtLink
                 :to="`/chat/${chat.id}`"
-                class="block w-full rounded-lg p-2 text-center hover:bg-gray-200 transition-all"
+                class="block w-full rounded-lg p-2 hover:bg-gray-200 transition-all"
               >
                 {{ chat.title }}
               </NuxtLink>
@@ -33,7 +41,7 @@
       </div>
       <div
         id="chat-view"
-        class="relative box-border flex w-[70vw] shrink-0 p-2 pb-15"
+        class="relative box-border flex w-[80vw] shrink-0 p-2 pb-15"
       >
         <NuxtPage />
       </div>
