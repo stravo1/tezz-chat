@@ -1,5 +1,5 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream, convertToCoreMessages, appendResponseMessages, tool } from 'ai';
+import { streamText, smoothStream, appendResponseMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { createJWTClient } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
+import { Query } from 'node-appwrite';
 
 // Constants
 const DEFAULT_TEMPERATURE = 0.7;
@@ -43,6 +44,8 @@ const chatInputSchema = z.object({
           content: z.string(),
           parts: z.array(z.any()).optional(),
           experimental_attachments: z.array(z.any()).optional(),
+          isEdited: z.boolean().optional(),
+          editedFrom: z.string().optional(),
         })
         .passthrough()
     )
@@ -75,6 +78,8 @@ interface Message {
   content: string;
   parts?: any[];
   experimental_attachments?: any[];
+  isEdited?: boolean;
+  editedFrom?: string;
 }
 
 interface ChatMessage {
@@ -82,6 +87,8 @@ interface ChatMessage {
   content: string;
   parts?: any[];
   experimental_attachments?: any[];
+  isEdited?: boolean;
+  editedFrom?: string;
 }
 
 // Helper functions
@@ -158,6 +165,7 @@ export default defineLazyEventHandler(async () => {
       const { messages, id: chatId, deviceId, timezone } = validation.data;
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
+      const isEditOperation = lastMessage.isEdited && lastMessage.editedFrom;
 
       if (userId) {
         if (!chatId) {
@@ -173,6 +181,29 @@ export default defineLazyEventHandler(async () => {
             COLLECTION_NAMES.CHATS,
             chatId
           );
+
+          if (lastMessage.role === 'user' && chatSession) {
+            try {
+              const userMessage = await createMessageDocument(
+                databases,
+                chatSession.$id,
+                lastMessage,
+                userId,
+                deviceId || 'server'
+              );
+
+              if (!userMessage || !userMessage.$id) {
+                throw new Error('Failed to create user message');
+              }
+
+              await updateChatDocument(databases, chatSession.$id, {
+                lastModifiedBy: deviceId || 'server',
+              });
+            } catch (messageError) {
+              console.error('Error creating user message:', messageError);
+              throw createAppError(ErrorCode.INTERNAL_ERROR, 'Failed to save user message');
+            }
+          }
         } catch (error) {
           const chatTitle = await generateChatTitle({ message: lastMessage });
           const now = createTimestamp();
@@ -191,29 +222,6 @@ export default defineLazyEventHandler(async () => {
             createPermissions(userId)
           );
         }
-
-        if (lastMessage.role === 'user' && chatSession) {
-          try {
-            const userMessage = await createMessageDocument(
-              databases,
-              chatSession.$id,
-              lastMessage,
-              userId,
-              deviceId || 'server'
-            );
-
-            if (!userMessage || !userMessage.$id) {
-              throw new Error('Failed to create user message');
-            }
-
-            await updateChatDocument(databases, chatSession.$id, {
-              lastModifiedBy: deviceId || 'server',
-            });
-          } catch (messageError) {
-            console.error('Error creating user message:', messageError);
-            throw createAppError(ErrorCode.INTERNAL_ERROR, 'Failed to save user message');
-          }
-        }
       } else {
         chatSession = {
           $id: `temp-${Date.now()}`,
@@ -228,7 +236,7 @@ export default defineLazyEventHandler(async () => {
 
       const result = streamText({
         model,
-        messages: convertToCoreMessages(messages),
+        messages: messages,
         temperature: DEFAULT_TEMPERATURE,
         experimental_transform: smoothStream({
           chunking: 'word',
@@ -346,16 +354,38 @@ export default defineLazyEventHandler(async () => {
           }
         },
         onFinish: async event => {
-          console.log('==========Finished');
-          console.log(event);
-          console.log('==========Finished');
           if (event.text && userId && chatSession) {
+            // Handle message editing after AI response
+            if (isEditOperation && lastMessage.editedFrom && chatId) {
+              const messagesToUpdate = await databases.listDocuments(
+                appwriteConfig.databaseId,
+                COLLECTION_NAMES.CHAT_MESSAGES,
+                [
+                  Query.equal('chatId', chatId),
+                  Query.greaterThan('$createdAt', lastMessage.editedFrom),
+                ]
+              );
+
+              // Use Promise.all for parallel updates
+              await Promise.all(
+                messagesToUpdate.documents.map(message =>
+                  databases.updateDocument(
+                    appwriteConfig.databaseId,
+                    COLLECTION_NAMES.CHAT_MESSAGES,
+                    message.$id,
+                    {
+                      deleted: true,
+                      updatedAt: createTimestamp(),
+                    }
+                  )
+                )
+              );
+            }
+
             const [, assistantMessage] = appendResponseMessages({
               messages: [lastMessage],
               responseMessages: event.response.messages,
             });
-
-            console.log(assistantMessage);
 
             try {
               const messageData: ChatMessage = {
@@ -365,17 +395,13 @@ export default defineLazyEventHandler(async () => {
                 experimental_attachments: lastMessage.experimental_attachments || [],
               };
 
-              await createMessageDocument(
-                databases,
-                chatSession.$id,
-                messageData,
-                userId,
-                'assistant'
-              );
-
-              await updateChatDocument(databases, chatSession.$id, {
-                lastModifiedBy: 'assistant',
-              });
+              // Create assistant message and update chat document in parallel
+              await Promise.all([
+                createMessageDocument(databases, chatSession.$id, messageData, userId, 'assistant'),
+                updateChatDocument(databases, chatSession.$id, {
+                  lastModifiedBy: 'assistant',
+                }),
+              ]);
             } catch (error) {
               console.error('Error creating assistant message:', error);
             }
