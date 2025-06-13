@@ -18,8 +18,6 @@ export async function generateChatTitle({
         .describe(
           'A concise and descriptive title for the chat conversation (maximum 80 characters)'
         ),
-      summary: z.string().describe('A brief summary of the main topic or question'),
-      category: z.string().describe('The general category or topic area of the conversation'),
     }),
     system: `You are our title maker assistant at tezz chat that generates concise and descriptive titles for chat conversations.
     - Generate a short title based on the user's first message (maximum 80 characters)
