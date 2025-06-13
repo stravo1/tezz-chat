@@ -61,7 +61,9 @@ const components = {
 
 const props = defineProps<{
   messages: UIMessage[];
+  haventGottenFirstChunk?: boolean;
 }>();
+console.log('Messages:', props);
 </script>
 
 <template>
@@ -92,6 +94,7 @@ const props = defineProps<{
           </div>
         </div>
       </div>
+      <ChatLoader v-if="haventGottenFirstChunk" />
       <div id="padding" class="pb-[200px]"></div>
     </div>
   </div>

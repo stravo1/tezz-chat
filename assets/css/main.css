@@ -2,6 +2,10 @@
 @import 'tailwindcss';
 @import './theme.css';
 @import './gruvbox-combined.css';
+@import './8-bit-loader.css';
+@import './dice-spinner.css';
+@import './pacman.css';
+
 body {
   font-family: 'Lato', sans-serif;
 }

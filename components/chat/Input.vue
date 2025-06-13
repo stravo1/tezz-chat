@@ -15,11 +15,22 @@ const props = defineProps<{
   handleSubmit: (message: string, file?: File, model?: string) => Promise<void>;
 }>();
 
+const scrollToBottom = () => {
+  document.getElementById('messages-container')?.scrollTo({
+    top: +document.getElementById('messages-container')?.scrollHeight!,
+    behavior: 'smooth',
+  });
+};
+
 const handleSubmit = () => {
   if (message.value.trim() === '') return;
   props.handleSubmit(message.value, selectedFile.value || undefined, selectedModel.value);
   message.value = '';
   selectedFile.value = null;
+  scrollToBottom();
+  setTimeout(() => {
+    scrollToBottom();
+  }, 100); // Clear file input after a short delay
 };
 
 const handleFileSelect = (event: Event) => {

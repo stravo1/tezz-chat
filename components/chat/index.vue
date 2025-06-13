@@ -16,7 +16,7 @@ if (!chatId) {
   console.warn('No chat ID provided!');
 }
 
-const { messages, append } = useChat({
+const { messages, append, status } = useChat({
   id: chatId,
   initialMessages: props.initialMessages || [],
   body: {
@@ -35,24 +35,43 @@ const handleSubmit = async (message: string) => {
   const messageId = ID.unique();
   const userMessage = createUserMessage(messageId, message);
   append(userMessage);
+  scrollToBottom();
+};
+
+const scrollToBottom = () => {
+  document.getElementById('messages-container')?.scrollTo({
+    top: document.getElementById('messages-container')?.scrollHeight,
+    behavior: 'smooth',
+  });
 };
 
 watch(
   messages,
   newMessages => {
     console.log('Messages updated:', newMessages);
-    document.getElementById('messages-container')?.scrollTo({
-      top: document.getElementById('messages-container')?.scrollHeight,
-      behavior: 'smooth',
-    });
+    scrollToBottom();
   },
   { deep: true }
 );
+
+watch(status, newStatus => {
+  console.log('Status updated:', newStatus);
+});
+
+console.log('Chat initialized with ID:', chatId, status.value);
+
+onMounted(() => {
+  scrollToBottom();
+});
+
+const haventGottenFirstChunk = computed(() => {
+  return status.value == 'submitted';
+});
 </script>
 
 <template>
   <div class="relative h-full w-full overflow-y-auto">
-    <ChatMessages :messages="messages" />
+    <ChatMessages :messages="messages" :haventGottenFirstChunk />
     <ChatInput :handleSubmit />
   </div>
 </template>
