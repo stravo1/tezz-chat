@@ -34,7 +34,6 @@ const handleSubmit = async (message: string) => {
   append(userMessage);
 };
 
-
 watch(
   messages,
   (newMessages) => {
@@ -49,6 +48,8 @@ watch(
 </script>
 
 <template>
-  <ChatMessages :messages="messages" />
-  <ChatInput :handleSubmit />
+  <div class="relative h-full w-full overflow-y-auto">
+    <ChatMessages :messages="messages" />
+    <ChatInput :handleSubmit />
+  </div>
 </template>
