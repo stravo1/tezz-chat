@@ -162,7 +162,7 @@ export default defineLazyEventHandler(async () => {
         );
       }
 
-      const { messages, id: chatId, deviceId, timezone } = validation.data;
+      const { messages, id: chatId, deviceId } = validation.data;
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
       const isEditOperation = lastMessage.isEdited && lastMessage.editedFrom;
@@ -221,6 +221,20 @@ export default defineLazyEventHandler(async () => {
             },
             createPermissions(userId)
           );
+          // create user message
+          const userMessage = await createMessageDocument(
+            databases,
+            chatSession.$id,
+            lastMessage,
+            userId,
+            deviceId || 'server'
+          );
+          if (!userMessage || !userMessage.$id) {
+            throw new Error('Failed to create user message');
+          }
+          await updateChatDocument(databases, chatSession.$id, {
+            lastModifiedBy: deviceId || 'server',
+          });
         }
       } else {
         chatSession = {
