@@ -1,15 +1,14 @@
 import { generateText, UIMessage } from 'ai';
 import { google } from '@ai-sdk/google';
-
+import { cerebras } from '@ai-sdk/cerebras';
 
 export async function generateChatTitle({
   message,
-  model = google('gemini-2.5-flash-preview-04-17')
+  model = cerebras('llama3.1-8b'),
 }: {
   message: UIMessage | any;
   model?: any;
 }) {
-
   const { text: title } = await generateText({
     model,
     system: `You are our title maker assistant at tezz chat that generates concise and descriptive titles for chat conversations.
