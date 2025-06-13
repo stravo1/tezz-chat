@@ -1,5 +1,5 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream, convertToCoreMessages, appendResponseMessages, tool } from 'ai';
+import { streamText, smoothStream, appendResponseMessages, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
@@ -236,7 +236,7 @@ export default defineLazyEventHandler(async () => {
 
       const result = streamText({
         model,
-        messages: convertToCoreMessages(messages),
+        messages: messages,
         temperature: DEFAULT_TEMPERATURE,
         experimental_transform: smoothStream({
           chunking: 'word',
