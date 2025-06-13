@@ -1,16 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
-@import "tailwindcss";
-@import "./theme.css";
-
+@import 'tailwindcss';
+@import './theme.css';
 body {
-    font-family: 'Lato', sans-serif;
+  font-family: 'Lato', sans-serif;
 }
 
 pre {
-    overflow: auto;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 8px;
+  border-top-right-radius: 0px;
+  border-top-left-radius: 0px;
 }
 
 p {
-    letter-spacing: 2%;
-    line-height: 1.75;
+  letter-spacing: 2%;
+  line-height: 1.75;
+}
+
+.copied {
+  display: none;
 }
