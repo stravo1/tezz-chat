@@ -411,6 +411,7 @@ export default defineLazyEventHandler(async () => {
           console.error('Chat error:', event.error);
         },
       });
+      result.consumeStream();
 
       return result.toDataStreamResponse();
     } catch (error) {
