@@ -41,7 +41,7 @@
               <div class="mb-4">
                 <NuxtLink
                   to="/chat/"
-                  class="bg-secondary text-secondary-container flex w-full items-center justify-center gap-2 rounded-lg p-2 text-center transition-all hover:bg-blue-600"
+                  class="bg-secondary text-secondary-container hover:bg-secondary-container/[1] hover:text-on-secondary-container flex w-full items-center justify-center gap-2 rounded-lg p-2 text-center transition-all"
                 >
                   <Plus /> New Chat
                 </NuxtLink>
@@ -57,7 +57,7 @@
                       'hover:bg-surface-container-high hover:text-on-surface-container-high':
                         $route.params.id !== chat.id,
                     }"
-                    class="block w-full rounded-lg p-2 px-4 text-sm transition-all"
+                    class="block w-full overflow-hidden rounded-lg p-2 px-4 text-sm text-ellipsis whitespace-nowrap transition-all"
                   >
                     {{ chat.title }}
                   </NuxtLink>

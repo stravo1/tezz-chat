@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Paperclip } from 'lucide-vue-next';
+import { ArrowUp, Paperclip } from 'lucide-vue-next';
 
 const message = ref('');
 const selectedModel = ref('gpt-3.5-turbo');
@@ -45,7 +45,8 @@ const removeFile = () => {
 
       <div class="flex w-full items-end gap-2">
         <form
-          class="text-primary pb-3 dark:bg-primary-container/[0.045] outline-tertiary/[0.05] relative flex w-full flex-col items-stretch gap-2 rounded-t-xl border border-b-0 border-white/70 bg-[--chat-input-background] px-3 pt-3 outline-8 backdrop-blur-lg max-sm:pb-6 sm:max-w-3xl dark:border-[hsl(0,0%,83%)]/[0.04]"
+          @submit.prevent="handleSubmit"
+          class="text-primary dark:bg-primary-container/[0.045] outline-tertiary/[0.05] relative flex w-full flex-col items-stretch gap-2 rounded-t-xl border border-b-0 border-white/70 bg-[--chat-input-background] px-3 pt-3 pb-3 outline-8 backdrop-blur-lg max-sm:pb-6 sm:max-w-3xl dark:border-[hsl(0,0%,83%)]/[0.04]"
           style="
             box-shadow:
               rgba(0, 0, 0, 0.1) 0px 80px 50px 0px,
@@ -60,6 +61,8 @@ const removeFile = () => {
             <div></div>
             <div class="flex flex-grow flex-row items-start">
               <textarea
+                v-model="message"
+                @keydown.enter.exact.prevent="handleSubmit"
                 name="input"
                 id="chat-input"
                 placeholder="Type your message here..."
@@ -79,27 +82,12 @@ const removeFile = () => {
                 aria-label="Message actions"
               >
                 <button
-                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/20 disabled:dark:active:bg-primary/20 relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg bg-[rgb(162,59,103)] p-2 text-sm font-semibold whitespace-nowrap text-pink-50 shadow transition-colors hover:bg-[#d56698] focus-visible:ring-1 focus-visible:outline-none active:bg-[rgb(162,59,103)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[rgb(162,59,103)] disabled:active:bg-[rgb(162,59,103)] dark:hover:bg-pink-800/70 dark:active:bg-pink-800/40"
+                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/20 disabled:dark:active:bg-primary/20 bg-primary-container hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap text-pink-50 shadow transition-colors focus-visible:ring-1 focus-visible:outline-none active:bg-[rgb(162,59,103)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[rgb(162,59,103)] disabled:active:bg-[rgb(162,59,103)]"
                   type="submit"
-                  disabled=""
-                  aria-label="Message requires text"
+                  :disabled="message.trim() === ''"
                   data-state="closed"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide lucide-arrow-up !size-5"
-                  >
-                    <path d="m5 12 7-7 7 7"></path>
-                    <path d="M12 19V5"></path>
-                  </svg>
+                  <ArrowUp />
                 </button>
               </div>
               <div class="flex flex-col gap-2 pr-2 sm:flex-row sm:items-center">
