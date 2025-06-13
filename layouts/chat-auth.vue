@@ -81,12 +81,10 @@
 import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { LoaderCircle, PanelLeft, PanelLeftClose, Plus } from 'lucide-vue-next';
 import { getThreads } from '~/utils/database/queries';
 import type { isRxDocument, RxDocument, RxQuery } from 'rxdb';
 
-const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 const { isAuthenticated, isAuthChecked, isLoading } = storeToRefs(userStore);
@@ -128,7 +126,7 @@ const getIfActive = (chatId: string) => {
   return route.params.id === chatId ? 'active-chat' : '';
 };
 const scrollToSelectedChat = () => {
-  const currentChatId = router.currentRoute.value.params.id;
+  const currentChatId = route.params.id;
   if (currentChatId) {
     const chatElement = document.querySelector(`#sidebar a[id="active-chat"]`) as HTMLElement;
     if (chatElement) {
@@ -139,7 +137,7 @@ const scrollToSelectedChat = () => {
 
 watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
   if (checked && !authenticated) {
-    router.push('/auth');
+    navigateTo('/auth');
   }
 });
 
@@ -153,6 +151,6 @@ watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
 const logout = async () => {
   console.log('Logging out...');
   await userStore.logOut();
-  router.push('/auth');
+  navigateTo('/auth');
 };
 </script>

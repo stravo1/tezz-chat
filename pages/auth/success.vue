@@ -11,23 +11,22 @@ onMounted(async () => {
   isLoading.value = true;
   const { userId, secret } = route.query;
   if (!userId || !secret) {
-    errorMessage.value =
-      "Missing authentication parameters. Redirecting to signup.";
-    console.error("OAuth callback error: Missing userId or secret.");
-    await router.push("/auth");
+    errorMessage.value = 'Missing authentication parameters. Redirecting to signup.';
+    console.error('OAuth callback error: Missing userId or secret.');
+    await navigateTo('/auth');
     isLoading.value = false; // Ensure loading state is reset.
     return; // Exit the function.
   }
 
   try {
     const session = await account.createSession(userId, secret);
-    console.log("Appwrite session created successfully:", session);
-    console.log("Session established. Redirecting to account page.");
-    await router.push("/chat");
+    console.log('Appwrite session created successfully:', session);
+    console.log('Session established. Redirecting to account page.');
+    await navigateTo('/chat');
   } catch (error) {
-    errorMessage.value = `Authentication failed: ${error.message || "An unknown error occurred."}`;
-    console.error("Error creating Appwrite session directly:", error);
-    await router.push("/auth");
+    errorMessage.value = `Authentication failed: ${error.message || 'An unknown error occurred.'}`;
+    console.error('Error creating Appwrite session directly:', error);
+    await navigateTo('/auth');
   } finally {
     isLoading.value = false;
   }
@@ -35,12 +34,12 @@ onMounted(async () => {
 
 const logout = async () => {
   try {
-    await account.deleteSession("current");
-    console.log("Session deleted successfully.");
-    await router.push("/auth");
+    await account.deleteSession('current');
+    console.log('Session deleted successfully.');
+    await navigateTo('/auth');
   } catch (error) {
-    console.error("Error deleting session:", error);
-    errorMessage.value = `Logout failed: ${error.message || "An unknown error occurred."}`;
+    console.error('Error deleting session:', error);
+    errorMessage.value = `Logout failed: ${error.message || 'An unknown error occurred.'}`;
   }
 };
 </script>
@@ -49,9 +48,7 @@ const logout = async () => {
   <div class="flex min-h-screen items-center justify-center bg-gray-100 p-4">
     <div class="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-md">
       <h1 class="mb-4 text-3xl font-bold text-gray-800">Authenticating...</h1>
-      <p class="mb-6 text-gray-600">
-        Please wait while we set up your session.
-      </p>
+      <p class="mb-6 text-gray-600">Please wait while we set up your session.</p>
 
       <!-- Loading spinner -->
       <div v-if="isLoading" class="mb-6 flex items-center justify-center">
