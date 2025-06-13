@@ -18,6 +18,7 @@
     "prepare": "npx husky"
   },
   "dependencies": {
+    "@ai-sdk/cerebras": "^0.2.14",
     "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/vue": "^1.2.12",
     "@nuxt/icon": "1.13.0",

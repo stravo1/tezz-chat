@@ -10,11 +10,27 @@ import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 
 // Constants
-const MODEL_NAME = 'gemini-2.0-flash';
 const DEFAULT_TEMPERATURE = 0.7;
 const MAX_RETRIES = 5;
 const MAX_STEPS = 5;
 const STREAM_DELAY_MS = 1;
+
+// Timezone to country code mapping
+const TIMEZONE_TO_COUNTRY: Record<string, string> = {
+  'Asia/Kolkata': 'in',
+  'Asia/Dubai': 'ae',
+  'Asia/Singapore': 'sg',
+  'Asia/Tokyo': 'jp',
+  'Asia/Shanghai': 'cn',
+  'Europe/London': 'uk',
+  'Europe/Paris': 'fr',
+  'Europe/Berlin': 'de',
+  'America/New_York': 'us',
+  'America/Los_Angeles': 'us',
+  'America/Chicago': 'us',
+  'Australia/Sydney': 'au',
+  'Pacific/Auckland': 'nz',
+};
 
 // Schema validation
 const chatInputSchema = z.object({
@@ -25,6 +41,7 @@ const chatInputSchema = z.object({
           id: z.string().optional(),
           role: z.enum(['user', 'assistant', 'system']),
           content: z.string(),
+          parts: z.array(z.any()).optional(),
           experimental_attachments: z.array(z.any()).optional(),
         })
         .passthrough()
@@ -32,6 +49,7 @@ const chatInputSchema = z.object({
     .min(1, 'At least one message is required'),
   id: z.string().optional(),
   deviceId: z.string().optional(),
+  timezone: z.string(),
 });
 
 // Types
@@ -112,22 +130,21 @@ const updateChatDocument = async (databases: any, chatId: string, updates: any) 
 };
 
 export default defineLazyEventHandler(async () => {
-  // const model = google(MODEL_NAME);
+  // const model = google("");
   const openrouter = createOpenRouter({
     apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
   });
-  const model = openrouter.chat('google/gemma-3-27b-it:free');
+  const model = openrouter.chat('meta-llama/llama-4-maverick:free');
 
   return defineEventHandler(async event => {
     try {
-      const { databases, account } = createJWTClient(event);
-      const user = await account.get();
+      const { databases } = createJWTClient(event);
+      const userId = event.context.session?.userId;
 
-      if (!user?.$id) {
+      if (!userId) {
         throw createAppError(ErrorCode.UNAUTHORIZED, 'User not authenticated');
       }
 
-      const userId = user.$id;
       const body = await readBody(event);
 
       const validation = chatInputSchema.safeParse(body);
@@ -138,7 +155,7 @@ export default defineLazyEventHandler(async () => {
         );
       }
 
-      const { messages, id: chatId, deviceId } = validation.data;
+      const { messages, id: chatId, deviceId, timezone } = validation.data;
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
 
@@ -209,7 +226,7 @@ export default defineLazyEventHandler(async () => {
         };
       }
 
-      const result = await streamText({
+      const result = streamText({
         model,
         messages: convertToCoreMessages(messages),
         temperature: DEFAULT_TEMPERATURE,
@@ -237,6 +254,11 @@ export default defineLazyEventHandler(async () => {
             }),
             execute: async ({ query, location, gl, num = 30, page }) => {
               try {
+                // Get timezone from the request body
+                const userTimezone = body.timezone;
+                // Get country code from timezone mapping
+                const countryCode = TIMEZONE_TO_COUNTRY[userTimezone] || 'in';
+
                 const response = await $fetch<SerperResponse>('https://google.serper.dev/search', {
                   method: 'POST',
                   headers: {
@@ -245,8 +267,8 @@ export default defineLazyEventHandler(async () => {
                   },
                   body: {
                     q: query,
-                    location,
-                    gl,
+                    location: location || userTimezone,
+                    gl: gl || countryCode,
                     num: Math.min(num, 30),
                     page,
                   },
@@ -324,6 +346,9 @@ export default defineLazyEventHandler(async () => {
           }
         },
         onFinish: async event => {
+          console.log('==========Finished');
+          console.log(event);
+          console.log('==========Finished');
           if (event.text && userId && chatSession) {
             const [, assistantMessage] = appendResponseMessages({
               messages: [lastMessage],
