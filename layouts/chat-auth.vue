@@ -82,7 +82,7 @@ import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
 import { LoaderCircle, PanelLeft, PanelLeftClose, Plus } from 'lucide-vue-next';
-import { getThreads } from '~/utils/database/queries';
+import { getThreads, getTitle } from '~/utils/database/queries';
 import type { isRxDocument, RxDocument, RxQuery } from 'rxdb';
 
 const route = useRoute();
@@ -120,11 +120,13 @@ onMounted(async () => {
   });
   // scroll to current chat on sidebar
   scrollToSelectedChat();
+  changeTitle(route.params.id as string);
 });
 
 const getIfActive = (chatId: string) => {
   return route.params.id === chatId ? 'active-chat' : '';
 };
+
 const scrollToSelectedChat = () => {
   const currentChatId = route.params.id;
   if (currentChatId) {
@@ -132,6 +134,15 @@ const scrollToSelectedChat = () => {
     if (chatElement) {
       chatElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  }
+};
+
+const changeTitle = async (newId: string) => {
+  const title = await getTitle(newId);
+  if (title) {
+    document.title = title + ' - tezz-chat';
+  } else {
+    document.title = 'tezz-chat';
   }
 };
 
@@ -148,6 +159,17 @@ watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
 //   },
 //   { immediate: true }
 // );
+
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    // react to route changes...
+    console.log('Route changed from', oldId, 'to', newId);
+    changeTitle(newId as string);
+    // scrollToSelectedChat();
+  }
+);
+
 const logout = async () => {
   console.log('Logging out...');
   await userStore.logOut();
