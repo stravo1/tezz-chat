@@ -1,9 +1,19 @@
 <script setup lang="tsx">
 import type { UIMessage } from 'ai';
-import 'highlight.js/styles/monokai.css';
 import MarkdownPreview from '@uivjs/vue-markdown-preview';
 import rehypeHighlight from 'rehype-highlight';
 import { ID } from 'appwrite';
+
+const handleCopy = (text: string) => {
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      console.log('Text copied to clipboard:', text);
+    })
+    .catch(err => {
+      console.error('Failed to copy text:', err);
+    });
+};
 
 const components = {
   pre: ({ children, ...options }) => {
@@ -60,16 +70,26 @@ const props = defineProps<{
       <div
         v-for="message in props.messages"
         :key="message.id"
-        class="flex w-full p-2"
+        class="group flex w-full p-2"
         :class="{ 'justify-end': message.role === 'user' }"
       >
         <div
           v-memo="[message]"
           :class="`${message.role === 'user' ? 'rounded-lg' : 'text-on-secondary-container w-full'}`"
+          class="group"
         >
           <MarkdownPreview :components="components" :rehype-plugins="[[rehypeHighlight]]">
             {{ message.content }}
           </MarkdownPreview>
+          <div
+            class="text-on-secondary-container text-xs opacity-0 transition-all group-hover:opacity-100"
+          >
+            <ChatMessageOptions
+              :role="message.role"
+              :message-id="message.id"
+              :handle-copy="() => handleCopy(message.content)"
+            />
+          </div>
         </div>
       </div>
       <div id="padding" class="pb-[200px]"></div>
