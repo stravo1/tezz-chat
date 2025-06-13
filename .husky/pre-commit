@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Get list of staged files
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|jsx|ts|tsx|vue|css|scss|json|md)$' || true)
+
+if [ -n "$staged_files" ]; then
+  echo "Formatting staged files with Prettier..."
+  echo "$staged_files" | xargs npx prettier --write
+  # Add the formatted files back to staging
+  echo "$staged_files" | xargs git add
+fi

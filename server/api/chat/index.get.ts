@@ -1,5 +1,5 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   return {
-    status: "will be implemented if needed"
-  }
+    status: 'will be implemented if needed',
+  };
 });

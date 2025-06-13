@@ -12,7 +12,10 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio --port=9169",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,vue,css,scss,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,vue,css,scss,json,md}\"",
+    "prepare": "npx husky"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
@@ -24,6 +27,7 @@
     "ai": "^4.3.16",
     "appwrite": "^18.1.1",
     "highlight.js": "^11.11.1",
+    "husky": "^9.1.7",
     "lucide-vue-next": "^0.513.0",
     "marked": "^15.0.12",
     "marked-highlight": "^2.2.1",

@@ -1,0 +1,26 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+.output
+.nuxt
+
+# Logs
+*.log
+
+# Cache
+.cache
+.temp
+
+# Environment variables
+.env*
+
+# Generated files
+*.generated.*
+*.min.*
+
+# Other
+.DS_Store
+coverage 
