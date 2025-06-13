@@ -1,5 +1,8 @@
 <template>
-  <div v-if="layoutLoading" class="fixed inset-0 h-screen w-screen bg-white flex items-center justify-center">
+  <div
+    v-if="layoutLoading"
+    class="fixed inset-0 flex h-screen w-screen items-center justify-center bg-white"
+  >
     <LoaderCircle class="animate-spin" />
   </div>
   <div v-if="!layoutLoading" class="relative flex min-h-screen flex-col text-gray-800">
@@ -7,7 +10,7 @@
       <button @click="logout" class="cursor-pointer">Logout</button>
     </header>
     <main class="flex h-screen w-screen">
-     <slot />
+      <slot />
     </main>
   </div>
 </template>
@@ -16,10 +19,8 @@
 import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { LoaderCircle } from 'lucide-vue-next';
 
-const router = useRouter();
 const userStore = useUserStore();
 const { isAuthenticated, isAuthChecked, isLoading } = storeToRefs(userStore);
 const layoutLoading = computed(() => isLoading.value || !isAuthChecked.value);
@@ -32,14 +33,13 @@ onMounted(async () => {
 
 watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
   if (checked && !authenticated) {
-    router.push('/auth');
+    navigateTo('/auth');
   }
 });
 
 const logout = async () => {
   console.log('Logging out...');
   await userStore.logOut();
-  router.push('/auth');
+  navigateTo('/auth');
 };
-
 </script>
