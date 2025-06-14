@@ -6,6 +6,12 @@ import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { z } from 'zod';
 
+const updateChatDocument = async (databases: any, chatId: string, updates: any) => {
+  return await databases.updateDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId, {
+    ...updates,
+    updatedAt: createTimestamp(),
+  });
+};
 // Schema validation
 const branchChatSchema = z.object({
   sourceChatId: z.string().describe('ID of the chat to branch from'),
@@ -81,7 +87,7 @@ export default defineEventHandler(async event => {
       COLLECTION_NAMES.CHAT_MESSAGES,
       [
         Query.equal('chatId', sourceChatId),
-        Query.lessThanEqual('$createdAt', branchFromTimestamp),
+        Query.lessThanEqual('createdAt', branchFromTimestamp),
         Query.equal('deleted', false),
         Query.orderAsc('$createdAt'),
       ]
@@ -133,29 +139,62 @@ export default defineEventHandler(async event => {
     console.log(newChat);
     console.log('================================');
 
-    // Copy messages to the new chat
-    const messagePromises = messages.documents.map(message => {
+    // Copy messages to the new chat with retry logic
+    // Process messages sequentially to maintain order
+    for (const message of messages.documents) {
       const newMessageId = ID.unique();
-      return databases.createDocument(
-        appwriteConfig.databaseId,
-        COLLECTION_NAMES.CHAT_MESSAGES,
-        newMessageId,
-        {
-          chatId: newChatId,
-          role: message.role,
-          content: message.content,
-          parts: message.parts || null,
-          attachments: message.attachments || null,
-          deleted: false,
-          lastModifiedBy: deviceId || 'server',
-          createdAt: message.$createdAt,
-          updatedAt: now,
-        },
-        createPermissions(userId)
-      );
-    });
+      const maxRetries = 3;
+      let retryCount = 0;
 
-    await Promise.all(messagePromises);
+      while (retryCount < maxRetries) {
+        try {
+          await databases.createDocument(
+            appwriteConfig.databaseId,
+            COLLECTION_NAMES.CHAT_MESSAGES,
+            newMessageId,
+            {
+              chatId: newChatId,
+              role: message.role,
+              content: message.content,
+              parts: message.parts || [],
+              attachments: message.attachments || [],
+              deleted: false,
+              lastModifiedBy: deviceId || 'server',
+              createdAt: message.$createdAt,
+              updatedAt: now,
+            },
+            createPermissions(userId)
+          );
+          break; // Success, exit retry loop
+        } catch (error) {
+          retryCount++;
+          if (retryCount === maxRetries) {
+            console.error(`Failed to create message after ${maxRetries} attempts:`, error);
+            throw error;
+          }
+          // Wait for 1 second before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    try {
+      await updateChatDocument(databases, newChatId, {
+        lastModifiedBy: 'user',
+      });
+    } catch (error) {
+      // If message creation fails, delete the chat to maintain consistency
+      try {
+        await databases.deleteDocument(
+          appwriteConfig.databaseId,
+          COLLECTION_NAMES.CHATS,
+          newChatId
+        );
+      } catch (deleteError) {
+        console.error('Failed to clean up chat after message creation failure:', deleteError);
+      }
+      throw error;
+    }
 
     return {
       success: true,

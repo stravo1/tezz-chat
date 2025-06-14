@@ -10,12 +10,12 @@ const props = defineProps<{
 const route = useRoute();
 const id = route.params.id;
 const chatId = props.chatId || '';
-
+const messageStore = useMessageStore();
 if (!chatId) {
   console.warn('No chat ID provided!');
 }
 
-const { messages, append, status } = useChat({
+const { messages, append, status, setMessages } = useChat({
   id: chatId,
   initialMessages: props.initialMessages || [],
   body: {
@@ -60,6 +60,16 @@ watch(status, newStatus => {
 console.log('Chat initialized with ID:', chatId, status.value);
 
 onMounted(() => {
+  if (messageStore.isBranched) {
+    console.log('Chat has been branched, setting messages from store');
+    // @ts-ignore
+    setMessages(messageStore.messages);
+    messageStore.isBranched = false; // Reset the branched state
+    messageStore.messages = []; // Clear messages in store
+  } else {
+    console.log('No branching detected, using initial messages');
+    setMessages(props.initialMessages || []);
+  }
   scrollToBottom();
 });
 
@@ -73,7 +83,13 @@ const haventGottenFirstChunk = computed(() => {
     <div class="text-on-background h-fit pt-[25vh] text-3xl" v-if="!messages.length">
       Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
     </div>
-    <ChatMessages v-else :messages="messages" :haventGottenFirstChunk />
+    <ChatMessages
+      v-else
+      :messages="messages"
+      :chat-id="chatId"
+      :set-messages="setMessages"
+      :haventGottenFirstChunk
+    />
     <ChatInput :handleSubmit />
   </div>
 </template>
