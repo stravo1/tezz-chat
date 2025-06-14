@@ -62,20 +62,28 @@
                 </NuxtLink>
               </div>
               <div class="mt-6 flex h-full flex-col gap-1 overflow-y-auto">
-                <div v-for="chat in arrayOfChats" :key="chat.id" class="w-full">
+                <div v-for="chat in arrayOfChats" :key="chat.id" class="group relative w-full">
                   <NuxtLink
                     :to="`/chat/${chat.id}`"
                     :id="getIfActive(chat.id)"
                     :class="{
                       'bg-secondary-container text-on-secondary-container':
                         $route.params.id === chat.id,
-                      'hover:bg-surface-container-high hover:text-on-surface-container-high':
+                      'group-hover:bg-surface-container-high group-hover:text-on-surface-container-high':
                         $route.params.id !== chat.id,
                     }"
-                    class="block w-full overflow-hidden rounded-lg p-2 px-4 text-sm text-ellipsis whitespace-nowrap transition-all"
+                    class="flex space-x-2 rounded-lg p-2 px-4 transition-all"
                   >
-                    {{ chat.title }}
+                    <Split :size="18" v-if="chat.isBranched" class="shrink-0 opacity-50" />
+                    <div class="w-full overflow-hidden text-sm text-ellipsis whitespace-nowrap">
+                      {{ chat.title }}
+                    </div>
                   </NuxtLink>
+                  <button
+                    class="text-on-surface-container-highest group: from-surface-container-highest to-surface-container-highest/1 absolute top-0 right-0 bottom-0 flex w-[75px] cursor-pointer items-center justify-end rounded-r-lg bg-gradient-to-l pr-2 opacity-0 transition-all group-hover:opacity-100 hover:text-white"
+                  >
+                    <Trash2 :size="18" class="opacity-50 group-hover:opacity-100" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -96,7 +104,17 @@
 import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
-import { LoaderCircle, PanelLeft, PanelLeftClose, Plus, PlusIcon, Search } from 'lucide-vue-next';
+import {
+  LoaderCircle,
+  PanelLeft,
+  PanelLeftClose,
+  Plus,
+  PlusIcon,
+  Search,
+  Split,
+  Trash,
+  Trash2,
+} from 'lucide-vue-next';
 import { getThreads, getTitle } from '~/utils/database/queries';
 import type { isRxDocument, RxDocument, RxQuery } from 'rxdb';
 
@@ -105,7 +123,7 @@ const userStore = useUserStore();
 const { isAuthenticated, isAuthChecked, isLoading } = storeToRefs(userStore);
 const layoutLoading = computed(() => isLoading.value || !isAuthChecked.value);
 
-const arrayOfChats = ref([] as { id: string; title: string }[]);
+const arrayOfChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
 const isSidebarOpen = ref(false);
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
@@ -121,9 +139,13 @@ onMounted(async () => {
   } else {
     console.log('Threads found:', threads);
     threads.forEach((thread: RxDocument) => {
+      console.log('Thread ID:', thread.get('id'));
+      console.log('Thread Title:', thread.get('title') || 'No title available');
+      console.log('Is Branched:', thread.get('sourceChatId') ? true : false);
       arrayOfChats.value.push({
         id: thread.get('id'),
         title: thread.get('title') || 'No summary available',
+        isBranched: thread.get('sourceChatId') ? true : false,
       });
     });
   }
@@ -137,6 +159,7 @@ onMounted(async () => {
       return {
         id: thread.get('id'),
         title: thread.get('title') || 'No summary available',
+        isBranched: thread.get('sourceChatId') ? true : false,
       };
     });
   });
