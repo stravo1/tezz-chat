@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowUp, Paperclip } from 'lucide-vue-next';
-
-const message = ref('');
+import { useTextareaAutosize } from '@vueuse/core';
+const { textarea, input: message } = useTextareaAutosize();
 const selectedModel = ref('gpt-3.5-turbo');
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -69,19 +69,18 @@ const removeFile = () => {
           "
         >
           <div class="flex flex-grow flex-col">
-            <div></div>
             <div class="flex flex-grow flex-row items-start">
               <textarea
+                ref="textarea"
                 v-model="message"
                 @keydown.enter.exact.prevent="handleSubmit"
                 name="input"
                 id="chat-input"
                 placeholder="Type your message here..."
-                class="text-on-secondary-container placeholder:text-secondary-foreground/60 w-full resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-0"
+                class="text-on-secondary-container placeholder:text-secondary-foreground/60 max-h-[240px] min-h-[48px] w-full resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-0"
                 aria-label="Message input"
                 aria-describedby="chat-input-description"
                 autocomplete="off"
-                style="height: 48px !important"
               ></textarea>
               <div id="chat-input-description" class="sr-only">
                 Press Enter to send, Shift + Enter for new line
@@ -93,7 +92,7 @@ const removeFile = () => {
                 aria-label="Message actions"
               >
                 <button
-                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/20 disabled:dark:active:bg-primary/20 bg-primary-container hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap text-pink-50 shadow transition-colors focus-visible:ring-1 focus-visible:outline-none active:bg-[rgb(162,59,103)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[rgb(162,59,103)] disabled:active:bg-[rgb(162,59,103)]"
+                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/20 disabled:dark:active:bg-primary/20 bg-primary-container hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                   type="submit"
                   :disabled="message.trim() === ''"
                   data-state="closed"
