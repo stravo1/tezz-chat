@@ -9,7 +9,6 @@ const props = defineProps<{
 
 const route = useRoute();
 const id = route.params.id;
-
 const chatId = props.chatId || '';
 
 if (!chatId) {
@@ -70,8 +69,11 @@ const haventGottenFirstChunk = computed(() => {
 </script>
 
 <template>
-  <div class="relative h-full w-full overflow-y-auto">
-    <ChatMessages :messages="messages" :haventGottenFirstChunk />
+  <div class="relative flex h-full w-full justify-center overflow-y-auto">
+    <div class="text-on-background p-[20%] text-3xl" v-if="!messages.length">
+      Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
+    </div>
+    <ChatMessages v-else :messages="messages" :haventGottenFirstChunk />
     <ChatInput :handleSubmit />
   </div>
 </template>

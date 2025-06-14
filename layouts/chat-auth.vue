@@ -18,7 +18,8 @@
           @click="toggleSidebar"
           class="cursor-pointer rounded p-2 transition-all"
           :class="{
-            'text-tertiary-container bg-transparent': !isSidebarOpen,
+            'text-tertiary-container/50 hover:text-tertiary-container bg-transparent':
+              !isSidebarOpen,
             'text-on-surface-container bg-transparent': isSidebarOpen,
           }"
         >
@@ -27,14 +28,15 @@
         </button>
         <button
           @click="toggleSidebar"
-          class="cursor-pointer rounded p-2 transition-all"
-          :class="{
-            'text-tertiary-container bg-transparent': !isSidebarOpen,
-            'text-on-surface-container bg-transparent': isSidebarOpen,
-          }"
+          class="text-tertiary-container/50 hover:text-tertiary-container cursor-pointer rounded p-2 transition-all"
         >
-          <PanelLeft v-if="!isSidebarOpen" />
-          <PanelLeftClose v-else />
+          <Search v-if="!isSidebarOpen" />
+        </button>
+        <button
+          @click="startNewChat"
+          class="text-tertiary-container/50 hover:text-tertiary-container cursor-pointer rounded p-2 transition-all"
+        >
+          <PlusIcon v-if="!isSidebarOpen" />
         </button>
       </div>
       <div
@@ -94,7 +96,7 @@
 import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
-import { LoaderCircle, PanelLeft, PanelLeftClose, Plus } from 'lucide-vue-next';
+import { LoaderCircle, PanelLeft, PanelLeftClose, Plus, PlusIcon, Search } from 'lucide-vue-next';
 import { getThreads, getTitle } from '~/utils/database/queries';
 import type { isRxDocument, RxDocument, RxQuery } from 'rxdb';
 
@@ -108,6 +110,7 @@ const isSidebarOpen = ref(false);
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
 };
+
 onMounted(async () => {
   if (!isAuthChecked.value) {
     await userStore.fetchUser();
@@ -140,6 +143,10 @@ onMounted(async () => {
 
 const getIfActive = (chatId: string) => {
   return route.params.id === chatId ? 'active-chat' : '';
+};
+
+const startNewChat = () => {
+  navigateTo(`/chat/`);
 };
 
 const scrollToSelectedChat = () => {
