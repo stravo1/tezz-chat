@@ -24,25 +24,23 @@ const handleBranch = async (createdAt: any) => {
     }
   });
   console.log('Filtered messages for branching:', filteredMessages);
-  if (props.setMessages) {
-    props.setMessages(filteredMessages);
-    const res = await $fetch('/api/chat/branch', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + (await userStore.getJWT()),
-      },
-      body: {
-        sourceChatId: props.chatId,
-        branchFromTimestamp: createdAt,
-      },
-    });
-    console.log('Branching response:', res);
-    messageStore.messages = filteredMessages;
-    messageStore.isBranched = true;
-    navigateTo(`/chat/${res.data.chatId}`);
-  } else {
-    console.warn('setMessages function is not provided in props');
-  }
+
+  // props.setMessages(filteredMessages);
+  const res = await $fetch('/api/chat/branch', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + (await userStore.getJWT()),
+    },
+    body: {
+      sourceChatId: props.chatId,
+      branchFromTimestamp: createdAt,
+    },
+  });
+  console.log('Branching response:', res);
+  // @ts-ignore
+  messageStore.messages = filteredMessages;
+  messageStore.isBranched = true;
+  navigateTo(`/chat/${res.data.chatId}`);
 };
 
 const handleCopy = (text: string) => {
@@ -135,7 +133,7 @@ console.log('Messages:', props.messages);
               :role="message.role"
               :message-id="message.id"
               :handle-copy="() => handleCopy(message.content)"
-              :handle-branch="() => handleBranch(message.createdAt)"
+              :handle-branch="() => handleBranch((message as any).$createdAt)"
             />
           </div>
         </div>

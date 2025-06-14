@@ -19,6 +19,7 @@ const convertToUIMessages = (messages: any) => {
     parts: message.parts ? JSON.parse(message.parts) : [],
     content: message.content || '',
     createdAt: message.createdAt,
+    $createdAt: message.$createdAt,
   }));
 };
 
