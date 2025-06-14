@@ -26,3 +26,7 @@ p {
 .copied {
   display: none;
 }
+
+.no-tailwind *:not(.keep-tailwind):not(.keep-tailwind *) {
+  all: revert;
+}
