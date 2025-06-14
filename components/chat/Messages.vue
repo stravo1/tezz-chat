@@ -1,18 +1,24 @@
 <script setup lang="tsx">
-import type { UIMessage } from 'ai';
+import type { ChatRequestOptions, UIMessage } from 'ai';
 import MarkdownPreview from '@uivjs/vue-markdown-preview';
 import rehypeHighlight from 'rehype-highlight';
 import { ID } from 'appwrite';
+import { useTextareaAutosize } from '@vueuse/core';
 
 const props = defineProps<{
   chatId?: string;
   messages: UIMessage[];
   haventGottenFirstChunk?: boolean;
-  setMessages?: (messages: UIMessage[]) => void;
+  setMessages: (messages: UIMessage[]) => void;
+  reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>;
 }>();
 
 const messageStore = useMessageStore();
 const userStore = useUserStore();
+const { textarea, input: contentBeingEdited } = useTextareaAutosize();
+const isBeingEdited = ref(false);
+const timeStampOfMessageBeingEdited = ref<string | null>(null);
+
 const handleBranch = async (createdAt: any) => {
   // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
   const filteredMessages = props.messages.filter(message => {
@@ -20,7 +26,7 @@ const handleBranch = async (createdAt: any) => {
       return new Date(message.createdAt as any) <= new Date(createdAt);
     } catch (error) {
       console.error('Error comparing dates:', error);
-      return (message.createdAt as any) >= createdAt; // If there's an error, exclude the message
+      return (message.createdAt as any) <= createdAt; // If there's an error, exclude the message
     }
   });
   console.log('Filtered messages for branching:', filteredMessages);
@@ -43,6 +49,42 @@ const handleBranch = async (createdAt: any) => {
   navigateTo(`/chat/${res.data.chatId}`);
 };
 
+const handleEdit = async (createdAt: any, content?: string) => {
+  console.log('Editing message with createdAt:', createdAt, 'and content:', content);
+  // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
+  const filteredMessages = props.messages.filter(message => {
+    try {
+      return new Date(message.createdAt as any) <= new Date(createdAt);
+    } catch (error) {
+      console.error('Error comparing dates:', error);
+      return (message.createdAt as any) >= createdAt; // If there's an error, exclude the message
+    }
+  });
+  console.log('Filtered messages for editing:', filteredMessages);
+  if (filteredMessages[filteredMessages.length - 1].role == 'assistant') {
+    filteredMessages.pop(); // Remove the last assistant message if it exists
+  }
+  if (!content) {
+    console.error('Content is required for editing the last user message.');
+    return;
+  }
+  filteredMessages[filteredMessages.length - 1].content = content;
+  filteredMessages[filteredMessages.length - 1].parts = [
+    {
+      type: 'text' as const,
+      text: content,
+    },
+  ];
+  props.setMessages?.(filteredMessages);
+  console.log('Filtered messages for branching:', filteredMessages);
+  props.reload?.({
+    body: {
+      isEdited: true,
+      editedFrom: filteredMessages[filteredMessages.length - 1].createdAt,
+    },
+  });
+};
+
 const handleCopy = (text: string) => {
   navigator.clipboard
     .writeText(text)
@@ -55,6 +97,7 @@ const handleCopy = (text: string) => {
 };
 
 const components = {
+  // @ts-ignore
   pre: ({ children, ...options }) => {
     function getLastChildElement(parentId: string): HTMLElement | null {
       const parentElement = document.getElementById(parentId);
@@ -112,11 +155,21 @@ console.log('Messages:', props.messages);
       >
         <div
           v-memo="[message]"
-          :class="`${message.role === 'user' ? 'max-w-[33vw]' : 'text-on-secondary-container w-full'}`"
+          :class="`${message.role === 'user' ? 'flex max-w-[33vw] flex-col items-end' : 'text-on-secondary-container w-full'}`"
           class="group"
         >
+          <textarea
+            ref="textarea"
+            class="max-h-[240px] w-full resize-none rounded-lg border p-4 outline-none"
+            v-if="isBeingEdited && timeStampOfMessageBeingEdited == String(message.createdAt)"
+            v-model="contentBeingEdited"
+            name="input"
+            id="chat-input"
+            placeholder="Type your message here..."
+            rows="2"
+          ></textarea>
           <MarkdownPreview
-            v-if="message.role !== 'user'"
+            v-else-if="message.role !== 'user'"
             :components="components"
             class="no-tailwind"
             :rehype-plugins="[[rehypeHighlight]]"
@@ -132,8 +185,34 @@ console.log('Messages:', props.messages);
             <ChatMessageOptions
               :role="message.role"
               :message-id="message.id"
+              :is-editing="isBeingEdited"
               :handle-copy="() => handleCopy(message.content)"
               :handle-branch="() => handleBranch((message as any).$createdAt)"
+              :handle-edit="
+                () => {
+                  isBeingEdited = true;
+                  contentBeingEdited = message.content;
+                  timeStampOfMessageBeingEdited = String(message.createdAt);
+                }
+              "
+              :handle-retry="
+                () => {
+                  handleEdit(message.createdAt, message.content);
+                }
+              "
+              :handle-save="
+                () => {
+                  handleEdit(message.createdAt, contentBeingEdited);
+                  isBeingEdited = false;
+                  timeStampOfMessageBeingEdited = null;
+                }
+              "
+              :handle-discard="
+                () => {
+                  isBeingEdited = false;
+                  timeStampOfMessageBeingEdited = null;
+                }
+              "
             />
           </div>
         </div>

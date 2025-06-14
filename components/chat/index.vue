@@ -15,7 +15,7 @@ if (!chatId) {
   console.warn('No chat ID provided!');
 }
 
-const { messages, append, status, setMessages } = useChat({
+const { messages, append, status, setMessages, reload } = useChat({
   id: chatId,
   initialMessages: props.initialMessages || [],
   body: {
@@ -91,6 +91,7 @@ const haventGottenFirstChunk = computed(() => {
       :messages="messages"
       :chat-id="chatId"
       :set-messages="setMessages"
+      :reload="reload"
       :haventGottenFirstChunk
     />
     <ChatInput :handleSubmit />

@@ -372,27 +372,42 @@ export default defineLazyEventHandler(async () => {
         onFinish: async event => {
           if (event.text && userId && chatSession) {
             // Handle message editing after AI response
-            if (isEditOperation && lastMessage.editedFrom && chatId) {
+            if (isEditOperation && editedFrom && chatId) {
               const messagesToUpdate = await databases.listDocuments(
                 appwriteConfig.databaseId,
                 COLLECTION_NAMES.CHAT_MESSAGES,
-                [
-                  Query.equal('chatId', chatId),
-                  Query.greaterThan('$createdAt', lastMessage.editedFrom),
-                ]
+                [Query.equal('chatId', chatId), Query.greaterThan('createdAt', editedFrom)]
               );
 
+              let lastMessageQuery = await databases.listDocuments(
+                appwriteConfig.databaseId,
+                COLLECTION_NAMES.CHAT_MESSAGES,
+                [Query.equal('chatId', chatId), Query.equal('createdAt', editedFrom)]
+              );
+              if (lastMessageQuery.documents.length > 0) {
+                const lastMessageToUpdate = lastMessageQuery.documents[0];
+                // Update the last message with new content
+                await databases.updateDocument(
+                  appwriteConfig.databaseId,
+                  COLLECTION_NAMES.CHAT_MESSAGES,
+                  lastMessageToUpdate.$id,
+                  {
+                    content: lastMessage.content,
+                    parts: JSON.stringify(lastMessage.parts || []),
+                    updatedAt: createTimestamp(),
+                  }
+                );
+                console.log('Message updated successfully for editing');
+              } else {
+                console.warn('No message found to update for editing');
+              }
               // Use Promise.all for parallel updates
               await Promise.all(
                 messagesToUpdate.documents.map(message =>
-                  databases.updateDocument(
+                  databases.deleteDocument(
                     appwriteConfig.databaseId,
                     COLLECTION_NAMES.CHAT_MESSAGES,
-                    message.$id,
-                    {
-                      deleted: true,
-                      updatedAt: createTimestamp(),
-                    }
+                    message.$id
                   )
                 )
               );

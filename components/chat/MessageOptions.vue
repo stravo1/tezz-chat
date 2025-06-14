@@ -7,6 +7,25 @@
     }"
   >
     <button
+      v-if="isEditing && role === 'user'"
+      @click="handleSave"
+      class="action-button hover:bg-secondary-container rounded p-2"
+      aria-label="Copy message"
+      title="Copy"
+    >
+      <Check :size="18" />
+    </button>
+    <button
+      v-if="isEditing && role === 'user'"
+      @click="handleDiscard"
+      class="action-button hover:bg-secondary-container rounded p-2"
+      aria-label="Copy message"
+      title="Copy"
+    >
+      <X :size="18" />
+    </button>
+    <button
+      v-if="!isEditing"
       @click="handleCopy"
       class="action-button hover:bg-secondary-container rounded p-2"
       aria-label="Copy message"
@@ -16,7 +35,7 @@
       <Check v-else :size="18" />
     </button>
     <button
-      v-if="role !== 'user' && role !== 'data'"
+      v-if="!isEditing && role !== 'user' && role !== 'data'"
       @click="handleBranch"
       class="action-button hover:bg-secondary-container rounded p-2"
       aria-label="Copy message"
@@ -25,7 +44,7 @@
       <Split :size="18" />
     </button>
     <button
-      v-if="role === 'user' || role === 'data'"
+      v-if="!isEditing && (role === 'user' || role === 'data')"
       @click="handleEdit"
       class="action-button hover:bg-secondary-container rounded p-2"
       aria-label="Edit message"
@@ -34,6 +53,7 @@
       <Edit3 :size="18" />
     </button>
     <button
+      v-if="!isEditing"
       @click="handleRetry"
       class="action-button hover:bg-secondary-container rounded p-2"
       aria-label="Retry generation"
@@ -45,14 +65,18 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Copy, Edit3, RefreshCw, Split, Trash2 } from 'lucide-vue-next';
+import { Check, Copy, Cross, Edit3, RefreshCw, Split, Trash2, X } from 'lucide-vue-next';
 
 const props = defineProps<{
   role: 'user' | 'data' | 'system' | 'assistant';
   messageId?: string;
+  isEditing?: boolean;
   handleEdit?: () => void;
   handleCopy?: () => void;
   handleBranch?: () => void;
+  handleRetry?: () => void;
+  handleSave?: () => void;
+  handleDiscard?: () => void;
 }>();
 
 const copied = ref(false);
@@ -67,11 +91,6 @@ const handleCopy = () => {
     copied.value = false;
   }, 2000);
   // emit('copy');
-};
-
-const handleRetry = () => {
-  console.log('Retry action triggered');
-  // emit('retry');
 };
 </script>
 
