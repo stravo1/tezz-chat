@@ -44,8 +44,6 @@ const chatInputSchema = z.object({
           content: z.string(),
           parts: z.array(z.any()).optional(),
           experimental_attachments: z.array(z.any()).optional(),
-          isEdited: z.boolean().optional(),
-          editedFrom: z.string().optional(),
         })
         .passthrough()
     )
@@ -53,6 +51,8 @@ const chatInputSchema = z.object({
   id: z.string().optional(),
   deviceId: z.string().optional(),
   timezone: z.string(),
+  isEdited: z.boolean().optional(),
+  editedFrom: z.string().optional(),
 });
 
 // Types
@@ -138,10 +138,12 @@ const updateChatDocument = async (databases: any, chatId: string, updates: any) 
 
 export default defineLazyEventHandler(async () => {
   // const model = google("");
-  const openrouter = createOpenRouter({
-    apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
-  });
-  const model = openrouter.chat('meta-llama/llama-4-maverick:free');
+  // const openrouter = createOpenRouter({
+  //   apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+  // });
+  // const model = openrouter.chat('deepseek/deepseek-chat-v3-0324:free');
+
+  const model = google('gemini-1.5-flash-8b');
 
   return defineEventHandler(async event => {
     try {
@@ -162,10 +164,10 @@ export default defineLazyEventHandler(async () => {
         );
       }
 
-      const { messages, id: chatId, deviceId } = validation.data;
+      const { messages, id: chatId, deviceId, isEdited, editedFrom } = validation.data;
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
-      const isEditOperation = lastMessage.isEdited && lastMessage.editedFrom;
+      const isEditOperation = isEdited && editedFrom;
 
       if (userId) {
         if (!chatId) {
