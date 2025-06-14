@@ -129,16 +129,10 @@ onMounted(async () => {
   }
   let threadSubscription = ((await getThreads()) as RxQuery).$.subscribe(threads => {
     console.log('Threads updated:', threads);
-    arrayOfChats.value = threads.map((thread: RxDocument) => {
-      if (thread.get('id') == route.params.id) {
-        console.log('Current chat found:', thread.get('id'));
-        document.title = thread.get('title') || 'No title - tezz-chat';
-      }
-      return {
-        id: thread.get('id'),
-        title: thread.get('title') || 'No summary available',
-      };
-    });
+    arrayOfChats.value = threads.map((thread: RxDocument) => ({
+      id: thread.get('id'),
+      title: thread.get('title') || 'No summary available',
+    }));
   });
   // scroll to current chat on sidebar
   scrollToSelectedChat();

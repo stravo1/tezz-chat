@@ -16,15 +16,6 @@
       <Check v-else :size="18" />
     </button>
     <button
-      v-if="role !== 'user' && role !== 'data'"
-      @click="handleBranch"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Copy message"
-      title="Copy"
-    >
-      <Split :size="18" />
-    </button>
-    <button
       v-if="role === 'user' || role === 'data'"
       @click="handleEdit"
       class="action-button hover:bg-secondary-container rounded p-2"
@@ -34,6 +25,7 @@
       <Edit3 :size="18" />
     </button>
     <button
+      v-if="role !== 'user' && role !== 'data'"
       @click="handleRetry"
       class="action-button hover:bg-secondary-container rounded p-2"
       aria-label="Retry generation"
@@ -45,14 +37,13 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Copy, Edit3, RefreshCw, Split, Trash2 } from 'lucide-vue-next';
+import { Check, Copy, Edit3, RefreshCw, Trash2 } from 'lucide-vue-next';
 
 const props = defineProps<{
   role: 'user' | 'data' | 'system' | 'assistant';
   messageId?: string;
   handleEdit?: () => void;
   handleCopy?: () => void;
-  handleBranch?: () => void;
 }>();
 
 const copied = ref(false);

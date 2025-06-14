@@ -24,12 +24,7 @@ export const getMessagesByThreadId = async (threadId: string) => {
     selector: { id: threadId },
   });
   const result = await query.exec();
-  let messages = result[0]?.get('chatMessageId') || [];
-  // sort messages by createdAt
-  messages = [...messages];
-  messages.sort((a: UIMessage, b: UIMessage) => {
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
+  const messages = result[0]?.get('chatMessageId') || [];
   return messages;
 };
 
