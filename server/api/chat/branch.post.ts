@@ -42,10 +42,6 @@ export default defineEventHandler(async event => {
     }
 
     const body = await readBody(event);
-
-    console.log('================Body============');
-    console.log(body);
-
     const validation = branchChatSchema.safeParse(body);
 
     if (!validation.success) {
@@ -69,13 +65,8 @@ export default defineEventHandler(async event => {
     const sourceChat = await databases.getDocument(
       appwriteConfig.databaseId,
       COLLECTION_NAMES.CHATS,
-      sourceChatId,
-      [Query.select(['$id', 'title'])]
+      sourceChatId
     );
-
-    console.log('================Source Chat===============');
-    console.log(sourceChat);
-    console.log('===========================================');
 
     if (!sourceChat) {
       throw createAppError(ErrorCode.RESOURCE_NOT_FOUND, 'Source chat not found');
@@ -87,24 +78,14 @@ export default defineEventHandler(async event => {
       COLLECTION_NAMES.CHAT_MESSAGES,
       [
         Query.equal('chatId', sourceChatId),
-        Query.lessThanEqual('createdAt', branchFromTimestamp),
+        Query.lessThanEqual('$createdAt', branchFromTimestamp),
         Query.equal('deleted', false),
-        Query.orderAsc('$createdAt'),
       ]
     );
-
-    console.log(messages.total);
-    console.log('=============Messagees==============');
-    console.log(messages);
-    console.log('=====================================');
-
     // remove last message if it is from user
-    if (
-      messages.documents.length > 0 &&
-      messages.documents[messages.documents.length - 1].role === 'user'
-    ) {
-      messages.documents.pop();
-    }
+    // if (messages.documents.length > 0 && messages.documents[messages.documents.length - 1].role === 'user') {
+    //   messages.documents.pop();
+    // }
 
     if (!messages.documents.length) {
       throw createAppError(ErrorCode.RESOURCE_NOT_FOUND, 'No messages found to branch from');
@@ -135,66 +116,32 @@ export default defineEventHandler(async event => {
       createPermissions(userId)
     );
 
-    console.log('=================New Chat================');
-    console.log(newChat);
-    console.log('================================');
-
-    // Copy messages to the new chat with retry logic
-    // Process messages sequentially to maintain order
-    for (const message of messages.documents) {
+    // Copy messages to the new chat
+    const messagePromises = messages.documents.map(async message => {
       const newMessageId = ID.unique();
-      const maxRetries = 3;
-      let retryCount = 0;
+      return databases.createDocument(
+        appwriteConfig.databaseId,
+        COLLECTION_NAMES.CHAT_MESSAGES,
+        newMessageId,
+        {
+          chatId: newChatId,
+          role: message.role,
+          content: message.content,
+          parts: message.parts || null,
+          attachments: message.attachments || null,
+          deleted: false,
+          lastModifiedBy: deviceId || 'server',
+          createdAt: message.createdAt,
+          updatedAt: now,
+        },
+        createPermissions(userId)
+      );
+    });
 
-      while (retryCount < maxRetries) {
-        try {
-          await databases.createDocument(
-            appwriteConfig.databaseId,
-            COLLECTION_NAMES.CHAT_MESSAGES,
-            newMessageId,
-            {
-              chatId: newChatId,
-              role: message.role,
-              content: message.content,
-              parts: message.parts || [],
-              attachments: message.attachments || [],
-              deleted: false,
-              lastModifiedBy: deviceId || 'server',
-              createdAt: message.$createdAt,
-              updatedAt: now,
-            },
-            createPermissions(userId)
-          );
-          break; // Success, exit retry loop
-        } catch (error) {
-          retryCount++;
-          if (retryCount === maxRetries) {
-            console.error(`Failed to create message after ${maxRetries} attempts:`, error);
-            throw error;
-          }
-          // Wait for 1 second before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-    }
-
-    try {
-      await updateChatDocument(databases, newChatId, {
-        lastModifiedBy: 'user',
-      });
-    } catch (error) {
-      // If message creation fails, delete the chat to maintain consistency
-      try {
-        await databases.deleteDocument(
-          appwriteConfig.databaseId,
-          COLLECTION_NAMES.CHATS,
-          newChatId
-        );
-      } catch (deleteError) {
-        console.error('Failed to clean up chat after message creation failure:', deleteError);
-      }
-      throw error;
-    }
+    await Promise.all(messagePromises);
+    await updateChatDocument(databases, newChatId, {
+      lastModifiedBy: 'user',
+    });
 
     return {
       success: true,
