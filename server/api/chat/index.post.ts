@@ -410,12 +410,16 @@ export default defineLazyEventHandler(async () => {
               };
 
               // Create assistant message and update chat document in parallel
-              await Promise.all([
-                createMessageDocument(databases, chatSession.$id, messageData, userId, 'assistant'),
-                updateChatDocument(databases, chatSession.$id, {
+              await createMessageDocument(
+                databases,
+                chatSession.$id,
+                messageData,
+                userId,
+                'assistant'
+              ),
+                await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',
-                }),
-              ]);
+                });
             } catch (error) {
               console.error('Error creating assistant message:', error);
             }

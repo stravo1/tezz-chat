@@ -80,7 +80,10 @@ const haventGottenFirstChunk = computed(() => {
 
 <template>
   <div class="relative flex h-full w-full justify-center overflow-y-auto">
-    <div class="text-on-background h-fit pt-[25vh] text-3xl" v-if="!messages.length">
+    <div
+      class="text-on-background h-fit pt-[25vh] text-3xl"
+      v-if="!messages.length && status != 'submitted'"
+    >
       Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
     </div>
     <ChatMessages
