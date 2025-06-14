@@ -6,6 +6,12 @@ import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { z } from 'zod';
 
+const updateChatDocument = async (databases: any, chatId: string, updates: any) => {
+  return await databases.updateDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId, {
+    ...updates,
+    updatedAt: createTimestamp(),
+  });
+};
 // Schema validation
 const branchChatSchema = z.object({
   sourceChatId: z.string().describe('ID of the chat to branch from'),
@@ -76,6 +82,10 @@ export default defineEventHandler(async event => {
         Query.equal('deleted', false),
       ]
     );
+    // remove last message if it is from user
+    // if (messages.documents.length > 0 && messages.documents[messages.documents.length - 1].role === 'user') {
+    //   messages.documents.pop();
+    // }
 
     if (!messages.documents.length) {
       throw createAppError(ErrorCode.RESOURCE_NOT_FOUND, 'No messages found to branch from');
@@ -129,6 +139,9 @@ export default defineEventHandler(async event => {
     });
 
     await Promise.all(messagePromises);
+    await updateChatDocument(databases, newChatId, {
+      lastModifiedBy: 'user',
+    });
 
     return {
       success: true,

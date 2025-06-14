@@ -4,6 +4,47 @@ import MarkdownPreview from '@uivjs/vue-markdown-preview';
 import rehypeHighlight from 'rehype-highlight';
 import { ID } from 'appwrite';
 
+const props = defineProps<{
+  chatId?: string;
+  messages: UIMessage[];
+  haventGottenFirstChunk?: boolean;
+  setMessages?: (messages: UIMessage[]) => void;
+}>();
+
+const messageStore = useMessageStore();
+const userStore = useUserStore();
+const handleBranch = async (createdAt: any) => {
+  // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
+  const filteredMessages = props.messages.filter(message => {
+    try {
+      return new Date(message.createdAt as any) <= new Date(createdAt);
+    } catch (error) {
+      console.error('Error comparing dates:', error);
+      return (message.createdAt as any) >= createdAt; // If there's an error, exclude the message
+    }
+  });
+  console.log('Filtered messages for branching:', filteredMessages);
+  if (props.setMessages) {
+    props.setMessages(filteredMessages);
+    const res = await $fetch('/api/chat/branch', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + (await userStore.getJWT()),
+      },
+      body: {
+        sourceChatId: props.chatId,
+        branchFromTimestamp: createdAt,
+      },
+    });
+    console.log('Branching response:', res);
+    messageStore.messages = filteredMessages;
+    messageStore.isBranched = true;
+    navigateTo(`/chat/${res.data.chatId}`);
+  } else {
+    console.warn('setMessages function is not provided in props');
+  }
+};
+
 const handleCopy = (text: string) => {
   navigator.clipboard
     .writeText(text)
@@ -42,7 +83,7 @@ const components = {
 
     const language = options.class?.replace('language-', '') || 'plaintext';
     return (
-      <div class="my-10 w-full">
+      <div class="keep-tailwind my-10 w-full">
         <div class="text-on-secondary-container bg-secondary-container flex w-full items-center justify-between rounded-tl-lg rounded-tr-lg px-3 py-2 text-xs">
           <span class="font-mono">{language}</span>
           <span class="cursor-pointer" data-copy-button={id} onClick={clickCopied}>
@@ -50,7 +91,7 @@ const components = {
           </span>
         </div>
         <pre class="hljs">
-          <code onClick={clickCopied} id={id} {...options}>
+          <code id={id} {...options}>
             {children}
           </code>
         </pre>
@@ -59,11 +100,7 @@ const components = {
   },
 };
 
-const props = defineProps<{
-  messages: UIMessage[];
-  haventGottenFirstChunk?: boolean;
-}>();
-console.log('Messages:', props);
+console.log('Messages:', props.messages);
 </script>
 
 <template>
@@ -77,12 +114,20 @@ console.log('Messages:', props);
       >
         <div
           v-memo="[message]"
-          :class="`${message.role === 'user' ? 'rounded-lg' : 'text-on-secondary-container w-full'}`"
+          :class="`${message.role === 'user' ? 'max-w-[33vw]' : 'text-on-secondary-container w-full'}`"
           class="group"
         >
-          <MarkdownPreview :components="components" :rehype-plugins="[[rehypeHighlight]]">
+          <MarkdownPreview
+            v-if="message.role !== 'user'"
+            :components="components"
+            class="no-tailwind"
+            :rehype-plugins="[[rehypeHighlight]]"
+          >
             {{ message.content }}
           </MarkdownPreview>
+          <span v-else>
+            {{ message.content }}
+          </span>
           <div
             class="text-on-secondary-container text-xs opacity-0 transition-all group-hover:opacity-100"
           >
@@ -90,6 +135,7 @@ console.log('Messages:', props);
               :role="message.role"
               :message-id="message.id"
               :handle-copy="() => handleCopy(message.content)"
+              :handle-branch="() => handleBranch(message.createdAt)"
             />
           </div>
         </div>

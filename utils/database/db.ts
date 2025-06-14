@@ -48,7 +48,7 @@ const threadSchema = {
       default: 'private',
     },
     lastModifiedBy: { type: 'string', maxLength: 36, default: 'server' },
-    branchedFromTimestamp: { type: ['string', 'null'], maxLength: 24, default: null },
+    branchedFromTimestamp: { type: ['string', 'null'], default: null },
     sourceChatId: { type: ['string', 'null'], maxLength: 36, default: null },
     userId: { type: 'object' },
     streamId: { type: 'array' },
