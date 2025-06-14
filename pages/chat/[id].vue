@@ -22,7 +22,7 @@ const convertToUIMessages = (messages: any) => {
   }));
 };
 
-const messages = await getMessagesByThreadId(chatId.value);
+const messages = chatId.value ? await getMessagesByThreadId(chatId.value) : [];
 if (messages.length > 0) {
   console.log('Messages found for chat ID:', chatId);
   messages.forEach((msg: any) => {

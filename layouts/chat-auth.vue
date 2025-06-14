@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="layoutLoading"
-    class="fixed inset-0 flex h-screen w-screen items-center justify-center bg-white"
+    class="bg-inverse-surface text-on-inverse-surface fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center backdrop-blur-2xl"
   >
     <LoaderCircle class="animate-spin" />
   </div>
@@ -13,17 +13,30 @@
       <button @click="logout" class="cursor-pointer">Logout</button>
     </header>
     <main class="flex h-screen w-screen">
-      <button
-        @click="toggleSidebar"
-        class="absolute top-5 left-4 z-50 cursor-pointer rounded p-2 transition-all"
-        :class="{
-          'text-tertiary-container bg-transparent': !isSidebarOpen,
-          'text-on-surface-container bg-transparent': isSidebarOpen,
-        }"
-      >
-        <PanelLeft v-if="!isSidebarOpen" />
-        <PanelLeftClose v-else />
-      </button>
+      <div class="absolute top-5 left-4 z-50 flex">
+        <button
+          @click="toggleSidebar"
+          class="cursor-pointer rounded p-2 transition-all"
+          :class="{
+            'text-tertiary-container bg-transparent': !isSidebarOpen,
+            'text-on-surface-container bg-transparent': isSidebarOpen,
+          }"
+        >
+          <PanelLeft v-if="!isSidebarOpen" />
+          <PanelLeftClose v-else />
+        </button>
+        <button
+          @click="toggleSidebar"
+          class="cursor-pointer rounded p-2 transition-all"
+          :class="{
+            'text-tertiary-container bg-transparent': !isSidebarOpen,
+            'text-on-surface-container bg-transparent': isSidebarOpen,
+          }"
+        >
+          <PanelLeft v-if="!isSidebarOpen" />
+          <PanelLeftClose v-else />
+        </button>
+      </div>
       <div
         id="sidebar"
         class="flex h-full min-w-[0px] shrink-0 overflow-hidden transition-all"
@@ -120,7 +133,9 @@ onMounted(async () => {
   });
   // scroll to current chat on sidebar
   scrollToSelectedChat();
-  changeTitle(route.params.id as string);
+  route.params.id
+    ? changeTitle(route.params.id as string)
+    : (document.title = 'New Chat - tezz-chat');
 });
 
 const getIfActive = (chatId: string) => {
@@ -164,6 +179,11 @@ watch(
   () => route.params.id,
   async (newId, oldId) => {
     // react to route changes...
+    if (!newId) {
+      console.warn('No chat ID provided in route params.');
+      document.title = 'New Chat - tezz-chat';
+      return;
+    }
     console.log('Route changed from', oldId, 'to', newId);
     changeTitle(newId as string);
     // scrollToSelectedChat();
