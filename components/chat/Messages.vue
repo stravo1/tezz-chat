@@ -63,18 +63,19 @@ const handleEdit = async (createdAt: any, content?: string) => {
   console.log('Filtered messages for editing:', filteredMessages);
   if (filteredMessages[filteredMessages.length - 1].role == 'assistant') {
     filteredMessages.pop(); // Remove the last assistant message if it exists
-  }
-  if (!content) {
+  } else if (!content) {
     console.error('Content is required for editing the last user message.');
     return;
   }
-  filteredMessages[filteredMessages.length - 1].content = content;
-  filteredMessages[filteredMessages.length - 1].parts = [
-    {
-      type: 'text' as const,
-      text: content,
-    },
-  ];
+  if (content) {
+    filteredMessages[filteredMessages.length - 1].content = content;
+    filteredMessages[filteredMessages.length - 1].parts = [
+      {
+        type: 'text' as const,
+        text: content,
+      },
+    ];
+  }
   props.setMessages?.(filteredMessages);
   console.log('Filtered messages for branching:', filteredMessages);
   props.reload?.({
@@ -197,7 +198,7 @@ console.log('Messages:', props.messages);
               "
               :handle-retry="
                 () => {
-                  handleEdit(message.createdAt, message.content);
+                  handleEdit(message.createdAt, message.role == 'user' ? message.content : '');
                 }
               "
               :handle-save="
