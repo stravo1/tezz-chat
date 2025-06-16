@@ -3,7 +3,6 @@ import { ArrowUp, Paperclip } from 'lucide-vue-next';
 import { useTextareaAutosize } from '@vueuse/core';
 import type { UIMessage } from 'ai';
 const { textarea, input: message } = useTextareaAutosize();
-const selectedModel = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<File[]>([]);
 const selectedFilesWithUrl = ref<UIMessage['experimental_attachments']>([]);
@@ -16,6 +15,8 @@ const props = defineProps<{
   ) => Promise<void>;
 }>();
 
+const modelStore = useModelStore();
+
 const scrollToBottom = () => {
   document.getElementById('messages-container')?.scrollTo({
     top: +document.getElementById('messages-container')?.scrollHeight!,
@@ -25,7 +26,7 @@ const scrollToBottom = () => {
 
 const handleSubmit = () => {
   if (message.value.trim() === '') return;
-  props.handleSubmit(message.value, selectedFilesWithUrl.value, selectedModel.value);
+  props.handleSubmit(message.value, selectedFilesWithUrl.value, modelStore.selectedModel);
   message.value = '';
   selectedFiles.value = [];
   selectedFilesWithUrl.value = [];
@@ -153,10 +154,7 @@ const removeFile = (name: string) => {
                     aria-expanded="false"
                     data-state="closed"
                   >
-                    <ChatModelSelector
-                      :set-selected-model="model => (selectedModel = model)"
-                      class="flex items-center gap-1"
-                    />
+                    <ChatModelSelector class="flex items-center gap-1" />
                   </button>
                   <button
                     class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-2 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"

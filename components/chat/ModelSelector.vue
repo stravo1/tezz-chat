@@ -10,10 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const props = defineProps<{
-  setSelectedModel: (model: string) => void;
-}>();
-
 const models = [
   {
     title: 'Gemini 2.0 Flash Exp',
@@ -37,16 +33,18 @@ const models = [
   },
 ];
 
+const modelStore = useModelStore();
+
 const selectedModel = ref('gemini-2.0-flash-exp');
 const selectedModelTitle = ref('Gemini 2.0 Flash Exp');
 watch(selectedModel, newModel => {
   console.log('Selected model:', newModel);
   selectedModelTitle.value = models.find(model => model.value === newModel)?.title || '';
-  props.setSelectedModel(newModel);
+  modelStore.selectedModel = newModel;
 });
 
 onMounted(() => {
-  props.setSelectedModel(selectedModel.value);
+  selectedModel.value = modelStore.selectedModel || 'gemini-2.0-flash-exp';
 });
 </script>
 
@@ -57,15 +55,16 @@ onMounted(() => {
         {{ selectedModelTitle }}
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent class="w-56">
-      <DropdownMenuLabel>Select Model</DropdownMenuLabel>
-      <DropdownMenuSeparator />
+    <DropdownMenuContent :align="'start'" class="mb-4 w-56">
       <DropdownMenuRadioGroup v-model="selectedModel">
         <DropdownMenuRadioItem
           v-for="model in models"
           :key="model.value"
           :value="model.value"
-          class="cursor-pointer"
+          class="cursor-pointer p-4"
+          :class="{
+            'bg-secondary/30 text-on-secondary-container': selectedModel === model.value,
+          }"
         >
           {{ model.title }}
         </DropdownMenuRadioItem>

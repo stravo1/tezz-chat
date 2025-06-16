@@ -7,6 +7,7 @@ import {
   type DropdownMenuContentProps,
   DropdownMenuPortal,
   useForwardPropsEmits,
+  DropdownMenuArrow,
 } from 'reka-ui';
 import { cn } from '@/lib/utils';
 
@@ -37,5 +38,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     >
       <slot />
     </DropdownMenuContent>
+    <DropdownMenuArrow class="fill-white" />
   </DropdownMenuPortal>
 </template>

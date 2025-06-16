@@ -90,8 +90,6 @@ onMounted(() => {
   scrollToBottom();
 });
 
-console.log('Chat component mounted with chatIddddd:', chatId);
-
 const haventGottenFirstChunk = computed(() => {
   return status.value == 'submitted';
 });
