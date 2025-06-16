@@ -25,7 +25,7 @@ export default defineNuxtConfig({
     },
   },
   css: ['./assets/css/main.css'],
-  build: {
-    transpile: ['@uivjs/vue-markdown-preview', 'dexie', 'rxdb'],
-  },
+  // build: {
+  //   transpile: ['@uivjs/vue-markdown-preview', 'dexie', 'rxdb'],
+  // },
 });

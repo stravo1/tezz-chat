@@ -6,8 +6,6 @@ import {
   tool,
   experimental_generateImage as generateImage,
 } from 'ai';
-import { google } from '@ai-sdk/google';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
 import { ID, Permission, Role } from 'node-appwrite';
 import { createJWTClient } from '~/server/appwrite/config';
@@ -160,7 +158,7 @@ export default defineLazyEventHandler(async () => {
   // });
   // const model = openrouter.chat('deepseek/deepseek-chat-v3-0324:free');
 
-  const model = google('gemini-2.0-flash-exp');
+  // const model = google('gemini-2.0-flash-exp');
 
   return defineEventHandler(async event => {
     try {
