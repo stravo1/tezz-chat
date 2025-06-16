@@ -1,8 +1,6 @@
 <script setup lang="tsx">
 import type { ChatRequestOptions, UIMessage } from 'ai';
-import MarkdownPreview from '@uivjs/vue-markdown-preview';
-import rehypeHighlight from 'rehype-highlight';
-import { ID } from 'appwrite';
+
 import { useTextareaAutosize } from '@vueuse/core';
 import { File } from 'lucide-vue-next';
 
@@ -102,51 +100,6 @@ const handleCopy = (text: string) => {
     });
 };
 
-const components = {
-  // @ts-ignore
-  pre: ({ children, ...options }) => {
-    function getLastChildElement(parentId: string): HTMLElement | null {
-      const parentElement = document.getElementById(parentId);
-      if (!parentElement) return null;
-
-      const children = (parentElement as HTMLElement).children;
-      return children[children.length - 1] as HTMLElement | null;
-    }
-
-    const id = ID.unique();
-    const clickCopied = () => {
-      const elem = getLastChildElement(id);
-      if (!elem) return;
-      console.log(elem);
-      elem?.click();
-      let copyButtonSpan = document.querySelector(`[data-copy-button="${id}"]`);
-      if (copyButtonSpan) {
-        copyButtonSpan.textContent = 'Copied!';
-        setTimeout(() => {
-          copyButtonSpan.textContent = 'Copy';
-        }, 2000);
-      }
-    };
-
-    const language = options.class?.replace('language-', '') || 'plaintext';
-    return (
-      <div class="keep-tailwind my-10 w-full">
-        <div class="text-on-secondary-container bg-secondary-container flex w-full items-center justify-between rounded-tl-lg rounded-tr-lg px-3 py-2 text-xs">
-          <span class="font-mono">{language}</span>
-          <span class="cursor-pointer" data-copy-button={id} onClick={clickCopied}>
-            Copy
-          </span>
-        </div>
-        <pre class="hljs">
-          <code id={id} {...options}>
-            {children}
-          </code>
-        </pre>
-      </div>
-    );
-  },
-};
-
 console.log('Messages:', props.messages);
 </script>
 
@@ -174,14 +127,21 @@ console.log('Messages:', props.messages);
             placeholder="Type your message here..."
             rows="2"
           ></textarea>
-          <MarkdownPreview
-            v-else-if="message.role !== 'user'"
-            :components="components"
-            class="no-tailwind"
-            :rehype-plugins="[[rehypeHighlight]]"
-          >
-            {{ message.content }}
-          </MarkdownPreview>
+          <div v-else-if="message.role != 'user'">
+            <div v-for="part in message.parts">
+              <div v-if="part.type == 'reasoning'" class="flec-col flex">
+                <ChatMessageReasoning :id="message.id" :message="part.reasoning" />
+              </div>
+              <div v-else-if="part.type == 'text'">
+                <ChatMessageMarkdown
+                  v-if="part.text"
+                  :content="part.text"
+                  :id="message.id"
+                  class="markdown-content"
+                />
+              </div>
+            </div>
+          </div>
           <div v-else>
             <div v-if="message.experimental_attachments?.length">
               <div v-for="file in message.experimental_attachments">

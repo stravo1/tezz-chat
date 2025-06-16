@@ -15,7 +15,7 @@ if (!chatId.value) {
 const convertToUIMessages = (messages: any) => {
   return messages?.map((message: any) => {
     return {
-      id: message.id,
+      id: message.$id,
       role: message.role,
       parts: message.parts ? JSON.parse(message.parts) : [],
       experimental_attachments: message.attachments ? JSON.parse(message.attachments) : [],
