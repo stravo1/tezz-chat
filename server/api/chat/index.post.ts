@@ -1,5 +1,11 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream, appendResponseMessages, tool } from 'ai';
+import {
+  streamText,
+  smoothStream,
+  appendResponseMessages,
+  tool,
+  experimental_generateImage as generateImage,
+} from 'ai';
 import { google } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { z } from 'zod';
@@ -51,6 +57,7 @@ const chatInputSchema = z.object({
   id: z.string().optional(),
   deviceId: z.string().optional(),
   timezone: z.string(),
+  intent: z.enum(['text', 'image', 'search']),
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
 });
@@ -143,7 +150,7 @@ export default defineLazyEventHandler(async () => {
   // });
   // const model = openrouter.chat('deepseek/deepseek-chat-v3-0324:free');
 
-  const model = google('gemini-1.5-flash-8b');
+  const model = google('gemini-2.0-flash-exp');
 
   return defineEventHandler(async event => {
     try {
@@ -164,7 +171,7 @@ export default defineLazyEventHandler(async () => {
         );
       }
 
-      const { messages, id: chatId, deviceId, isEdited, editedFrom } = validation.data;
+      const { messages, id: chatId, deviceId, isEdited, editedFrom, intent } = validation.data;
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
       const isEditOperation = isEdited && editedFrom;
@@ -248,6 +255,52 @@ export default defineLazyEventHandler(async () => {
           createdAt: createTimestamp(),
           updatedAt: createTimestamp(),
         };
+      }
+
+      if (intent === 'image') {
+        const result = streamText({
+          model,
+          messages: messages,
+          temperature: DEFAULT_TEMPERATURE,
+          experimental_transform: smoothStream({
+            chunking: 'word',
+            delayInMs: STREAM_DELAY_MS,
+          }),
+          maxSteps: MAX_STEPS,
+          maxRetries: MAX_RETRIES,
+          onFinish: async event => {
+            if (event.text && userId && chatSession) {
+              try {
+                // Check if the response contains image data
+                const imageData = (event.response.body as any)?.files?.[0];
+                const messageData: ChatMessage = {
+                  role: 'assistant',
+                  content: event.text,
+                  parts: imageData ? [{ type: 'image', url: imageData.url }] : [],
+                  experimental_attachments: lastMessage.experimental_attachments || [],
+                };
+
+                await createMessageDocument(
+                  databases,
+                  chatSession.$id,
+                  messageData,
+                  userId,
+                  'assistant'
+                );
+                await updateChatDocument(databases, chatSession.$id, {
+                  lastModifiedBy: 'assistant',
+                });
+              } catch (error) {
+                console.error('Error creating image message:', error);
+              }
+            }
+          },
+          onError(event) {
+            console.error('Image generation error:', event.error);
+          },
+        });
+
+        return result.toDataStreamResponse();
       }
 
       const result = streamText({
