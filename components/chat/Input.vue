@@ -3,14 +3,10 @@ import { ArrowUp, Paperclip } from 'lucide-vue-next';
 import { useTextareaAutosize } from '@vueuse/core';
 import type { UIMessage } from 'ai';
 const { textarea, input: message } = useTextareaAutosize();
-const selectedModel = ref('gpt-3.5-turbo');
+const selectedModel = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<File[]>([]);
 const selectedFilesWithUrl = ref<UIMessage['experimental_attachments']>([]);
-const models = [
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5' },
-  { id: 'gpt-4', name: 'GPT-4' },
-];
 
 const props = defineProps<{
   handleSubmit: (
@@ -157,22 +153,12 @@ const removeFile = (name: string) => {
                     aria-expanded="false"
                     data-state="closed"
                   >
-                    <div class="text-left text-sm font-medium">Gemini 2.5 Flash</div>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-chevron-down right-0 size-4"
-                    >
-                      <path d="m6 9 6 6 6-6"></path>
-                    </svg></button
-                  ><button
+                    <ChatModelSelector
+                      :set-selected-model="model => (selectedModel = model)"
+                      class="flex items-center gap-1"
+                    />
+                  </button>
+                  <button
                     class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-2 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
                     aria-label="Attaching files is a subscriber-only feature"
                     type="button"

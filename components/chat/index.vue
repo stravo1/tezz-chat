@@ -4,7 +4,7 @@ import { ID } from 'appwrite';
 const userStore = useUserStore();
 const props = defineProps<{
   chatId: string;
-  initialMessages: UIMessage[];
+  initialMessages?: UIMessage[];
 }>();
 
 const route = useRoute();
@@ -42,7 +42,11 @@ const handleSubmit = async (
   const messageId = ID.unique();
   const userMessage = createUserMessage(messageId, message);
   append(userMessage, {
-    experimental_attachments: attachments,
+    experimental_attachments: attachments?.length ? attachments : undefined,
+    body: {
+      intent: 'text',
+      model: selectedModel || 'gemini-2.0-flash-exp',
+    },
   });
   scrollToBottom();
 };
@@ -70,6 +74,9 @@ watch(status, newStatus => {
 console.log('Chat initialized with ID:', chatId, status.value);
 
 onMounted(() => {
+  if (chatId && !messages.value.length) {
+    navigateTo('/chat');
+  }
   if (messageStore.isBranched) {
     console.log('Chat has been branched, setting messages from store');
     // @ts-ignore
@@ -82,6 +89,8 @@ onMounted(() => {
   }
   scrollToBottom();
 });
+
+console.log('Chat component mounted with chatIddddd:', chatId);
 
 const haventGottenFirstChunk = computed(() => {
   return status.value == 'submitted';
