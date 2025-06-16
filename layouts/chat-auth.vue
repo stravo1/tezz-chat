@@ -117,7 +117,9 @@ import {
 } from 'lucide-vue-next';
 import { getThreads, getTitle } from '~/utils/database/queries';
 import type { isRxDocument, RxDocument, RxQuery } from 'rxdb';
-
+import useDatabase from '../utils/database/db';
+useDatabase();
+console.log('Database initialized');
 const route = useRoute();
 const userStore = useUserStore();
 const { isAuthenticated, isAuthChecked, isLoading } = storeToRefs(userStore);

@@ -1,11 +1,9 @@
-<script setup lang="ts">
-import useDatabase from './utils/database/db';
-useDatabase();
-console.log("Database initialized");
-</script>
+<script setup lang="ts"></script>
 
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <ClientOnly>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </ClientOnly>
 </template>
