@@ -520,7 +520,9 @@ export default defineLazyEventHandler(async () => {
       });
       result.consumeStream();
 
-      return result.toDataStreamResponse();
+      return result.toDataStreamResponse({
+        sendReasoning: true,
+      });
     } catch (error) {
       console.error('Chat error:', error);
       return new Response(

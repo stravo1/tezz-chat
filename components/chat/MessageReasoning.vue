@@ -7,7 +7,7 @@ const props = defineProps<{
   id: string;
 }>();
 
-const isExpanded = ref(false);
+const isExpanded = ref(true);
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value;
 };
@@ -15,7 +15,7 @@ console.log('MessageReasoning component initialized with message:', props.messag
 </script>
 
 <template>
-  <div class="flex w-full max-w-3xl flex-col gap-2 pb-2" v-memo="[message, id]">
+  <div class="flex w-full max-w-3xl flex-col gap-2 pb-2">
     <button
       @click="toggleExpand"
       class="text-muted-foreground flex cursor-pointer items-center gap-2"
@@ -28,7 +28,7 @@ console.log('MessageReasoning component initialized with message:', props.messag
     </button>
 
     <div v-if="isExpanded" class="bg-secondary/10 rounded-md border p-4 text-xs">
-      <ChatMessageMarkdown :content="message" :id="id" />
+      <ChatMessageMarkdown v-memo="[message, id]" :content="message" :id="id" />
     </div>
   </div>
 </template>
