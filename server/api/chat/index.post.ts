@@ -15,6 +15,7 @@ import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { Query } from 'node-appwrite';
+import { getModel, type ModelType } from '~/server/utils/model';
 
 // Constants
 const DEFAULT_TEMPERATURE = 0.7;
@@ -60,6 +61,15 @@ const chatInputSchema = z.object({
   intent: z.enum(['text', 'image', 'search']),
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
+  model: z
+    .enum([
+      'gemini-2.0-flash-exp',
+      'gemini-2.5-flash-preview-05-20',
+      'deepseek-chat-v3',
+      'llama-3.3-8b',
+      'qwen3-30b',
+    ] as const)
+    .default('gemini-2.0-flash-exp'),
 });
 
 // Types
@@ -171,7 +181,16 @@ export default defineLazyEventHandler(async () => {
         );
       }
 
-      const { messages, id: chatId, deviceId, isEdited, editedFrom, intent } = validation.data;
+      const {
+        messages,
+        id: chatId,
+        deviceId,
+        isEdited,
+        editedFrom,
+        intent,
+        model,
+      } = validation.data;
+      const modelInstance = getModel(model as ModelType);
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
       const isEditOperation = isEdited && editedFrom;
@@ -259,7 +278,7 @@ export default defineLazyEventHandler(async () => {
 
       if (intent === 'image') {
         const result = streamText({
-          model,
+          model: modelInstance,
           messages: messages,
           temperature: DEFAULT_TEMPERATURE,
           experimental_transform: smoothStream({
@@ -304,7 +323,7 @@ export default defineLazyEventHandler(async () => {
       }
 
       const result = streamText({
-        model,
+        model: modelInstance,
         messages: messages,
         temperature: DEFAULT_TEMPERATURE,
         experimental_transform: smoothStream({
