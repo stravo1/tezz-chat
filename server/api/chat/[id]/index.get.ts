@@ -1,5 +1,6 @@
 import { Query } from 'node-appwrite';
 import { appwriteConfig, createJWTClient } from '~/server/appwrite/config';
+import { databases } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 
@@ -7,7 +8,7 @@ export default defineEventHandler(async event => {
   try {
     const chatId = getRouterParam(event, 'id');
     console.log(chatId);
-    const { databases } = createJWTClient(event);
+    // const { databases } = createJWTClient(event);
     if (!chatId) {
       throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required');
     }
@@ -20,11 +21,11 @@ export default defineEventHandler(async event => {
     );
 
     // // Check if user has access to the chat
-    // const isPublic = chat.visibility === 'public';
-    // console.log(isPublic);
-    // if (!isPublic) {
-    //   throw createAppError(ErrorCode.FORBIDDEN);
-    // }
+    const isPublic = chat.visibility === 'public';
+    console.log(isPublic);
+    if (!isPublic) {
+      throw createAppError(ErrorCode.FORBIDDEN);
+    }
 
     return chat;
   } catch (error) {

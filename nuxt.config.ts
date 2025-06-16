@@ -22,4 +22,7 @@ export default defineNuxtConfig({
     plugins: [tailwindcss(), vueJsxPlugin()],
   },
   css: ['./assets/css/main.css'],
+  build: {
+    transpile: ['@uivjs/vue-markdown-preview'],
+  },
 });
