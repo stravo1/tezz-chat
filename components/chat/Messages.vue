@@ -4,6 +4,7 @@ import MarkdownPreview from '@uivjs/vue-markdown-preview';
 import rehypeHighlight from 'rehype-highlight';
 import { ID } from 'appwrite';
 import { useTextareaAutosize } from '@vueuse/core';
+import { File } from 'lucide-vue-next';
 
 const props = defineProps<{
   chatId?: string;
@@ -177,9 +178,22 @@ console.log('Messages:', props.messages);
           >
             {{ message.content }}
           </MarkdownPreview>
-          <span v-else>
+          <div v-else>
+            <div v-if="message.experimental_attachments?.length">
+              <div v-for="file in message.experimental_attachments">
+                <File v-if="!file.contentType?.includes('image')" />
+                <img
+                  v-else
+                  :src="file.url"
+                  :alt="file.name"
+                  class="max-h-40 max-w-full rounded-lg object-cover"
+                />
+                <br />
+                {{ file.name }}
+              </div>
+            </div>
             {{ message.content }}
-          </span>
+          </div>
           <div
             class="text-on-secondary-container text-xs opacity-0 transition-all group-hover:opacity-100"
           >

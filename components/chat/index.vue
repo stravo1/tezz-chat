@@ -15,7 +15,7 @@ if (!chatId) {
   console.warn('No chat ID provided!');
 }
 
-const { messages, append, status, setMessages, reload } = useChat({
+const { messages, append, status, setMessages, reload, error } = useChat({
   id: chatId,
   initialMessages: props.initialMessages || [],
   body: {
@@ -24,16 +24,26 @@ const { messages, append, status, setMessages, reload } = useChat({
   headers: {
     Authorization: 'Bearer ' + (await userStore.getJWT()),
   },
+  onError: err => {
+    console.error('Chat error:', err);
+    error.value = err;
+  },
 });
 
-const handleSubmit = async (message: string) => {
+const handleSubmit = async (
+  message: string,
+  attachments?: UIMessage['experimental_attachments'],
+  selectedModel?: string
+) => {
   if (!id) {
     navigateTo(`/chat/${chatId}`);
     console.log('New chat created with ID:', chatId);
   }
   const messageId = ID.unique();
   const userMessage = createUserMessage(messageId, message);
-  append(userMessage);
+  append(userMessage, {
+    experimental_attachments: attachments,
+  });
   scrollToBottom();
 };
 

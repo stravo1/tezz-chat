@@ -13,14 +13,17 @@ if (!chatId.value) {
 }
 
 const convertToUIMessages = (messages: any) => {
-  return messages?.map((message: any) => ({
-    id: message.id,
-    role: message.role,
-    parts: message.parts ? JSON.parse(message.parts) : [],
-    content: message.content || '',
-    createdAt: message.createdAt,
-    $createdAt: message.$createdAt,
-  }));
+  return messages?.map((message: any) => {
+    return {
+      id: message.id,
+      role: message.role,
+      parts: message.parts ? JSON.parse(message.parts) : [],
+      experimental_attachments: message.attachments ? JSON.parse(message.attachments) : [],
+      content: message.content || '',
+      createdAt: message.createdAt,
+      $createdAt: message.$createdAt,
+    };
+  });
 };
 
 const messages = chatId.value ? await getMessagesByThreadId(chatId.value) : [];

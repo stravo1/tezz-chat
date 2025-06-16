@@ -23,6 +23,11 @@ const FileSchema = z.object({
   size: z.number().max(5 * 1024 * 1024, 'File size should be less than 5MB'),
 });
 
+const getDownloadUrl = (fileId: string, bucketId: string) => {
+  const { projectId, url } = appwriteConfig;
+  return `${url}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
+};
+
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/png',
@@ -39,12 +44,16 @@ const ALLOWED_MIME_TYPES = [
 // Storage bucket IDs
 const STORAGE_BUCKETS = {
   AUTHENTICATED: 'authenticated-files',
-  PUBLIC: 'public-files'
+  PUBLIC: 'public-files',
 } as const;
 
 export default defineEventHandler(async (event: H3Event) => {
   try {
-    const isAuthenticated = !!event.context.session?.userId;
+    const isAuthenticated = event.context.session?.userId;
+    console.log('File upload request received', {
+      isAuthenticated,
+      userId: event.context.session?.userId || 'guest',
+    });
     const formData = await readMultipartFormData(event);
 
     if (!formData || !formData.length) {
@@ -79,33 +88,23 @@ export default defineEventHandler(async (event: H3Event) => {
     const fileObj = fileToFile({
       data: file.data,
       type: file.type,
-      filename: file.filename
+      filename: file.filename,
     });
 
     // Upload to Appwrite Storage
     const bucketId = isAuthenticated ? STORAGE_BUCKETS.AUTHENTICATED : STORAGE_BUCKETS.PUBLIC;
     const fileId = ID.unique();
-    
-    const uploadedFile = await storage.createFile(
-      bucketId,
-      fileId,
-      fileObj
-    );
+
+    const uploadedFile = await storage.createFile(bucketId, fileId, fileObj);
 
     // Get file details
-    const fileDetails = await storage.getFile(
-      bucketId,
-      fileId
-    );
+    const fileDetails = await storage.getFile(bucketId, fileId);
 
     // Get file download URL
-    const downloadUrl = storage.getFileDownload(
-      bucketId,
-      fileId
-    );
+    const downloadUrl = getDownloadUrl(fileId, bucketId);
 
     // Get file preview URL (for images)
-    const previewUrl = file.type.startsWith('image/') 
+    const previewUrl = file.type.startsWith('image/')
       ? storage.getFilePreview(
           bucketId,
           fileId,
@@ -122,7 +121,7 @@ export default defineEventHandler(async (event: H3Event) => {
         name: file.filename,
         mimeType: file.type || '',
         size: file.data.length,
-        url: previewUrl || downloadUrl,
+        url: downloadUrl,
         downloadUrl,
         pathname: fileDetails.$id,
         contentType: fileDetails.mimeType,

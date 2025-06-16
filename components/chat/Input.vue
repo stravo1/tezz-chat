@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { ArrowUp, Paperclip } from 'lucide-vue-next';
 import { useTextareaAutosize } from '@vueuse/core';
+import type { UIMessage } from 'ai';
 const { textarea, input: message } = useTextareaAutosize();
 const selectedModel = ref('gpt-3.5-turbo');
 const fileInput = ref<HTMLInputElement | null>(null);
-const selectedFile = ref<File | null>(null);
-
+const selectedFiles = ref<File[]>([]);
+const selectedFilesWithUrl = ref<UIMessage['experimental_attachments']>([]);
 const models = [
   { id: 'gpt-3.5-turbo', name: 'GPT-3.5' },
   { id: 'gpt-4', name: 'GPT-4' },
 ];
 
 const props = defineProps<{
-  handleSubmit: (message: string, file?: File, model?: string) => Promise<void>;
+  handleSubmit: (
+    message: string,
+    attachments?: UIMessage['experimental_attachments'],
+    selectedModel?: string
+  ) => Promise<void>;
 }>();
 
 const scrollToBottom = () => {
@@ -24,9 +29,10 @@ const scrollToBottom = () => {
 
 const handleSubmit = () => {
   if (message.value.trim() === '') return;
-  props.handleSubmit(message.value, selectedFile.value || undefined, selectedModel.value);
+  props.handleSubmit(message.value, selectedFilesWithUrl.value, selectedModel.value);
   message.value = '';
-  selectedFile.value = null;
+  selectedFiles.value = [];
+  selectedFilesWithUrl.value = [];
   scrollToBottom();
   setTimeout(() => {
     scrollToBottom();
@@ -35,26 +41,67 @@ const handleSubmit = () => {
 
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement;
-  if (input.files?.length) {
-    selectedFile.value = input.files[0];
+  // add all files
+  if (input.files && input.files.length > 0) {
+    selectedFiles.value = Array.from(input.files);
+  } else {
+    selectedFiles.value = [];
   }
+  if (fileInput.value) fileInput.value.value = ''; // Clear the input field
 };
 
-const removeFile = () => {
-  selectedFile.value = null;
-  if (fileInput.value) fileInput.value.value = '';
+const handleAddUrl = (name: string, url: string) => {
+  if (!name || !url) return;
+  for (const file of selectedFiles.value) {
+    if (file.name === name) {
+      for (const attachment of selectedFilesWithUrl.value!) {
+        if (attachment.name === name) {
+          attachment.url = url; // Update the URL if it already exists
+          return;
+        }
+      }
+      selectedFilesWithUrl.value!.push({
+        url: url,
+        name: name,
+        contentType: file.type,
+      });
+    }
+  }
+};
+const removeFile = (name: string) => {
+  selectedFiles.value = selectedFiles.value.filter(file => file.name !== name);
+  selectedFilesWithUrl.value = selectedFilesWithUrl.value!.filter(
+    attachment => attachment.name !== name
+  );
+  // if (fileInput.value) fileInput.value.value = ''; // Clear the input field
 };
 </script>
 
 <template>
   <div class="absolute right-2 bottom-0 left-2 flex justify-center gap-2">
     <div class="w-full sm:max-w-3xl">
-      <div v-if="selectedFile" class="flex items-center gap-2 rounded-lg bg-gray-100 p-2">
-        <span class="text-sm">{{ selectedFile.name }}</span>
-        <button @click="removeFile" class="text-red-500 hover:text-red-700">×</button>
+      <div
+        v-if="selectedFiles.length"
+        class="bg-surface-container-low flex items-center gap-2 rounded-lg p-2 pb-3"
+      >
+        <ChatFileUpload
+          v-for="selectedFile in selectedFiles"
+          :file="selectedFile"
+          :set-url="url => handleAddUrl(selectedFile.name, url)"
+          :remove-file="() => removeFile(selectedFile.name)"
+        />
       </div>
-
-      <div class="flex w-full items-end gap-2">
+      <input
+        type="file"
+        class="hidden"
+        name=""
+        id="file-input"
+        ref="fileInput"
+        accept="image/*,application/pdf"
+        multiple
+        @change="handleFileSelect"
+      />
+      <div class="z-10 flex w-full items-end gap-2">
         <form
           @submit.prevent="handleSubmit"
           class="text-primary dark:bg-primary-container/[0.045] outline-tertiary/[0.05] relative flex w-full flex-col items-stretch gap-2 rounded-t-xl border border-b-0 border-white/70 bg-[--chat-input-background] px-3 pt-3 pb-3 outline-8 backdrop-blur-lg max-sm:pb-6 sm:max-w-3xl dark:border-[hsl(0,0%,83%)]/[0.04]"
@@ -126,13 +173,14 @@ const removeFile = () => {
                       <path d="m6 9 6 6 6-6"></path>
                     </svg></button
                   ><button
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto items-center justify-center gap-2 rounded-full px-2 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
+                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-2 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
                     aria-label="Attaching files is a subscriber-only feature"
                     type="button"
                     aria-haspopup="dialog"
                     aria-expanded="false"
                     aria-controls="radix-:rb:"
                     data-state="closed"
+                    @click="fileInput && fileInput.click()"
                   >
                     <Paperclip :size="18" />
                   </button>

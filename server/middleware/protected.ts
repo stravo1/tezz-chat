@@ -1,6 +1,6 @@
-import { Models } from "node-appwrite";
-import { createJWTClient } from "../appwrite/config";
-import { createAppError, ErrorCode } from "../utils/errors";
+import { Models } from 'node-appwrite';
+import { createJWTClient } from '../appwrite/config';
+import { createAppError, ErrorCode } from '../utils/errors';
 
 // Define interface for the session context
 export interface SessionContext {
@@ -11,11 +11,9 @@ export interface SessionContext {
 }
 
 // Define routes that require authentication
-const protectedRoutes = [
-  '/api/chat',
-];
+const protectedRoutes = ['/api/chat', '/api/upload'];
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   // Initialize session context with default values
   event.context.session = {
     userId: '',
@@ -39,7 +37,7 @@ export default defineEventHandler(async (event) => {
     try {
       // Get current user session
       const user: Models.User<Models.Preferences> = await account.get();
-      
+
       // Update session context with user data
       event.context.session = {
         userId: user.$id,

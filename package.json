@@ -29,6 +29,7 @@
     "@vueuse/core": "^13.3.0",
     "ai": "^4.3.16",
     "appwrite": "^18.1.1",
+    "axios": "^1.10.0",
     "highlight.js": "^11.11.1",
     "husky": "^9.1.7",
     "lucide-vue-next": "^0.513.0",
