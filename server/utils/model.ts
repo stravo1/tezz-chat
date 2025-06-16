@@ -5,8 +5,28 @@ export type ModelType =
   | 'gemini-2.0-flash-exp'
   | 'gemini-2.5-flash-preview-05-20'
   | 'deepseek-chat-v3'
-  | 'llama-3.3-8b'
+  | 'deepseek-r1'
+  | 'llama-4-scout'
   | 'qwen3-30b';
+
+export const supportedModels = [
+  'gemini-2.0-flash-exp',
+  'gemini-2.5-flash-preview-05-20',
+  'deepseek-chat-v3',
+  'deepseek-r1',
+  'llama-4-scout',
+  'qwen3-30b',
+];
+
+export const doesSupportToolCalls = (modelType: ModelType): boolean => {
+  const models = [
+    'gemini-2.0-flash-exp',
+    'gemini-2.5-flash-preview-05-20',
+    'deepseek-chat-v3',
+    'llama-4-scout',
+  ];
+  return models.includes(modelType);
+};
 
 export function getModel(modelType: ModelType) {
   switch (modelType) {
@@ -18,10 +38,14 @@ export function getModel(modelType: ModelType) {
       return createOpenRouter({
         apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
       }).chat('deepseek/deepseek-chat-v3-0324:free');
-    case 'llama-3.3-8b':
+    case 'deepseek-r1':
       return createOpenRouter({
         apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
-      }).chat('meta-llama/llama-3.3-8b-instruct:free');
+      }).chat('deepseek/deepseek-r1-0528:free');
+    case 'llama-4-scout':
+      return createOpenRouter({
+        apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+      }).chat('meta-llama/llama-4-scout:free');
     case 'qwen3-30b':
       return createOpenRouter({
         apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,

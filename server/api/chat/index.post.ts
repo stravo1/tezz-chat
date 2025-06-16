@@ -13,7 +13,12 @@ import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { Query } from 'node-appwrite';
-import { getModel, type ModelType } from '~/server/utils/model';
+import {
+  doesSupportToolCalls,
+  getModel,
+  supportedModels,
+  type ModelType,
+} from '~/server/utils/model';
 
 // Constants
 const DEFAULT_TEMPERATURE = 0.7;
@@ -56,18 +61,10 @@ const chatInputSchema = z.object({
   id: z.string().optional(),
   deviceId: z.string().optional(),
   timezone: z.string(),
-  intent: z.enum(['text', 'image', 'search']),
+  intent: z.enum(['text', 'image', 'search']).default('text'),
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
-  model: z
-    .enum([
-      'gemini-2.0-flash-exp',
-      'gemini-2.5-flash-preview-05-20',
-      'deepseek-chat-v3',
-      'llama-3.3-8b',
-      'qwen3-30b',
-    ] as const)
-    .default('gemini-2.0-flash-exp'),
+  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-2.0-flash-exp'),
 });
 
 // Types
@@ -330,105 +327,110 @@ export default defineLazyEventHandler(async () => {
         }),
         maxSteps: MAX_STEPS,
         maxRetries: MAX_RETRIES,
-        tools: {
-          web_search: tool({
-            description: 'Search the web for information using Serper API.',
-            parameters: z.object({
-              query: z.string().describe('The search query to look up on the web.'),
-              location: z
-                .string()
-                .optional()
-                .describe('Location for localized results (e.g., "India").'),
-              gl: z.string().optional().describe('Google country code (e.g., "in" for India).'),
-              num: z
-                .number()
-                .optional()
-                .describe('Number of results to return (default: 10, max: 20).'),
-              page: z.number().optional().describe('Page number for pagination (default: 1).'),
-            }),
-            execute: async ({ query, location, gl, num = 30, page }) => {
-              try {
-                // Get timezone from the request body
-                const userTimezone = body.timezone;
-                // Get country code from timezone mapping
-                const countryCode = TIMEZONE_TO_COUNTRY[userTimezone] || 'in';
+        tools: doesSupportToolCalls(model as ModelType)
+          ? {
+              web_search: tool({
+                description: 'Search the web for information using Serper API.',
+                parameters: z.object({
+                  query: z.string().describe('The search query to look up on the web.'),
+                  location: z
+                    .string()
+                    .optional()
+                    .describe('Location for localized results (e.g., "India").'),
+                  gl: z.string().optional().describe('Google country code (e.g., "in" for India).'),
+                  num: z
+                    .number()
+                    .optional()
+                    .describe('Number of results to return (default: 10, max: 20).'),
+                  page: z.number().optional().describe('Page number for pagination (default: 1).'),
+                }),
+                execute: async ({ query, location, gl, num = 30, page }) => {
+                  try {
+                    // Get timezone from the request body
+                    const userTimezone = body.timezone;
+                    // Get country code from timezone mapping
+                    const countryCode = TIMEZONE_TO_COUNTRY[userTimezone] || 'in';
 
-                const response = await $fetch<SerperResponse>('https://google.serper.dev/search', {
-                  method: 'POST',
-                  headers: {
-                    'X-API-KEY': process.env.NUXT_SERPR_API_KEY as string,
-                    'Content-Type': 'application/json',
-                  },
-                  body: {
-                    q: query,
-                    location: location || userTimezone,
-                    gl: gl || countryCode,
-                    num: Math.min(num, 30),
-                    page,
-                  },
-                });
+                    const response = await $fetch<SerperResponse>(
+                      'https://google.serper.dev/search',
+                      {
+                        method: 'POST',
+                        headers: {
+                          'X-API-KEY': process.env.NUXT_SERPR_API_KEY as string,
+                          'Content-Type': 'application/json',
+                        },
+                        body: {
+                          q: query,
+                          location: location || userTimezone,
+                          gl: gl || countryCode,
+                          num: Math.min(num, 30),
+                          page,
+                        },
+                      }
+                    );
 
-                const searchResults = {
-                  summary: response.knowledgeGraph?.description || '',
-                  organic:
-                    response.organic?.map(result => ({
-                      title: result.title,
-                      link: result.link,
-                      snippet: result.snippet,
-                      date: result.date || '',
-                    })) || [],
-                  topStories:
-                    response.organic
-                      ?.filter(result => result.date)
-                      ?.map(story => ({
-                        title: story.title,
-                        source: story.link,
-                        date: story.date,
-                      })) || [],
-                  peopleAlsoAsk:
-                    response.peopleAlsoAsk?.map(qa => ({
-                      question: qa.question,
-                      answer: qa.snippet,
-                    })) || [],
-                  totalResults: response.organic?.length || 0,
-                };
+                    const searchResults = {
+                      summary: response.knowledgeGraph?.description || '',
+                      organic:
+                        response.organic?.map(result => ({
+                          title: result.title,
+                          link: result.link,
+                          snippet: result.snippet,
+                          date: result.date || '',
+                        })) || [],
+                      topStories:
+                        response.organic
+                          ?.filter(result => result.date)
+                          ?.map(story => ({
+                            title: story.title,
+                            source: story.link,
+                            date: story.date,
+                          })) || [],
+                      peopleAlsoAsk:
+                        response.peopleAlsoAsk?.map(qa => ({
+                          question: qa.question,
+                          answer: qa.snippet,
+                        })) || [],
+                      totalResults: response.organic?.length || 0,
+                    };
 
-                return {
-                  success: true,
-                  data: {
-                    summary: searchResults.summary,
-                    results: searchResults.organic
-                      .slice(0, 3)
-                      .map(
-                        result =>
-                          `Title: ${result.title}\nLink: ${result.link}\nSnippet: ${result.snippet}${result.date ? `\nDate: ${result.date}` : ''}`
-                      )
-                      .join('\n\n'),
-                    topStories: searchResults.topStories
-                      .slice(0, 2)
-                      .map(
-                        story =>
-                          `Title: ${story.title}\nSource: ${story.source}\nDate: ${story.date}`
-                      )
-                      .join('\n\n'),
-                    relatedQuestions: searchResults.peopleAlsoAsk
-                      .slice(0, 2)
-                      .map(qa => `Q: ${qa.question}\nA: ${qa.answer}`)
-                      .join('\n\n'),
-                    totalResults: searchResults.totalResults,
-                  },
-                };
-              } catch (error) {
-                console.error('Serper search error:', error);
-                return {
-                  success: false,
-                  error: 'Failed to perform web search',
-                };
-              }
-            },
-          }),
-        },
-        toolChoice: 'auto',
+                    return {
+                      success: true,
+                      data: {
+                        summary: searchResults.summary,
+                        results: searchResults.organic
+                          .slice(0, 3)
+                          .map(
+                            result =>
+                              `Title: ${result.title}\nLink: ${result.link}\nSnippet: ${result.snippet}${result.date ? `\nDate: ${result.date}` : ''}`
+                          )
+                          .join('\n\n'),
+                        topStories: searchResults.topStories
+                          .slice(0, 2)
+                          .map(
+                            story =>
+                              `Title: ${story.title}\nSource: ${story.source}\nDate: ${story.date}`
+                          )
+                          .join('\n\n'),
+                        relatedQuestions: searchResults.peopleAlsoAsk
+                          .slice(0, 2)
+                          .map(qa => `Q: ${qa.question}\nA: ${qa.answer}`)
+                          .join('\n\n'),
+                        totalResults: searchResults.totalResults,
+                      },
+                    };
+                  } catch (error) {
+                    console.error('Serper search error:', error);
+                    return {
+                      success: false,
+                      error: 'Failed to perform web search',
+                    };
+                  }
+                },
+              }),
+            }
+          : undefined,
+        toolChoice: doesSupportToolCalls(model as ModelType) ? 'auto' : undefined,
         onChunk(event) {
           if (event.chunk.type === 'tool-call') {
             console.log('Called Tool: ', event.chunk.toolName);

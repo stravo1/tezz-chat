@@ -10,6 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+export type ModelType =
+  | 'gemini-2.0-flash-exp'
+  | 'gemini-2.5-flash-preview-05-20'
+  | 'deepseek-chat-v3'
+  | 'deepseek-r1'
+  | 'llama-4-scout'
+  | 'qwen3-30b';
+
 const models = [
   {
     title: 'Gemini 2.0 Flash Exp',
@@ -24,12 +32,16 @@ const models = [
     value: 'deepseek-chat-v3',
   },
   {
-    title: 'Llama 3.3 8B',
-    value: 'llama-3.3-8b',
-  },
-  {
     title: 'Qwen3 30B',
     value: 'qwen3-30b',
+  },
+  {
+    title: 'Deepseek R1',
+    value: 'deepseek-r1',
+  },
+  {
+    title: 'Llama 4 Scout',
+    value: 'llama-4-scout',
   },
 ];
 
