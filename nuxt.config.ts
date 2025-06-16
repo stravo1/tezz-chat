@@ -20,9 +20,12 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss(), vueJsxPlugin()],
+    optimizeDeps: {
+      include: ['dexie', 'rxdb'],
+    },
   },
   css: ['./assets/css/main.css'],
   build: {
-    transpile: ['@uivjs/vue-markdown-preview'],
+    transpile: ['@uivjs/vue-markdown-preview', 'dexie', 'rxdb'],
   },
 });
