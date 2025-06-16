@@ -1,7 +1,11 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream, appendResponseMessages, tool } from 'ai';
-import { google } from '@ai-sdk/google';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import {
+  streamText,
+  smoothStream,
+  appendResponseMessages,
+  tool,
+  experimental_generateImage as generateImage,
+} from 'ai';
 import { z } from 'zod';
 import { ID, Permission, Role } from 'node-appwrite';
 import { createJWTClient } from '~/server/appwrite/config';
@@ -9,6 +13,7 @@ import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { Query } from 'node-appwrite';
+import { getModel, type ModelType } from '~/server/utils/model';
 
 // Constants
 const DEFAULT_TEMPERATURE = 0.7;
@@ -51,8 +56,18 @@ const chatInputSchema = z.object({
   id: z.string().optional(),
   deviceId: z.string().optional(),
   timezone: z.string(),
+  intent: z.enum(['text', 'image', 'search']),
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
+  model: z
+    .enum([
+      'gemini-2.0-flash-exp',
+      'gemini-2.5-flash-preview-05-20',
+      'deepseek-chat-v3',
+      'llama-3.3-8b',
+      'qwen3-30b',
+    ] as const)
+    .default('gemini-2.0-flash-exp'),
 });
 
 // Types
@@ -143,7 +158,7 @@ export default defineLazyEventHandler(async () => {
   // });
   // const model = openrouter.chat('deepseek/deepseek-chat-v3-0324:free');
 
-  const model = google('gemini-1.5-flash-8b');
+  // const model = google('gemini-2.0-flash-exp');
 
   return defineEventHandler(async event => {
     try {
@@ -164,7 +179,16 @@ export default defineLazyEventHandler(async () => {
         );
       }
 
-      const { messages, id: chatId, deviceId, isEdited, editedFrom } = validation.data;
+      const {
+        messages,
+        id: chatId,
+        deviceId,
+        isEdited,
+        editedFrom,
+        intent,
+        model,
+      } = validation.data;
+      const modelInstance = getModel(model as ModelType);
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
       const isEditOperation = isEdited && editedFrom;
@@ -250,8 +274,54 @@ export default defineLazyEventHandler(async () => {
         };
       }
 
+      if (intent === 'image') {
+        const result = streamText({
+          model: modelInstance,
+          messages: messages,
+          temperature: DEFAULT_TEMPERATURE,
+          experimental_transform: smoothStream({
+            chunking: 'word',
+            delayInMs: STREAM_DELAY_MS,
+          }),
+          maxSteps: MAX_STEPS,
+          maxRetries: MAX_RETRIES,
+          onFinish: async event => {
+            if (event.text && userId && chatSession) {
+              try {
+                // Check if the response contains image data
+                const imageData = (event.response.body as any)?.files?.[0];
+                const messageData: ChatMessage = {
+                  role: 'assistant',
+                  content: event.text,
+                  parts: imageData ? [{ type: 'image', url: imageData.url }] : [],
+                  experimental_attachments: lastMessage.experimental_attachments || [],
+                };
+
+                await createMessageDocument(
+                  databases,
+                  chatSession.$id,
+                  messageData,
+                  userId,
+                  'assistant'
+                );
+                await updateChatDocument(databases, chatSession.$id, {
+                  lastModifiedBy: 'assistant',
+                });
+              } catch (error) {
+                console.error('Error creating image message:', error);
+              }
+            }
+          },
+          onError(event) {
+            console.error('Image generation error:', event.error);
+          },
+        });
+
+        return result.toDataStreamResponse();
+      }
+
       const result = streamText({
-        model,
+        model: modelInstance,
         messages: messages,
         temperature: DEFAULT_TEMPERATURE,
         experimental_transform: smoothStream({

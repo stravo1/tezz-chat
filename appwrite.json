@@ -19,12 +19,12 @@
     "auth": {
       "methods": {
         "jwt": true,
-        "phone": true,
-        "invites": true,
-        "anonymous": true,
-        "email-otp": true,
-        "magic-url": true,
-        "email-password": true
+        "phone": false,
+        "invites": false,
+        "anonymous": false,
+        "email-otp": false,
+        "magic-url": false,
+        "email-password": false
       },
       "security": {
         "duration": 31536000,
@@ -278,6 +278,30 @@
       "$permissions": [],
       "fileSecurity": false,
       "name": "tezz-b",
+      "enabled": true,
+      "maximumFileSize": 5000000000,
+      "allowedFileExtensions": [],
+      "compression": "none",
+      "encryption": true,
+      "antivirus": true
+    },
+    {
+      "$id": "authenticated-files",
+      "$permissions": [],
+      "fileSecurity": false,
+      "name": "authenticated-files",
+      "enabled": true,
+      "maximumFileSize": 5000000000,
+      "allowedFileExtensions": [],
+      "compression": "none",
+      "encryption": true,
+      "antivirus": true
+    },
+    {
+      "$id": "public-files",
+      "$permissions": [],
+      "fileSecurity": false,
+      "name": "public-files",
       "enabled": true,
       "maximumFileSize": 5000000000,
       "allowedFileExtensions": [],
