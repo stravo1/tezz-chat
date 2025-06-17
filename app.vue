@@ -9,6 +9,7 @@ defineOgImageComponent('Pergel', {
 </script>
 
 <template>
+  <NuxtPwaManifest />
   <ClientOnly>
     <NuxtLayout>
       <NuxtPage />
