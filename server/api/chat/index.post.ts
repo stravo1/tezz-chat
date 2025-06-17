@@ -419,7 +419,7 @@ export default defineLazyEventHandler(async () => {
         // }),
         maxSteps: MAX_STEPS,
         maxRetries: MAX_RETRIES,
-        abortSignal: controller.signal,
+        // abortSignal: controller.signal,
         tools: doesSupportToolCalls(model as ModelType)
           ? {
               web_search: tool({
