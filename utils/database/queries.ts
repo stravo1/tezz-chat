@@ -41,6 +41,26 @@ export const getThreadDetails = async (threadId: string) => {
   };
 };
 
+export const getThreadByNameMatching = async (name: string) => {
+  const db = await initDb();
+  const query = db.threads.find({
+    selector: {
+      title: {
+        $regex: `.*${name}.*`,
+        $options: 'i', // case-insensitive search
+      },
+    },
+    sort: [{ updatedAt: 'desc' }],
+  });
+  const result = await query.exec();
+  if (result.length === 0) {
+    throw new Error(`No threads found matching name: ${name}`);
+  }
+  return result.map((thread: any) => ({
+    id: thread.get('id'),
+    title: thread.get('title'),
+  }));
+};
 export const getThreadDetailsQuery = async (threadId: string) => {
   const db = await initDb();
   return db.threads.find({

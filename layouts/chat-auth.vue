@@ -58,7 +58,7 @@
           <PanelLeftClose v-else />
         </button>
         <button
-          @click="toggleSidebar"
+          @click="() => (isSearchModalOpen = true)"
           class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
         >
           <Search v-if="!isSidebarOpen" />
@@ -84,7 +84,7 @@
           <h1 class="mt-2 text-center text-lg font-medium">tezz-chat</h1>
           <div class="h-[95%] w-full max-w-md overflow-hidden">
             <div class="flex h-full flex-col">
-              <div class="mb-4">
+              <div class="mb-2">
                 <NuxtLink
                   to="/chat/"
                   class="bg-secondary text-secondary-container hover:bg-secondary-container/[1] hover:text-on-secondary-container flex w-full items-center justify-center gap-2 rounded-lg p-2 text-center transition-all"
@@ -92,7 +92,21 @@
                   <Plus /> New Chat
                 </NuxtLink>
               </div>
-              <div class="mt-6 flex h-full flex-col gap-1 overflow-y-auto">
+              <div class="relative mt-6 flex h-full flex-col gap-1 overflow-y-auto">
+                <div class="bg-surface-container-lowest sticky top-0 z-10 pb-4">
+                  <div
+                    class="bg-surface-container-lowest flex w-full items-center justify-center gap-2 rounded-lg p-2 px-6 text-black/50 dark:text-white/50"
+                  >
+                    <Search class="text-black/50 dark:text-white/50" />
+                    <input
+                      @input="filterChats(($event.target as HTMLInputElement)?.value)"
+                      ref="searchInput"
+                      type="text"
+                      placeholder="Search..."
+                      class="w-full border-black/50 p-1 outline-none focus:outline-none dark:border-white/50"
+                    />
+                  </div>
+                </div>
                 <div v-for="chat in arrayOfChats" :key="chat.id" class="group relative w-full">
                   <NuxtLink
                     :to="`/chat/${chat.id}`"
@@ -127,6 +141,7 @@
       >
         <NuxtPage />
       </div>
+      <SearchModal v-if="isSearchModalOpen" :close-modal="() => (isSearchModalOpen = false)" />
     </main>
   </div>
 </template>
@@ -152,7 +167,9 @@ import {
   Trash,
   Trash2,
 } from 'lucide-vue-next';
+// @ts-ignore
 import { toast } from 'vue-sonner';
+
 import {
   getThreads,
   getTitle,
@@ -171,6 +188,7 @@ const { isAuthenticated, isAuthChecked, isLoading: isUserStateLoading } = storeT
 const layoutLoading = computed(() => isUserStateLoading.value || !isAuthChecked.value);
 
 const arrayOfChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
+const allChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
 const isSidebarOpen = ref(false);
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
@@ -179,6 +197,7 @@ const toggleSidebar = () => {
 const isLoading = ref(false);
 const visibilityRef = ref<'na' | 'public' | 'private'>('na');
 const threadDetailsSubscription = ref<Subscription>();
+const isSearchModalOpen = ref(false);
 
 onMounted(async () => {
   if (!isAuthChecked.value) {
@@ -198,6 +217,11 @@ onMounted(async () => {
         title: thread.get('title') || 'No summary available',
         isBranched: thread.get('sourceChatId') ? true : false,
       });
+      allChats.value.push({
+        id: thread.get('id'),
+        title: thread.get('title') || 'No summary available',
+        isBranched: thread.get('sourceChatId') ? true : false,
+      });
     });
   }
   ((await getThreads()) as RxQuery).$.subscribe(threads => {
@@ -213,6 +237,7 @@ onMounted(async () => {
         isBranched: thread.get('sourceChatId') ? true : false,
       };
     });
+    allChats.value = arrayOfChats.value; // Update allChats with the latest threads
   });
   if (route.params.id) {
     threadDetailsSubscription.value = (
@@ -238,6 +263,16 @@ onMounted(async () => {
     ? changeTitle(route.params.id as string)
     : (document.title = 'New Chat - tezz-chat');
 });
+
+const filterChats = (query: string | null | undefined) => {
+  if (!query) {
+    arrayOfChats.value = allChats.value; // Reset to all chats if query is empty
+    return;
+  }
+  arrayOfChats.value = arrayOfChats.value.filter(chat =>
+    chat.title.toLowerCase().includes(query.toLowerCase())
+  );
+};
 
 const getIfActive = (chatId: string) => {
   return route.params.id === chatId ? 'active-chat' : '';
