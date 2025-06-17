@@ -6,6 +6,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
   modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt', 'nuxt-og-image'],
+  site: {
+    url: 'https://tezz-chat.netlify.app/',
+    name: 'Tezz Chat',
+  },
   runtimeConfig: {
     geminiApiKey: process.env.GEMINI_API_KEY || '',
     cerebrasApiKey: process.env.CEREBRAS_API_KEY || '',
