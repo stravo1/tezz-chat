@@ -136,7 +136,7 @@ const handlePrimaryAction = () => {
                 name="input"
                 id="chat-input"
                 placeholder="Type your message here..."
-                class="text-on-secondary-container placeholder:text-secondary-foreground/60 max-h-[240px] min-h-[48px] w-full resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-0"
+                class="text-on-secondary-container placeholder:text-secondary/60 max-h-[240px] min-h-[48px] w-full resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-0"
                 aria-label="Message input"
                 aria-describedby="chat-input-description"
                 autocomplete="off"
@@ -164,7 +164,7 @@ const handlePrimaryAction = () => {
                 <div class="ml-[-7px] flex items-center gap-1">
                   <button
                     v-if="intentStore.selectedIntent != 'image'"
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground relative -mb-2 inline-flex h-8 items-center justify-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-primary disabled:hover:text-primary/50 text-primary/70 relative -mb-2 inline-flex h-8 items-center justify-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                     type="button"
                     id="radix-:r8:"
                     aria-haspopup="menu"
@@ -174,7 +174,7 @@ const handlePrimaryAction = () => {
                     <ChatModelSelector class="flex items-center gap-1" />
                   </button>
                   <button
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
+                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-primary disabled:hover:text-primary/50 text-primary/70 -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
                     aria-label="Attaching files is a subscriber-only feature"
                     type="button"
                     aria-haspopup="dialog"
@@ -186,7 +186,11 @@ const handlePrimaryAction = () => {
                     <Paperclip :size="18" />
                   </button>
                   <button
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 ml-3 flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full border border-dashed px-6 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
+                    :class="{
+                      'text-primary/40 border-dashed': intentStore.selectedIntent != 'image',
+                      'text-primary bg-primary/10': intentStore.selectedIntent == 'image',
+                    }"
+                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-primary disabled:hover:text-primary/50 -mb-1.5 ml-3 flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full border px-6 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
                     aria-label="Attaching files is a subscriber-only feature"
                     type="button"
                     aria-haspopup="dialog"

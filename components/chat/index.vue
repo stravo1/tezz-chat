@@ -106,7 +106,7 @@ const haventGottenFirstChunk = computed(() => {
     >
       Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
     </div>
-    <ChatMessages v-else :messages :chat-id :set-messages :reload :haventGottenFirstChunk />
+    <ChatMessages v-else :messages :chat-id :set-messages :reload :haventGottenFirstChunk :status />
     <ChatInput :handleSubmit :status :stop />
   </div>
 </template>

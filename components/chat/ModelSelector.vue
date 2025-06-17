@@ -63,7 +63,9 @@ onMounted(() => {
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <button class="max-w-20 overflow-hidden text-ellipsis whitespace-nowrap">
+      <button
+        class="text-primary/70 hover:text-primary max-w-28 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
+      >
         {{ selectedModelTitle }}
       </button>
     </DropdownMenuTrigger>
