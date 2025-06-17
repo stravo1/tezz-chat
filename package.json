@@ -26,6 +26,7 @@
     "@pinia/nuxt": "0.11.1",
     "@tailwindcss/vite": "^4.1.8",
     "@uivjs/vue-markdown-preview": "^1.0.5",
+    "@vite-pwa/nuxt": "1.0.4",
     "@vueuse/core": "^13.3.0",
     "ai": "^4.3.16",
     "appwrite": "^18.1.1",
