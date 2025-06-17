@@ -4,6 +4,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  deviceId?: string;
 }
 
 interface UserState {

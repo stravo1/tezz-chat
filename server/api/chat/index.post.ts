@@ -27,6 +27,7 @@ const DEFAULT_TEMPERATURE = 0.7;
 const MAX_RETRIES = 5;
 const MAX_STEPS = 5;
 const STREAM_DELAY_MS = 1;
+const DB_OPERATION_TIMEOUT = 10000; // 10 seconds
 
 // Timezone to country code mapping
 const TIMEZONE_TO_COUNTRY: Record<string, string> = {
@@ -116,6 +117,26 @@ const createPermissions = (userId: string) => [
   Permission.delete(Role.user(userId)),
 ];
 
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  retries = MAX_RETRIES,
+  timeout = DB_OPERATION_TIMEOUT
+): Promise<T> => {
+  try {
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Operation timed out')), timeout);
+    });
+    return (await Promise.race([operation(), timeoutPromise])) as T;
+  } catch (error) {
+    if (retries > 0) {
+      console.log(`Retrying operation, ${retries} attempts left`);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+      return withRetry(operation, retries - 1, timeout);
+    }
+    throw error;
+  }
+};
+
 const createMessageDocument = async (
   databases: any,
   chatId: string,
@@ -126,30 +147,34 @@ const createMessageDocument = async (
   const messageId = ID.unique();
   const now = createTimestamp();
 
-  return await databases.createDocument(
-    appwriteConfig.databaseId,
-    COLLECTION_NAMES.CHAT_MESSAGES,
-    messageId,
-    {
-      chatId,
-      role: message.role,
-      content: message.content,
-      parts: JSON.stringify(message.parts || null),
-      attachments: JSON.stringify(message.experimental_attachments || []),
-      lastModifiedBy: deviceId || 'server',
-      deleted: false,
-      createdAt: now,
-      updatedAt: now,
-    },
-    createPermissions(userId)
+  return await withRetry(() =>
+    databases.createDocument(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.CHAT_MESSAGES,
+      messageId,
+      {
+        chatId,
+        role: message.role,
+        content: message.content,
+        parts: JSON.stringify(message.parts || null),
+        attachments: JSON.stringify(message.experimental_attachments || []),
+        lastModifiedBy: deviceId || 'server',
+        deleted: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+      createPermissions(userId)
+    )
   );
 };
 
 const updateChatDocument = async (databases: any, chatId: string, updates: any) => {
-  return await databases.updateDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId, {
-    ...updates,
-    updatedAt: createTimestamp(),
-  });
+  return await withRetry(() =>
+    databases.updateDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId, {
+      ...updates,
+      updatedAt: createTimestamp(),
+    })
+  );
 };
 
 const handleAfterEditDeletion = async (
@@ -159,45 +184,48 @@ const handleAfterEditDeletion = async (
   lastMessage: Message,
   editedFromId: string
 ) => {
-  console.log(lastMessage, 'lastMessage');
-  const messagebeingEdited = await databases.getDocument(
-    appwriteConfig.databaseId,
-    COLLECTION_NAMES.CHAT_MESSAGES,
-    editedFromId
-  );
-  console.log(messagebeingEdited.$id, 'messagebeingEdited');
-  const messagesToUpdate = await databases.listDocuments(
-    appwriteConfig.databaseId,
-    COLLECTION_NAMES.CHAT_MESSAGES,
-    [Query.equal('chatId', chatId), Query.greaterThan('$createdAt', messagebeingEdited.$createdAt)]
-  );
-
-  if (messagebeingEdited) {
-    // Update the last message with new content
-    await databases.updateDocument(
-      appwriteConfig.databaseId,
-      COLLECTION_NAMES.CHAT_MESSAGES,
-      editedFromId,
-      {
-        content: lastMessage.content,
-        parts: JSON.stringify(lastMessage.parts || []),
-        updatedAt: createTimestamp(),
-      }
+  try {
+    const messagebeingEdited = await withRetry(() =>
+      databases.getDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHAT_MESSAGES, editedFromId)
     );
-    console.log('Message updated successfully for editing');
-  } else {
-    console.warn('No message found to update for editing');
-  }
-  // Use Promise.all for parallel updates
-  await Promise.all(
-    messagesToUpdate.documents.map(message =>
-      databases.deleteDocument(
-        appwriteConfig.databaseId,
-        COLLECTION_NAMES.CHAT_MESSAGES,
-        message.$id
+
+    const messagesToUpdate = await withRetry(() =>
+      databases.listDocuments(appwriteConfig.databaseId, COLLECTION_NAMES.CHAT_MESSAGES, [
+        Query.equal('chatId', chatId),
+        Query.greaterThan('$createdAt', messagebeingEdited.$createdAt),
+      ])
+    );
+
+    if (messagebeingEdited) {
+      await withRetry(() =>
+        databases.updateDocument(
+          appwriteConfig.databaseId,
+          COLLECTION_NAMES.CHAT_MESSAGES,
+          editedFromId,
+          {
+            content: lastMessage.content,
+            parts: JSON.stringify(lastMessage.parts || []),
+            updatedAt: createTimestamp(),
+          }
+        )
+      );
+    }
+
+    await Promise.all(
+      messagesToUpdate.documents.map(message =>
+        withRetry(() =>
+          databases.deleteDocument(
+            appwriteConfig.databaseId,
+            COLLECTION_NAMES.CHAT_MESSAGES,
+            message.$id
+          )
+        )
       )
-    )
-  );
+    );
+  } catch (error) {
+    console.error('Error in handleAfterEditDeletion:', error);
+    throw error;
+  }
 };
 
 export default defineLazyEventHandler(async () => {
