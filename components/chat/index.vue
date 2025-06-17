@@ -10,7 +10,10 @@ const props = defineProps<{
 const route = useRoute();
 const id = route.params.id;
 const chatId = props.chatId || '';
+
 const messageStore = useMessageStore();
+const intentStore = useIntentStore();
+
 if (!chatId) {
   console.warn('No chat ID provided!');
 }
@@ -44,7 +47,7 @@ const handleSubmit = async (
   append(userMessage, {
     experimental_attachments: attachments?.length ? attachments : undefined,
     body: {
-      intent: 'image',
+      intent: intentStore.selectedIntent,
       model: selectedModel || 'gemini-2.0-flash-exp',
     },
   });

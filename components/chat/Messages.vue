@@ -15,6 +15,7 @@ const props = defineProps<{
 const messageStore = useMessageStore();
 const userStore = useUserStore();
 const modelStore = useModelStore();
+const intentStore = useIntentStore();
 
 const { textarea, input: contentBeingEdited } = useTextareaAutosize();
 const isBeingEdited = ref(false);
@@ -83,7 +84,8 @@ const handleEdit = async (createdAt: any, content?: string) => {
     body: {
       isEdited: true,
       editedFrom: filteredMessages[filteredMessages.length - 1].createdAt,
-      intent: 'text',
+      editedFromId: filteredMessages[filteredMessages.length - 1].id,
+      intent: intentStore.selectedIntent,
       model: modelStore.selectedModel,
     },
   });

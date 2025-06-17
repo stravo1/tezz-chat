@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, Paperclip } from 'lucide-vue-next';
+import { ArrowUp, Image, Paperclip } from 'lucide-vue-next';
 import { useTextareaAutosize } from '@vueuse/core';
 import type { UIMessage } from 'ai';
 const { textarea, input: message } = useTextareaAutosize();
@@ -18,6 +18,11 @@ const props = defineProps<{
 }>();
 
 const modelStore = useModelStore();
+const intentStore = useIntentStore();
+
+const handleToggleIntent = () => {
+  intentStore.toggleIntent();
+};
 
 const scrollToBottom = () => {
   document.getElementById('messages-container')?.scrollTo({
@@ -158,6 +163,7 @@ const handlePrimaryAction = () => {
               <div class="flex flex-col gap-2 pr-2 sm:flex-row sm:items-center">
                 <div class="ml-[-7px] flex items-center gap-1">
                   <button
+                    v-if="intentStore.selectedIntent != 'image'"
                     class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground relative -mb-2 inline-flex h-8 items-center justify-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                     type="button"
                     id="radix-:r8:"
@@ -168,7 +174,7 @@ const handlePrimaryAction = () => {
                     <ChatModelSelector class="flex items-center gap-1" />
                   </button>
                   <button
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-2 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
+                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
                     aria-label="Attaching files is a subscriber-only feature"
                     type="button"
                     aria-haspopup="dialog"
@@ -178,6 +184,18 @@ const handlePrimaryAction = () => {
                     @click="fileInput && fileInput.click()"
                   >
                     <Paperclip :size="18" />
+                  </button>
+                  <button
+                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-foreground disabled:hover:text-foreground/50 text-muted-foreground -mb-1.5 ml-3 flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full border border-dashed px-6 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
+                    aria-label="Attaching files is a subscriber-only feature"
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="radix-:rb:"
+                    data-state="closed"
+                    @click="handleToggleIntent"
+                  >
+                    <Image :size="18" />
                   </button>
                 </div>
               </div>
