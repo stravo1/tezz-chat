@@ -9,17 +9,37 @@
     v-if="!layoutLoading"
     class="bg-surface-container text-on-surface relative flex min-h-screen flex-col"
   >
-    <header class="absolute top-0 right-0 z-50 p-4">
-      <button @click="logout" class="cursor-pointer">Logout</button>
-    </header>
     <main class="flex h-screen w-screen">
+      <div class="absolute top-5 right-4 z-50 flex">
+        <button
+          @click="toggleSidebar"
+          class="cursor-pointer rounded p-2 transition-all"
+          :class="{
+            'text-tertiary/50 hover:text-tertiary bg-transparent': !isSidebarOpen,
+            'text-on-surface-container bg-transparent': isSidebarOpen,
+          }"
+        >
+          <Share2 v-if="!isSidebarOpen" />
+        </button>
+        <button
+          @click="toggleSidebar"
+          class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
+        >
+          <Settings2 v-if="!isSidebarOpen" />
+        </button>
+        <button
+          @click="startNewChat"
+          class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
+        >
+          <LogOut v-if="!isSidebarOpen" />
+        </button>
+      </div>
       <div class="absolute top-5 left-4 z-50 flex">
         <button
           @click="toggleSidebar"
           class="cursor-pointer rounded p-2 transition-all"
           :class="{
-            'text-tertiary-container/50 hover:text-tertiary-container bg-transparent':
-              !isSidebarOpen,
+            'text-tertiary/50 hover:text-tertiary bg-transparent': !isSidebarOpen,
             'text-on-surface-container bg-transparent': isSidebarOpen,
           }"
         >
@@ -28,13 +48,13 @@
         </button>
         <button
           @click="toggleSidebar"
-          class="text-tertiary-container/50 hover:text-tertiary-container cursor-pointer rounded p-2 transition-all"
+          class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
         >
           <Search v-if="!isSidebarOpen" />
         </button>
         <button
           @click="startNewChat"
-          class="text-tertiary-container/50 hover:text-tertiary-container cursor-pointer rounded p-2 transition-all"
+          class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
         >
           <PlusIcon v-if="!isSidebarOpen" />
         </button>
@@ -106,11 +126,14 @@ import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
 import {
   LoaderCircle,
+  LogOut,
   PanelLeft,
   PanelLeftClose,
   Plus,
   PlusIcon,
   Search,
+  Settings2,
+  Share2,
   Split,
   Trash,
   Trash2,
