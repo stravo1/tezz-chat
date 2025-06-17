@@ -5,9 +5,10 @@ import {
   appendResponseMessages,
   tool,
   experimental_generateImage as generateImage,
+  UIMessage,
 } from 'ai';
 import { z } from 'zod';
-import { ID, Permission, Role } from 'node-appwrite';
+import { Databases, ID, Permission, Role } from 'node-appwrite';
 import { createJWTClient } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
@@ -65,6 +66,7 @@ const chatInputSchema = z.object({
   intent: z.enum(['text', 'image', 'search']).default('text'),
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
+  editedFromId: z.string().optional(),
   model: z.enum(supportedModels as [string, ...string[]]).default('gemini-2.0-flash-exp'),
 });
 
@@ -102,6 +104,7 @@ interface ChatMessage {
   experimental_attachments?: any[];
   isEdited?: boolean;
   editedFrom?: string;
+  editedFromId?: string;
 }
 
 // Helper functions
@@ -149,6 +152,54 @@ const updateChatDocument = async (databases: any, chatId: string, updates: any) 
   });
 };
 
+const handleAfterEditDeletion = async (
+  databases: Databases,
+  chatId: string,
+  editedFrom: string,
+  lastMessage: Message,
+  editedFromId: string
+) => {
+  console.log(lastMessage, 'lastMessage');
+  const messagebeingEdited = await databases.getDocument(
+    appwriteConfig.databaseId,
+    COLLECTION_NAMES.CHAT_MESSAGES,
+    editedFromId
+  );
+  console.log(messagebeingEdited.$id, 'messagebeingEdited');
+  const messagesToUpdate = await databases.listDocuments(
+    appwriteConfig.databaseId,
+    COLLECTION_NAMES.CHAT_MESSAGES,
+    [Query.equal('chatId', chatId), Query.greaterThan('$createdAt', messagebeingEdited.$createdAt)]
+  );
+
+  if (messagebeingEdited) {
+    // Update the last message with new content
+    await databases.updateDocument(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.CHAT_MESSAGES,
+      editedFromId,
+      {
+        content: lastMessage.content,
+        parts: JSON.stringify(lastMessage.parts || []),
+        updatedAt: createTimestamp(),
+      }
+    );
+    console.log('Message updated successfully for editing');
+  } else {
+    console.warn('No message found to update for editing');
+  }
+  // Use Promise.all for parallel updates
+  await Promise.all(
+    messagesToUpdate.documents.map(message =>
+      databases.deleteDocument(
+        appwriteConfig.databaseId,
+        COLLECTION_NAMES.CHAT_MESSAGES,
+        message.$id
+      )
+    )
+  );
+};
+
 export default defineLazyEventHandler(async () => {
   // const model = google("");
   // const openrouter = createOpenRouter({
@@ -192,6 +243,7 @@ export default defineLazyEventHandler(async () => {
         editedFrom,
         intent,
         model,
+        editedFromId,
       } = validation.data;
       const modelInstance = getModel(model as ModelType);
       const lastMessage = messages[messages.length - 1] as Message;
@@ -308,7 +360,7 @@ export default defineLazyEventHandler(async () => {
                           type: 'text',
                           text: event.text,
                         },
-                        { type: 'file', data: imageData.base64 },
+                        { type: 'file', mimeType: event.files[0].mimeType, data: imageData.base64 },
                       ]
                     : [
                         {
@@ -318,6 +370,16 @@ export default defineLazyEventHandler(async () => {
                       ],
                   experimental_attachments: lastMessage.experimental_attachments || [],
                 };
+                if (isEditOperation && editedFrom && chatId && editedFromId) {
+                  await handleAfterEditDeletion(
+                    databases,
+                    chatId,
+                    editedFrom,
+                    lastMessage,
+                    editedFromId
+                  );
+                  console.log('Handled message editing and deletion successfully');
+                }
 
                 await createMessageDocument(
                   databases,
@@ -470,45 +532,15 @@ export default defineLazyEventHandler(async () => {
         onFinish: async event => {
           if (event.text && userId && chatSession) {
             // Handle message editing after AI response
-            if (isEditOperation && editedFrom && chatId) {
-              const messagesToUpdate = await databases.listDocuments(
-                appwriteConfig.databaseId,
-                COLLECTION_NAMES.CHAT_MESSAGES,
-                [Query.equal('chatId', chatId), Query.greaterThan('createdAt', editedFrom)]
+            if (isEditOperation && editedFrom && chatId && editedFromId) {
+              await handleAfterEditDeletion(
+                databases,
+                chatId,
+                editedFrom,
+                lastMessage,
+                editedFromId
               );
-
-              let lastMessageQuery = await databases.listDocuments(
-                appwriteConfig.databaseId,
-                COLLECTION_NAMES.CHAT_MESSAGES,
-                [Query.equal('chatId', chatId), Query.equal('createdAt', editedFrom)]
-              );
-              if (lastMessageQuery.documents.length > 0) {
-                const lastMessageToUpdate = lastMessageQuery.documents[0];
-                // Update the last message with new content
-                await databases.updateDocument(
-                  appwriteConfig.databaseId,
-                  COLLECTION_NAMES.CHAT_MESSAGES,
-                  lastMessageToUpdate.$id,
-                  {
-                    content: lastMessage.content,
-                    parts: JSON.stringify(lastMessage.parts || []),
-                    updatedAt: createTimestamp(),
-                  }
-                );
-                console.log('Message updated successfully for editing');
-              } else {
-                console.warn('No message found to update for editing');
-              }
-              // Use Promise.all for parallel updates
-              await Promise.all(
-                messagesToUpdate.documents.map(message =>
-                  databases.deleteDocument(
-                    appwriteConfig.databaseId,
-                    COLLECTION_NAMES.CHAT_MESSAGES,
-                    message.$id
-                  )
-                )
-              );
+              console.log('Handled message editing and deletion successfully');
             }
 
             const [, assistantMessage] = appendResponseMessages({
