@@ -47,7 +47,7 @@ export default defineNuxtConfig({
       name: 'Tezz Chat',
       short_name: 'Tezz Chat',
       description: 'AI-powered chat application',
-      theme_color: '#ffffff',
+      theme_color: '#fcd195',
       background_color: '#ffffff',
       display: 'standalone',
       orientation: 'portrait',
