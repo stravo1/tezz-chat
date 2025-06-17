@@ -33,7 +33,7 @@
           </button>
         </div>
         <button
-          @click="toggleSidebar"
+          @click="() => (isSettingsModalOpen = true)"
           class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
         >
           <Settings2 />
@@ -142,6 +142,10 @@
         <NuxtPage />
       </div>
       <SearchModal v-if="isSearchModalOpen" :close-modal="() => (isSearchModalOpen = false)" />
+      <SettingsModal
+        v-if="isSettingsModalOpen"
+        :close-modal="() => (isSettingsModalOpen = false)"
+      />
     </main>
   </div>
 </template>
@@ -198,6 +202,7 @@ const isLoading = ref(false);
 const visibilityRef = ref<'na' | 'public' | 'private'>('na');
 const threadDetailsSubscription = ref<Subscription>();
 const isSearchModalOpen = ref(false);
+const isSettingsModalOpen = ref(true);
 
 onMounted(async () => {
   if (!isAuthChecked.value) {
@@ -350,20 +355,12 @@ watch(
   }
 );
 
-const logout = async () => {
-  console.log('Logging out...');
-  await userStore.logOut();
-  navigateTo('/auth');
-};
-
 const copy = async () => {
   try {
     const link = `${window.location.origin}/chat/shared/${route.params.id}`;
     await navigator.clipboard.writeText(link);
     console.log('Chat link copied to clipboard:', link);
-    toast('Link copied!', {
-      description: 'Your chat link has been copied to the clipboard.',
-    });
+    toast.success('Link copied!');
   } catch (error) {
     console.error('Error copying chat link:', error);
     isLoading.value = false;
