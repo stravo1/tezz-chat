@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt', 'nuxt-og-image'],
   site: {
-    url: 'https://tezz-chat.netlify.app/',
+    url: 'https://tezz-chat.netlify.app',
     name: 'Tezz Chat',
   },
   runtimeConfig: {
