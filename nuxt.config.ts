@@ -1,4 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import process from 'node:process';
+const sw = process.env.SW === 'true';
+
 import tailwindcss from '@tailwindcss/vite';
 import vueJsxPlugin from '@vitejs/plugin-vue-jsx';
 
@@ -42,6 +45,9 @@ export default defineNuxtConfig({
     },
   },
   pwa: {
+    strategies: sw ? 'injectManifest' : 'generateSW',
+    srcDir: sw ? 'service-worker' : undefined,
+    filename: sw ? 'sw.ts' : undefined,
     registerType: 'autoUpdate',
     manifest: {
       name: 'Tezz Chat',
@@ -131,6 +137,9 @@ export default defineNuxtConfig({
           },
         },
       ],
+    },
+    client: {
+      installPrompt: true,
     },
     devOptions: {
       enabled: true,
