@@ -1,9 +1,10 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
 interface User {
   id: string;
   email: string;
   name: string;
+  deviceId?: string;
 }
 
 interface UserState {
@@ -15,7 +16,7 @@ interface UserState {
   lastJwtCreatedAt?: number; // Timestamp of the last JWT creation
 }
 
-export const useUserStore = defineStore("user", {
+export const useUserStore = defineStore('user', {
   state: (): UserState => ({
     currentUser: null,
     isAuthenticated: false,
@@ -43,7 +44,7 @@ export const useUserStore = defineStore("user", {
           this.isAuthenticated = false;
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error('Error fetching user:', error);
         this.currentUser = null;
         this.isAuthenticated = false;
       } finally {
@@ -57,17 +58,17 @@ export const useUserStore = defineStore("user", {
       const { account } = useAppwrite();
       try {
         try {
-          await $fetch("/api/auth/oauth/logout", {
-            method: "POST",
+          await $fetch('/api/auth/oauth/logout', {
+            method: 'POST',
           });
         } catch (error) {
-          console.error("Error during OAuth logout:", error);
+          console.error('Error during OAuth logout:', error);
         }
-        await account.deleteSession("current");
-        console.log("Session deleted successfully.");
+        await account.deleteSession('current');
+        console.log('Session deleted successfully.');
         this.clearUser();
       } catch (error) {
-        console.error("Error logging out:", error);
+        console.error('Error logging out:', error);
       } finally {
         this.isLoading = false;
       }
@@ -88,7 +89,7 @@ export const useUserStore = defineStore("user", {
         this.lastJwtCreatedAt = Date.now();
         return this.jwtToken;
       } catch (error) {
-        console.error("Error fetching JWT:", error);
+        console.error('Error fetching JWT:', error);
         throw error; // Re-throw to handle it in the component
       }
     },
