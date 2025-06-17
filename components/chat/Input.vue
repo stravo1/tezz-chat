@@ -13,6 +13,8 @@ const props = defineProps<{
     attachments?: UIMessage['experimental_attachments'],
     selectedModel?: string
   ) => Promise<void>;
+  status: string;
+  stop: () => void;
 }>();
 
 const modelStore = useModelStore();
@@ -71,6 +73,14 @@ const removeFile = (name: string) => {
     attachment => attachment.name !== name
   );
   // if (fileInput.value) fileInput.value.value = ''; // Clear the input field
+};
+
+const handlePrimaryAction = () => {
+  if (props.status === 'streaming') {
+    props.stop();
+  } else {
+    handleSubmit();
+  }
 };
 </script>
 
@@ -136,12 +146,13 @@ const removeFile = (name: string) => {
                 aria-label="Message actions"
               >
                 <button
-                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/20 disabled:dark:active:bg-primary/20 bg-primary-container hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  type="submit"
-                  :disabled="message.trim() === ''"
+                  @click="handlePrimaryAction"
+                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/0 disabled:dark:active:bg-primary/0 bg-primary-container hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="message.trim() === '' && status != 'streaming'"
                   data-state="closed"
                 >
-                  <ArrowUp />
+                  <div v-if="status == 'streaming'" class="h-5 w-5 shrink-0 rounded bg-white"></div>
+                  <ArrowUp v-else />
                 </button>
               </div>
               <div class="flex flex-col gap-2 pr-2 sm:flex-row sm:items-center">

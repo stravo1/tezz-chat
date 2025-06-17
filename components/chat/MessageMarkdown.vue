@@ -65,14 +65,14 @@ watch(
   () => props.content,
   newContent => {
     blocks.value = getBlocks(newContent);
-    console.log('Content updated:', newContent, blocks.value);
+    // console.log('Content updated:', newContent, blocks.value);
   },
   { immediate: true }
 );
 </script>
 <template>
   <div class="markdown-content" v-memo="[content, id]">
-    <div v-for="(block, index) in blocks" :key="index" class="markdown-block">
+    <div v-for="(block, index) in blocks" :key="`key-${index}-${id}`" class="markdown-block">
       <MarkdownPreview
         v-memo="[block]"
         :components="components"

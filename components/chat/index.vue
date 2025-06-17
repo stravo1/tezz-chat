@@ -15,7 +15,7 @@ if (!chatId) {
   console.warn('No chat ID provided!');
 }
 
-const { messages, append, status, setMessages, reload, error } = useChat({
+const { messages, append, status, setMessages, reload, error, stop } = useChat({
   id: chatId,
   initialMessages: props.initialMessages || [],
   body: {
@@ -44,7 +44,7 @@ const handleSubmit = async (
   append(userMessage, {
     experimental_attachments: attachments?.length ? attachments : undefined,
     body: {
-      intent: 'text',
+      intent: 'image',
       model: selectedModel || 'gemini-2.0-flash-exp',
     },
   });
@@ -103,14 +103,7 @@ const haventGottenFirstChunk = computed(() => {
     >
       Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
     </div>
-    <ChatMessages
-      v-else
-      :messages="messages"
-      :chat-id="chatId"
-      :set-messages="setMessages"
-      :reload="reload"
-      :haventGottenFirstChunk
-    />
-    <ChatInput :handleSubmit />
+    <ChatMessages v-else :messages :chat-id :set-messages :reload :haventGottenFirstChunk />
+    <ChatInput :handleSubmit :status :stop />
   </div>
 </template>

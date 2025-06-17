@@ -140,6 +140,13 @@ console.log('Messages:', props.messages);
                   class="markdown-content"
                 />
               </div>
+              <div v-else-if="part.type == 'file'">
+                <img
+                  class="max-h-[480px] max-w-[480px]"
+                  :src="'data:' + part.mimeType + ';base64,' + part.data"
+                  :alt="'Image'"
+                />
+              </div>
             </div>
           </div>
           <div v-else>
