@@ -229,11 +229,16 @@ export default defineLazyEventHandler(async () => {
         );
       }
       const controller = new AbortController();
-      event.node.req.socket.on('close', () => {
-        console.log('Request closed, aborting stream');
-        controller.abort();
-        // Handle request close event if needed
-      });
+      try {
+        event.node.req.socket.on('close', () => {
+          console.log('Request closed, aborting stream');
+          controller.abort();
+          // Handle request close event if needed
+        });
+      } catch (error) {
+        console.error('Error setting up request close listener:', error);
+        console.log('Continuing without request close listener', event);
+      }
 
       const {
         messages,
