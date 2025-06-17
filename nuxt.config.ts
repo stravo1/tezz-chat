@@ -5,7 +5,7 @@ import vueJsxPlugin from '@vitejs/plugin-vue-jsx';
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
-  modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt'],
+  modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt', 'nuxt-og-image'],
   runtimeConfig: {
     geminiApiKey: process.env.GEMINI_API_KEY || '',
     cerebrasApiKey: process.env.CEREBRAS_API_KEY || '',
@@ -96,6 +96,7 @@ export default defineNuxtConfig({
     workbox: {
       navigateFallback: '/',
       globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      globDirectory: '.output/public',
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -104,7 +105,7 @@ export default defineNuxtConfig({
             cacheName: 'google-fonts-cache',
             expiration: {
               maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+              maxAgeSeconds: 60 * 60 * 24 * 365,
             },
             cacheableResponse: {
               statuses: [0, 200],
@@ -118,7 +119,7 @@ export default defineNuxtConfig({
             cacheName: 'gstatic-fonts-cache',
             expiration: {
               maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+              maxAgeSeconds: 60 * 60 * 24 * 365,
             },
             cacheableResponse: {
               statuses: [0, 200],
