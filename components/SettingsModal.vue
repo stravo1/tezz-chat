@@ -3,7 +3,7 @@
     @click="props.closeModal"
     class="fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
   >
-    <div @click.stop class="h-fit max-h-[50vh] w-[55vw]">
+    <div @click.stop class="h-fit max-h-[50vh] w-[90vw] lg:w-[55vw]">
       <div
         class="bg-primary-container/20 flex w-full items-center justify-between rounded-t-lg p-4 px-6 text-black/50 dark:text-white/50"
       >

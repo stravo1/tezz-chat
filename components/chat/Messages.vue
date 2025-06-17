@@ -118,7 +118,7 @@ console.log('Messages:', props.messages);
       >
         <div
           v-memo="[message]"
-          :class="`${message.role === 'user' ? 'flex max-w-[33vw] flex-col items-end' : 'text-on-secondary-container w-full'}`"
+          :class="`${message.role === 'user' ? 'flex max-w-[50vw] flex-col items-end lg:max-w-[33vw]' : 'text-on-secondary-container w-full'}`"
           class="group"
         >
           <textarea

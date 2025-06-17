@@ -72,14 +72,20 @@
       </div>
       <div
         id="sidebar"
-        class="flex h-full min-w-[0px] shrink-0 overflow-hidden transition-all"
+        class="fixed z-30 flex h-full min-w-[0px] shrink-0 overflow-hidden transition-all lg:relative"
         :class="{
           'w-0': !isSidebarOpen,
           'w-[20vw] min-w-[300px]': isSidebarOpen,
         }"
       >
         <div
-          class="bg-surface-container-lowest text-on-surface-container-lowest flex h-full w-[20vw] min-w-[300px] shrink-0 flex-col gap-10 p-4"
+          id="sidebar-backdrop"
+          class="fixed inset-0 z-10 bg-black/50 backdrop-blur-lg lg:hidden"
+          v-if="isSidebarOpen"
+          @click="toggleSidebar"
+        ></div>
+        <div
+          class="bg-surface-container-lowest text-on-surface-container-lowest z-20 flex h-full w-[20vw] min-w-[300px] shrink-0 flex-col gap-10 p-4"
         >
           <h1 class="mt-2 text-center text-lg font-medium">tezz-chat</h1>
           <div class="h-[95%] w-full max-w-md overflow-hidden">
@@ -137,7 +143,7 @@
       </div>
       <div
         id="chat-view"
-        class="relative box-border flex h-full w-full justify-center overflow-hidden px-4 pt-24"
+        class="relative box-border flex h-full w-full justify-center overflow-hidden px-2 pt-24 lg:px-4"
       >
         <NuxtPage />
       </div>
@@ -202,7 +208,7 @@ const isLoading = ref(false);
 const visibilityRef = ref<'na' | 'public' | 'private'>('na');
 const threadDetailsSubscription = ref<Subscription>();
 const isSearchModalOpen = ref(false);
-const isSettingsModalOpen = ref(true);
+const isSettingsModalOpen = ref(false);
 
 onMounted(async () => {
   if (!isAuthChecked.value) {
