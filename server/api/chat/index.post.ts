@@ -19,6 +19,7 @@ import {
   supportedModels,
   type ModelType,
 } from '~/server/utils/model';
+import { google } from '@ai-sdk/google';
 
 // Constants
 const DEFAULT_TEMPERATURE = 0.7;
@@ -167,6 +168,7 @@ export default defineLazyEventHandler(async () => {
       }
 
       const body = await readBody(event);
+      console.log('Received body:', body);
 
       const validation = chatInputSchema.safeParse(body);
       if (!validation.success) {
@@ -175,6 +177,12 @@ export default defineLazyEventHandler(async () => {
           `Invalid input: ${validation.error.errors[0]?.message}`
         );
       }
+      const controller = new AbortController();
+      event.node.req.socket.on('close', () => {
+        console.log('Request closed, aborting stream');
+        controller.abort();
+        // Handle request close event if needed
+      });
 
       const {
         messages,
@@ -273,7 +281,7 @@ export default defineLazyEventHandler(async () => {
 
       if (intent === 'image') {
         const result = streamText({
-          model: modelInstance,
+          // model: modelInstance,
           messages: messages,
           temperature: DEFAULT_TEMPERATURE,
           experimental_transform: smoothStream({
@@ -282,15 +290,32 @@ export default defineLazyEventHandler(async () => {
           }),
           maxSteps: MAX_STEPS,
           maxRetries: MAX_RETRIES,
+          model: google('gemini-2.0-flash-exp'),
+          providerOptions: {
+            google: { responseModalities: ['TEXT', 'IMAGE'] },
+          },
           onFinish: async event => {
             if (event.text && userId && chatSession) {
               try {
                 // Check if the response contains image data
-                const imageData = (event.response.body as any)?.files?.[0];
+                const imageData = event.files?.[0];
                 const messageData: ChatMessage = {
                   role: 'assistant',
                   content: event.text,
-                  parts: imageData ? [{ type: 'image', url: imageData.url }] : [],
+                  parts: imageData
+                    ? [
+                        {
+                          type: 'text',
+                          text: event.text,
+                        },
+                        { type: 'file', data: imageData.base64 },
+                      ]
+                    : [
+                        {
+                          type: 'text',
+                          text: event.text,
+                        },
+                      ],
                   experimental_attachments: lastMessage.experimental_attachments || [],
                 };
 
@@ -321,12 +346,13 @@ export default defineLazyEventHandler(async () => {
         model: modelInstance,
         messages: messages,
         temperature: DEFAULT_TEMPERATURE,
-        experimental_transform: smoothStream({
-          chunking: 'word',
-          delayInMs: STREAM_DELAY_MS,
-        }),
+        // experimental_transform: smoothStream({
+        //   chunking: 'word',
+        //   delayInMs: STREAM_DELAY_MS,
+        // }),
         maxSteps: MAX_STEPS,
         maxRetries: MAX_RETRIES,
+        abortSignal: controller.signal,
         tools: doesSupportToolCalls(model as ModelType)
           ? {
               web_search: tool({
