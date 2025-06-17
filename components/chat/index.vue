@@ -5,6 +5,7 @@ const userStore = useUserStore();
 const props = defineProps<{
   chatId: string;
   initialMessages?: UIMessage[];
+  isPublic?: boolean;
 }>();
 
 const route = useRoute();
@@ -25,7 +26,7 @@ const { messages, append, status, setMessages, reload, error, stop } = useChat({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   },
   headers: {
-    Authorization: 'Bearer ' + (await userStore.getJWT()),
+    Authorization: 'Bearer ' + (props.isPublic ? '' : await userStore.getJWT()),
   },
   onError: err => {
     console.error('Chat error:', err);
@@ -55,6 +56,7 @@ const handleSubmit = async (
 };
 
 const scrollToBottom = () => {
+  if (props.isPublic) return; // Skip scrolling for public chats
   document.getElementById('messages-container')?.scrollTo({
     top: document.getElementById('messages-container')?.scrollHeight,
     behavior: 'smooth',
@@ -106,7 +108,16 @@ const haventGottenFirstChunk = computed(() => {
     >
       Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
     </div>
-    <ChatMessages v-else :messages :chat-id :set-messages :reload :haventGottenFirstChunk :status />
-    <ChatInput :handleSubmit :status :stop />
+    <ChatMessages
+      v-else
+      :messages
+      :chat-id
+      :set-messages
+      :reload
+      :haventGottenFirstChunk
+      :status
+      :is-public
+    />
+    <ChatInput v-if="!isPublic" :handleSubmit :status :stop />
   </div>
 </template>

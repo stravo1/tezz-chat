@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { LoaderCircle } from 'lucide-vue-next';
-
-onMounted(() => {
-  navigateTo("/chat/");
-});
+await navigateTo('/chat/');
 </script>
 
 <template>

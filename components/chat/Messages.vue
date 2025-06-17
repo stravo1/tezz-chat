@@ -11,6 +11,7 @@ const props = defineProps<{
   setMessages: (messages: UIMessage[]) => void;
   reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>;
   status: string;
+  isPublic?: boolean;
 }>();
 
 const messageStore = useMessageStore();
@@ -174,7 +175,7 @@ console.log('Messages:', props.messages);
             class="text-on-secondary-container text-xs opacity-0 transition-all group-hover:opacity-100"
           >
             <ChatMessageOptions
-              v-if="status !== 'streaming'"
+              v-if="status !== 'streaming' && !isPublic"
               :role="message.role"
               :message-id="message.id"
               :is-editing="isBeingEdited"

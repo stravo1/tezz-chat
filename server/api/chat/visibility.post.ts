@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Query } from 'node-appwrite';
-import { createSessionClient } from '~/server/appwrite/config';
+import { createJWTClient, createSessionClient } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
@@ -16,7 +16,7 @@ const visibilitySchema = z.object({
 
 export default defineEventHandler(async event => {
   try {
-    const { databases } = createSessionClient(event);
+    const { databases } = createJWTClient(event);
     const session = event.context.session;
     if (!session?.userId) {
       throw createAppError(
@@ -26,6 +26,7 @@ export default defineEventHandler(async event => {
     }
 
     const body = await readBody(event);
+    console.log('Request body:', body);
     const validation = visibilitySchema.safeParse(body);
 
     if (!validation.success) {

@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="layoutLoading"
-    class="bg-inverse-surface text-on-inverse-surface fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center backdrop-blur-2xl"
+    class="bg-inverse-surface text-inverse-on-surface fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center backdrop-blur-2xl"
   >
     <LoaderCircle class="animate-spin" />
   </div>
@@ -9,30 +9,41 @@
     v-if="!layoutLoading"
     class="bg-surface-container text-on-surface relative flex min-h-screen flex-col"
   >
+    <LoaderModal v-if="isLoading" />
     <main class="flex h-screen w-screen">
-      <div class="absolute top-5 right-4 z-50 flex">
-        <button
-          @click="toggleSidebar"
-          class="cursor-pointer rounded p-2 transition-all"
-          :class="{
-            'text-tertiary/50 hover:text-tertiary bg-transparent': !isSidebarOpen,
-            'text-on-surface-container bg-transparent': isSidebarOpen,
-          }"
+      <div class="absolute top-5 right-4 z-50 flex" v-if="!isSidebarOpen">
+        <div
+          class="group flex rounded-lg px-2"
+          :class="{ 'hover:bg-surface-container-low': visibilityRef == 'public' }"
         >
-          <Share2 v-if="!isSidebarOpen" />
-        </button>
+          <button
+            v-if="visibilityRef != 'na'"
+            @click="copy"
+            class="text-tertiary/50 hover:text-tertiary hidden cursor-pointer rounded bg-transparent p-2 transition-all group-hover:flex"
+          >
+            <Link2 v-if="visibilityRef == 'public'" />
+          </button>
+          <button
+            v-if="visibilityRef != 'na'"
+            @click="share"
+            class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded bg-transparent p-2 transition-all"
+          >
+            <Share2 v-if="visibilityRef == 'private'" />
+            <EyeOff v-if="visibilityRef == 'public'" />
+          </button>
+        </div>
         <button
           @click="toggleSidebar"
           class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
         >
-          <Settings2 v-if="!isSidebarOpen" />
+          <Settings2 />
         </button>
-        <button
-          @click="startNewChat"
+        <!-- <button
+          @click="logout"
           class="text-tertiary/50 hover:text-tertiary cursor-pointer rounded p-2 transition-all"
         >
-          <LogOut v-if="!isSidebarOpen" />
-        </button>
+          <LogOut />
+        </button> -->
       </div>
       <div class="absolute top-5 left-4 z-50 flex">
         <button
@@ -125,6 +136,9 @@ import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch } from 'vue';
 import {
+  EyeOff,
+  Link,
+  Link2,
   LoaderCircle,
   LogOut,
   PanelLeft,
@@ -138,21 +152,33 @@ import {
   Trash,
   Trash2,
 } from 'lucide-vue-next';
-import { getThreads, getTitle } from '~/utils/database/queries';
+import { toast } from 'vue-sonner';
+import {
+  getThreads,
+  getTitle,
+  getThreadDetails,
+  getThreadDetailsQuery,
+} from '~/utils/database/queries';
 import type { isRxDocument, RxDocument, RxQuery } from 'rxdb';
+import type { Subscription } from 'rxjs';
 import useDatabase from '../utils/database/db';
+
 useDatabase();
 console.log('Database initialized');
 const route = useRoute();
 const userStore = useUserStore();
-const { isAuthenticated, isAuthChecked, isLoading } = storeToRefs(userStore);
-const layoutLoading = computed(() => isLoading.value || !isAuthChecked.value);
+const { isAuthenticated, isAuthChecked, isLoading: isUserStateLoading } = storeToRefs(userStore);
+const layoutLoading = computed(() => isUserStateLoading.value || !isAuthChecked.value);
 
 const arrayOfChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
 const isSidebarOpen = ref(false);
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
 };
+
+const isLoading = ref(false);
+const visibilityRef = ref<'na' | 'public' | 'private'>('na');
+const threadDetailsSubscription = ref<Subscription>();
 
 onMounted(async () => {
   if (!isAuthChecked.value) {
@@ -164,9 +190,9 @@ onMounted(async () => {
   } else {
     console.log('Threads found:', threads);
     threads.forEach((thread: RxDocument) => {
-      console.log('Thread ID:', thread.get('id'));
-      console.log('Thread Title:', thread.get('title') || 'No title available');
-      console.log('Is Branched:', thread.get('sourceChatId') ? true : false);
+      // console.log('Thread ID:', thread.get('id'));
+      // console.log('Thread Title:', thread.get('title') || 'No title available');
+      // console.log('Is Branched:', thread.get('sourceChatId') ? true : false);
       arrayOfChats.value.push({
         id: thread.get('id'),
         title: thread.get('title') || 'No summary available',
@@ -174,7 +200,7 @@ onMounted(async () => {
       });
     });
   }
-  let threadSubscription = ((await getThreads()) as RxQuery).$.subscribe(threads => {
+  ((await getThreads()) as RxQuery).$.subscribe(threads => {
     console.log('Threads updated:', threads);
     arrayOfChats.value = threads.map((thread: RxDocument) => {
       if (thread.get('id') == route.params.id) {
@@ -188,6 +214,24 @@ onMounted(async () => {
       };
     });
   });
+  if (route.params.id) {
+    threadDetailsSubscription.value = (
+      (await getThreadDetailsQuery(route.params.id as string)) as RxQuery
+    ).$.subscribe(async thread => {
+      console.log(thread, 'thread info');
+      let threadInfo = route.params.id
+        ? await getThreadDetails(route.params.id as string)
+        : {
+            title: 'New Chat - tezz-chat',
+            visibility: 'na',
+          };
+      const { title, visibility } = threadInfo;
+      document.title = title;
+      visibilityRef.value = visibility;
+      console.log(threadInfo);
+    });
+  }
+
   // scroll to current chat on sidebar
   scrollToSelectedChat();
   route.params.id
@@ -243,8 +287,28 @@ watch(
     if (!newId) {
       console.warn('No chat ID provided in route params.');
       document.title = 'New Chat - tezz-chat';
+      visibilityRef.value = 'na';
       return;
     }
+    if (threadDetailsSubscription.value) {
+      threadDetailsSubscription.value.unsubscribe();
+    }
+    threadDetailsSubscription.value = (
+      (await getThreadDetailsQuery(route.params.id as string)) as RxQuery
+    ).$.subscribe(async thread => {
+      console.log(thread, 'thread info');
+      let threadInfo = route.params.id
+        ? await getThreadDetails(route.params.id as string)
+        : {
+            title: 'New Chat - tezz-chat',
+            visibility: 'na',
+          };
+      const { title, visibility } = threadInfo;
+      document.title = title;
+      visibilityRef.value = visibility;
+      console.log(threadInfo);
+    });
+
     console.log('Route changed from', oldId, 'to', newId);
     changeTitle(newId as string);
     // scrollToSelectedChat();
@@ -255,5 +319,40 @@ const logout = async () => {
   console.log('Logging out...');
   await userStore.logOut();
   navigateTo('/auth');
+};
+
+const copy = async () => {
+  try {
+    const link = `${window.location.origin}/chat/shared/${route.params.id}`;
+    await navigator.clipboard.writeText(link);
+    console.log('Chat link copied to clipboard:', link);
+    toast('Link copied!', {
+      description: 'Your chat link has been copied to the clipboard.',
+    });
+  } catch (error) {
+    console.error('Error copying chat link:', error);
+    isLoading.value = false;
+  }
+};
+const share = async () => {
+  isLoading.value = true;
+  try {
+    const response = await $fetch('/api/chat/visibility', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + (await userStore.getJWT()),
+      },
+      body: {
+        chatId: route.params.id,
+        visibility: visibilityRef.value == 'public' ? 'private' : 'public',
+      },
+    });
+    console.log('Share response:', response);
+    isLoading.value = false;
+    // Handle share success, e.g., show a notification or copy link to clipboard
+  } catch (error) {
+    console.error('Error sharing chat:', error);
+    isLoading.value = false;
+  }
 };
 </script>

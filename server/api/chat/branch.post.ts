@@ -73,6 +73,7 @@ export default defineEventHandler(async event => {
     }
 
     // Get all messages up to the specified timestamp
+    // TODO: use id instead of timestamp
     const messages = await databases.listDocuments(
       appwriteConfig.databaseId,
       COLLECTION_NAMES.CHAT_MESSAGES,

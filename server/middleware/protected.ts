@@ -26,6 +26,12 @@ export default defineEventHandler(async event => {
   const url = event.node.req.url || '';
 
   // Skip authentication check for non-protected routes
+  console.log(url, 'url');
+  console.log(/\/shared\/[a-zA-Z0-9-]+$/.test(url), 'testing url');
+  if (/\/shared\/[a-zA-Z0-9-]+$/.test(url)) {
+    console.log('Skipping auth...');
+    return;
+  }
   if (!protectedRoutes.some(route => url.startsWith(route))) {
     return;
   }
