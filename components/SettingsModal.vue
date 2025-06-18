@@ -146,13 +146,15 @@ const deleteAllIndexDB = async () => {
   try {
     const dbs = await indexedDB.databases();
     for (const db of dbs) {
-      const request = indexedDB.deleteDatabase(db.name);
-      request.onsuccess = () => {
-        console.log(`Deleted database: ${db.name}`);
-      };
-      request.onerror = event => {
-        console.error(`Error deleting database ${db.name}:`, event);
-      };
+      if (db.name) {
+        const request = indexedDB.deleteDatabase(db.name);
+        request.onsuccess = () => {
+          console.log(`Deleted database: ${db.name}`);
+        };
+        request.onerror = event => {
+          console.error(`Error deleting database ${db.name}:`, event);
+        };
+      }
     }
   } catch (error) {
     console.error('Error deleting IndexedDB databases:', error);

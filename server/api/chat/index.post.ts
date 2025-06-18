@@ -21,6 +21,7 @@ import {
   type ModelType,
 } from '~/server/utils/model';
 import { google } from '@ai-sdk/google';
+import { withRetry } from '~/server/utils/db';
 
 // Constants
 const DEFAULT_TEMPERATURE = 0.7;
@@ -117,34 +118,15 @@ const createPermissions = (userId: string) => [
   Permission.delete(Role.user(userId)),
 ];
 
-const withRetry = async <T>(
-  operation: () => Promise<T>,
-  retries = MAX_RETRIES,
-  timeout = DB_OPERATION_TIMEOUT
-): Promise<T> => {
-  try {
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Operation timed out')), timeout);
-    });
-    return (await Promise.race([operation(), timeoutPromise])) as T;
-  } catch (error) {
-    if (retries > 0) {
-      console.log(`Retrying operation, ${retries} attempts left`);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
-      return withRetry(operation, retries - 1, timeout);
-    }
-    throw error;
-  }
-};
-
 const createMessageDocument = async (
   databases: any,
   chatId: string,
   message: ChatMessage,
   userId: string,
-  deviceId: string
+  deviceId: string,
+  messageIdFromMessage: string | null = null
 ) => {
-  const messageId = ID.unique();
+  const messageId = messageIdFromMessage ? messageIdFromMessage : ID.unique();
   const now = createTimestamp();
 
   return await withRetry(() =>
@@ -383,6 +365,7 @@ export default defineLazyEventHandler(async () => {
           // model: modelInstance,
           messages: messages,
           temperature: DEFAULT_TEMPERATURE,
+          experimental_generateMessageId: () => ID.unique(),
           experimental_transform: smoothStream({
             chunking: 'word',
             delayInMs: STREAM_DELAY_MS,
@@ -394,6 +377,7 @@ export default defineLazyEventHandler(async () => {
             google: { responseModalities: ['TEXT', 'IMAGE'] },
           },
           onFinish: async event => {
+            console.log('Image generation finished:', event.response.messages);
             if (event.text && userId && chatSession) {
               try {
                 // Check if the response contains image data
@@ -433,7 +417,8 @@ export default defineLazyEventHandler(async () => {
                   chatSession.$id,
                   messageData,
                   userId,
-                  'assistant'
+                  'assistant',
+                  event.response.messages[0].id || null
                 );
                 await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',
@@ -461,6 +446,7 @@ export default defineLazyEventHandler(async () => {
         // }),
         maxSteps: MAX_STEPS,
         maxRetries: MAX_RETRIES,
+        experimental_generateMessageId: () => ID.unique(),
         // abortSignal: controller.signal,
         tools: doesSupportToolCalls(model as ModelType)
           ? {
@@ -578,6 +564,7 @@ export default defineLazyEventHandler(async () => {
         },
         onFinish: async event => {
           if (event.text && userId && chatSession) {
+            console.log('AI response:', event, event.response);
             // Handle message editing after AI response
             if (isEditOperation && editedFrom && chatId && editedFromId) {
               await handleAfterEditDeletion(
@@ -609,7 +596,8 @@ export default defineLazyEventHandler(async () => {
                 chatSession.$id,
                 messageData,
                 userId,
-                'assistant'
+                'assistant',
+                assistantMessage.id || null
               ),
                 await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',

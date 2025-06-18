@@ -94,9 +94,6 @@ watch(status, newStatus => {
 console.log('Chat initialized with ID:', chatId, status.value);
 
 onMounted(() => {
-  if (chatId && !messages.value.length) {
-    navigateTo('/chat');
-  }
   if (messageStore.isBranched) {
     console.log('Chat has been branched, setting messages from store');
     // @ts-ignore
@@ -106,6 +103,9 @@ onMounted(() => {
   } else {
     console.log('No branching detected, using initial messages');
     setMessages(props.initialMessages || []);
+    if (chatId && !props.initialMessages?.length) {
+      navigateTo('/chat');
+    }
   }
   scrollToBottom();
 });

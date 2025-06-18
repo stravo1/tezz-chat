@@ -23,7 +23,7 @@ const { textarea, input: contentBeingEdited } = useTextareaAutosize();
 const isBeingEdited = ref(false);
 const timeStampOfMessageBeingEdited = ref<string | null>(null);
 
-const handleBranch = async (createdAt: any) => {
+const handleBranch = async (id: string, createdAt: any) => {
   // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
   const filteredMessages = props.messages.filter(message => {
     try {
@@ -44,6 +44,7 @@ const handleBranch = async (createdAt: any) => {
     body: {
       sourceChatId: props.chatId,
       branchFromTimestamp: createdAt,
+      branchFromMessageId: id,
     },
   });
   console.log('Branching response:', res);
@@ -180,7 +181,7 @@ console.log('Messages:', props.messages);
               :message-id="message.id"
               :is-editing="isBeingEdited"
               :handle-copy="() => handleCopy(message.content)"
-              :handle-branch="() => handleBranch((message as any).$createdAt)"
+              :handle-branch="() => handleBranch(message.id, message.createdAt)"
               :handle-edit="
                 () => {
                   isBeingEdited = true;
