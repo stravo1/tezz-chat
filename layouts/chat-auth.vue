@@ -291,7 +291,7 @@ const filterChats = (query: string | null | undefined) => {
     arrayOfChats.value = allChats.value; // Reset to all chats if query is empty
     return;
   }
-  arrayOfChats.value = arrayOfChats.value.filter(chat =>
+  arrayOfChats.value = allChats.value.filter(chat =>
     chat.title.toLowerCase().includes(query.toLowerCase())
   );
 };
