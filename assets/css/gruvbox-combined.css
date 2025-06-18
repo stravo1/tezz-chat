@@ -1,4 +1,4 @@
-@media (prefers-color-scheme: dark) {
+.dark {
   pre code.hljs {
     display: block;
     overflow-x: auto;
@@ -162,7 +162,7 @@ base0F  #d65d0e  Deprecated, Opening/Closing Embedded Language Tags, e.g. <?php 
     font-weight: bold;
   }
 }
-@media (prefers-color-scheme: light) {
+.light {
   pre code.hljs {
     display: block;
     overflow-x: auto;
