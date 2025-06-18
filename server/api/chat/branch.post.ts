@@ -5,6 +5,7 @@ import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { z } from 'zod';
+import { withRetry } from '~/server/utils/db';
 
 const updateChatDocument = async (databases: any, chatId: string, updates: any) => {
   return await databases.updateDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId, {
@@ -19,8 +20,10 @@ const branchChatSchema = z.object({
     .string()
     .describe(
       'ISO timestamp of the message to branch from (messages before this timestamp will be included)'
-    ),
+    )
+    .optional(),
   deviceId: z.string().optional().describe('Optional device identifier'),
+  branchFromMessageId: z.string(),
 });
 
 // Helper functions
@@ -51,15 +54,21 @@ export default defineEventHandler(async event => {
       );
     }
 
-    const { sourceChatId, branchFromTimestamp, deviceId } = validation.data;
-
+    const { sourceChatId, branchFromTimestamp, deviceId, branchFromMessageId } = validation.data;
+    const messagebeingBranched = await withRetry(() =>
+      databases.getDocument(
+        appwriteConfig.databaseId,
+        COLLECTION_NAMES.CHAT_MESSAGES,
+        branchFromMessageId
+      )
+    );
     // Validate timestamp format
-    if (isNaN(Date.parse(branchFromTimestamp))) {
-      throw createAppError(
-        ErrorCode.INVALID_REQUEST,
-        'Invalid timestamp format. Please provide a valid ISO timestamp.'
-      );
-    }
+    // if (isNaN(Date.parse(branchFromTimestamp))) {
+    //   throw createAppError(
+    //     ErrorCode.INVALID_REQUEST,
+    //     'Invalid timestamp format. Please provide a valid ISO timestamp.'
+    //   );
+    // }
 
     // Get the source chat
     const sourceChat = await databases.getDocument(
@@ -79,7 +88,7 @@ export default defineEventHandler(async event => {
       COLLECTION_NAMES.CHAT_MESSAGES,
       [
         Query.equal('chatId', sourceChatId),
-        Query.lessThanEqual('$createdAt', branchFromTimestamp),
+        Query.lessThanEqual('createdAt', messagebeingBranched.createdAt),
         Query.equal('deleted', false),
       ]
     );
@@ -118,7 +127,23 @@ export default defineEventHandler(async event => {
     );
 
     // Copy messages to the new chat
+    console.log(
+      'Branching chat:',
+      newChatId,
+      'from source:',
+      sourceChatId,
+      'no. of messages:',
+      messages.documents.length,
+      'branching from message:',
+      messagebeingBranched.$id
+    );
     const messagePromises = messages.documents.map(async message => {
+      console.log(
+        'Branching message:',
+        message.$id,
+        message.createdAt,
+        new Date(message.createdAt) <= new Date(messagebeingBranched.createdAt)
+      );
       const newMessageId = ID.unique();
       return databases.createDocument(
         appwriteConfig.databaseId,
@@ -142,6 +167,7 @@ export default defineEventHandler(async event => {
     await Promise.all(messagePromises);
     await updateChatDocument(databases, newChatId, {
       lastModifiedBy: 'user',
+      updatedAt: new Date().toISOString(),
     });
 
     return {
