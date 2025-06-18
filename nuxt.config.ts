@@ -37,113 +37,80 @@ export default defineNuxtConfig({
     build: {
       transpile: ['@uivjs/vue-markdown-preview', 'dexie', 'rxdb'],
     },
+    pwa: {
+      strategies: sw ? 'injectManifest' : 'generateSW',
+      srcDir: sw ? 'service-worker' : undefined,
+      filename: sw ? 'sw.ts' : undefined,
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'Tezz Chat',
+        short_name: 'Tezz Chat',
+        description: 'AI-powered chat application',
+        theme_color: '#fcd195',
+        background_color: '#ffffff',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        icons: [
+          {
+            src: 'icons/icon-72x72.png',
+            sizes: '72x72',
+            type: 'image/png',
+          },
+          {
+            src: 'icons/icon-96x96.png',
+            sizes: '96x96',
+            type: 'image/png',
+          },
+          {
+            src: 'icons/icon-128x128.png',
+            sizes: '128x128',
+            type: 'image/png',
+          },
+          {
+            src: 'icons/icon-144x144.png',
+            sizes: '144x144',
+            type: 'image/png',
+          },
+          {
+            src: 'icons/icon-152x152.png',
+            sizes: '152x152',
+            type: 'image/png',
+          },
+          {
+            src: 'icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+          {
+            src: 'icons/icon-384x384.png',
+            sizes: '384x384',
+            type: 'image/png',
+          },
+          {
+            src: 'icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      },
+      client: {
+        installPrompt: true,
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+    },
   },
   app: {
     head: {
       viewport:
         'width=device-width,initial-scale=1,user-scalable=no,interactive-widget=resizes-content',
-    },
-  },
-  pwa: {
-    strategies: sw ? 'injectManifest' : 'generateSW',
-    srcDir: sw ? 'service-worker' : undefined,
-    filename: sw ? 'sw.ts' : undefined,
-    registerType: 'autoUpdate',
-    manifest: {
-      name: 'Tezz Chat',
-      short_name: 'Tezz Chat',
-      description: 'AI-powered chat application',
-      theme_color: '#fcd195',
-      background_color: '#ffffff',
-      display: 'standalone',
-      orientation: 'portrait',
-      scope: '/',
-      start_url: '/',
-      icons: [
-        {
-          src: 'icons/icon-72x72.png',
-          sizes: '72x72',
-          type: 'image/png',
-        },
-        {
-          src: 'icons/icon-96x96.png',
-          sizes: '96x96',
-          type: 'image/png',
-        },
-        {
-          src: 'icons/icon-128x128.png',
-          sizes: '128x128',
-          type: 'image/png',
-        },
-        {
-          src: 'icons/icon-144x144.png',
-          sizes: '144x144',
-          type: 'image/png',
-        },
-        {
-          src: 'icons/icon-152x152.png',
-          sizes: '152x152',
-          type: 'image/png',
-        },
-        {
-          src: 'icons/icon-192x192.png',
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any maskable',
-        },
-        {
-          src: 'icons/icon-384x384.png',
-          sizes: '384x384',
-          type: 'image/png',
-        },
-        {
-          src: 'icons/icon-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-        },
-      ],
-    },
-    workbox: {
-      navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
-      globDirectory: '.output/public',
-      runtimeCaching: [
-        {
-          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'google-fonts-cache',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365,
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-        {
-          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'gstatic-fonts-cache',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365,
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-      ],
-    },
-    client: {
-      installPrompt: true,
-    },
-    devOptions: {
-      enabled: true,
-      type: 'module',
     },
   },
 });
