@@ -41,6 +41,7 @@
     "node-appwrite": "^17.0.0",
     "nuxt": "^3.17.5",
     "nuxt-og-image": "5.1.6",
+    "nuxt-seo-utils": "7.0.12",
     "pinia": "^3.0.3",
     "rehype-highlight": "^7.0.2",
     "reka-ui": "^2.3.1",

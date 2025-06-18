@@ -8,9 +8,9 @@ import vueJsxPlugin from '@vitejs/plugin-vue-jsx';
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
-  modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt', 'nuxt-og-image'],
+  modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt', 'nuxt-og-image', 'nuxt-seo-utils'],
   site: {
-    url: 'https://tezz-chat.vercel.app',
+    url: 'https://www.tezz.chat',
     name: 'Tezz Chat',
   },
   runtimeConfig: {
