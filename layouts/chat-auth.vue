@@ -412,5 +412,7 @@ const deleteThread = async (threadId: string) => {
     console.error(`Error deleting thread ${threadId}:`, error);
     isLoading.value = false;
   }
+  // TODO: only if there was a prev chat
+  navigateTo('/chat/');
 };
 </script>
