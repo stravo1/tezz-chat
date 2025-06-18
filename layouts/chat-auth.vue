@@ -368,12 +368,12 @@ watch(
   }
 );
 
-const copy = async () => {
+const copy = async (suppressToast: boolean = false) => {
   try {
     const link = `${window.location.origin}/chat/shared/${route.params.id}`;
     await navigator.clipboard.writeText(link);
     console.log('Chat link copied to clipboard:', link);
-    toast.success('Link copied!');
+    if (!suppressToast) toast.success('Link copied!');
   } catch (error) {
     console.error('Error copying chat link:', error);
     isLoading.value = false;
@@ -393,6 +393,14 @@ const share = async () => {
       },
     });
     console.log('Share response:', response);
+    if (response.data.visibility == 'public') {
+      visibilityRef.value = 'public';
+      toast.success('Chat is now public! Link copied to clipboard.');
+      copy(true); // Automatically copy the link when made public
+    } else {
+      visibilityRef.value = 'private';
+      toast.success('Chat is now private!');
+    }
     isLoading.value = false;
     // Handle share success, e.g., show a notification or copy link to clipboard
   } catch (error) {
