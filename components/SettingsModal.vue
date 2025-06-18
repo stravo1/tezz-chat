@@ -25,12 +25,21 @@
               <p class="text-sm opacity-75">{{ userProfile.email || 'No email provided' }}</p>
             </div>
           </div>
-          <button
-            @click="logout"
-            class="text-primary/50 cursor-pointer rounded px-4 py-2 hover:bg-red-100 dark:hover:bg-red-400/20"
-          >
-            <LogOut class="text-red-500 dark:text-red-300" />
-          </button>
+          <div class="flex items-center justify-center gap-2">
+            <button
+              @click="toggleDarkMode()"
+              class="text-primary/50 hover:bg-primary/10 cursor-pointer rounded px-4 py-2"
+            >
+              <Sun v-if="isDark" />
+              <Moon v-else />
+            </button>
+            <button
+              @click="logout"
+              class="text-primary/50 cursor-pointer rounded px-4 py-2 hover:bg-red-100 dark:hover:bg-red-400/20"
+            >
+              <LogOut class="text-red-500 dark:text-red-300" />
+            </button>
+          </div>
         </div>
 
         <!-- API Keys Section -->
@@ -77,10 +86,11 @@
 </template>
 
 <script setup lang="ts">
-import { LogOut, Save, Settings, Settings2, User, X } from 'lucide-vue-next';
+import { LogOut, Moon, Save, Settings, Settings2, Sun, User, X } from 'lucide-vue-next';
 import { ref, onMounted, onUnmounted } from 'vue';
 // @ts-ignore
 import { toast } from 'vue-sonner';
+import { useDark, useToggle } from '@vueuse/core';
 
 interface UserProfile {
   name: string;
@@ -102,7 +112,13 @@ const userStore = useUserStore();
 // API key management
 const geminiKey = ref('');
 const openRouterKey = ref('');
-
+const isDark = useDark({
+  selector: 'html',
+  attribute: 'class',
+  valueDark: 'dark',
+  valueLight: 'light',
+});
+const toggleDarkMode = useToggle(isDark);
 const saveGeminiKey = () => {
   if (geminiKey.value) {
     localStorage.setItem('gemini-api-key', geminiKey.value);

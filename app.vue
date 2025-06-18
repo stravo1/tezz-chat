@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { Toaster } from '@/components/ui/sonner';
+import { useDark } from '@vueuse/core';
 import 'vue-sonner/style.css';
-
+const isDark = useDark({
+  selector: 'html',
+  attribute: 'class',
+  valueDark: 'dark',
+  valueLight: 'light',
+});
 defineOgImageComponent('Pergel', {
   headline: 'Open-Source ChatGPT Alternative',
   title: 'Tezz Chat',
