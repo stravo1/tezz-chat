@@ -6,9 +6,9 @@
     <div class="h-[60vh] w-[80vw] lg:h-[40vh] lg:w-[55vw]">
       <div
         :class="{ 'rounded-b-lg': matchedThrads.length === 0 }"
-        class="bg-primary-container/20 flex w-full items-center justify-center gap-2 rounded-t-lg p-4 px-6 text-black/50 dark:text-white/50"
+        class="bg-surface dark:bg-primary-container/60 text-primary flex w-full items-center justify-center gap-2 rounded-t-lg p-4 px-6 dark:text-white/50"
       >
-        <Search class="text-black/50 dark:text-white/50" />
+        <Search class="text-primary dark:text-white/50" />
         <input
           ref="searchInput"
           @keydown="handleKeyPress"
@@ -24,7 +24,7 @@
             v-for="thread in matchedThrads"
             :key="thread.id"
             :to="`/chat/${thread.id}`"
-            class="bg-secondary-container/10 text-on-secondary-container hover:bg-secondary-container/30 border-secondary/50 cursor-pointer overflow-hidden border-b p-4 text-ellipsis whitespace-nowrap"
+            class="bg-surface-container-low dark:bg-secondary-container/10 text-on-secondary-container hover:bg-secondary-container dark:hover:bg-secondary-container/30 border-secondary/50 cursor-pointer overflow-hidden border-b p-4 text-ellipsis whitespace-nowrap"
           >
             {{ thread.title }}
           </NuxtLink>

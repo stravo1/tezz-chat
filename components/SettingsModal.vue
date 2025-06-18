@@ -5,7 +5,7 @@
   >
     <div @click.stop class="h-fit max-h-[50vh] w-[90vw] max-w-[540px] lg:w-[55vw]">
       <div
-        class="bg-primary-container/20 flex w-full items-center justify-between rounded-t-lg p-4 px-6 text-black/50 dark:text-white/50"
+        class="bg-surface-container-low dark:bg-primary-container/60 flex w-full items-center justify-between rounded-t-lg p-4 px-6 text-black/50 dark:text-white/50"
       >
         <div class="flex items-center gap-2">
           <Settings2 class="text-black/50 dark:text-white/50" />
@@ -13,7 +13,9 @@
         <X class="cursor-pointer hover:opacity-75" @click="props.closeModal" />
       </div>
 
-      <div class="bg-secondary-container/10 h-full overflow-y-auto p-6">
+      <div
+        class="bg-surface dark:bg-secondary-container/10 h-full overflow-y-auto rounded-b-lg p-6"
+      >
         <!-- User Profile Section -->
         <div class="mb-8 flex justify-between">
           <div class="flex items-center gap-4">
@@ -25,9 +27,9 @@
           </div>
           <button
             @click="logout"
-            class="text-primary/50 cursor-pointer rounded px-4 py-2 hover:bg-red-600/50"
+            class="text-primary/50 cursor-pointer rounded px-4 py-2 hover:bg-red-100 dark:hover:bg-red-400/20"
           >
-            <LogOut />
+            <LogOut class="text-red-500 dark:text-red-300" />
           </button>
         </div>
 
