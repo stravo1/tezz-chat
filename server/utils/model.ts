@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 export type ModelType =
@@ -34,6 +34,7 @@ interface ModelOptions {
 }
 
 export function getModel(modelType: ModelType, options: ModelOptions = {}) {
+  console.log(options, 'options in getModel');
   const {
     geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     openRouterApiKey = process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
@@ -45,7 +46,8 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       if (!geminiApiKey) {
         throw new Error('Gemini API key is required but not provided');
       }
-      return google(modelType, { apiKey: geminiApiKey });
+      let google = createGoogleGenerativeAI({ apiKey: geminiApiKey });
+      return google(modelType);
 
     case 'deepseek-chat-v3':
       return createOpenRouter({
@@ -71,6 +73,7 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       if (!geminiApiKey) {
         throw new Error('Gemini API key is required but not provided');
       }
-      return google('gemini-2.0-flash-exp', { apiKey: geminiApiKey });
+      const googleDef = createGoogleGenerativeAI({ apiKey: geminiApiKey });
+      return googleDef('gemini-2.0-flash-exp');
   }
 }
