@@ -161,7 +161,8 @@
 <script setup lang="ts">
 import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
-import { onMounted, computed, watch } from 'vue';
+import { onMounted, computed, watch, ref } from 'vue';
+import { useHead } from '#imports'; // Import useHead from #imports
 import {
   EyeOff,
   Link,
@@ -201,6 +202,12 @@ const layoutLoading = computed(() => isUserStateLoading.value || !isAuthChecked.
 
 const arrayOfChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
 const allChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
+const pageTitle = ref('New Chat');
+
+// Set up page title with useHead
+useHead({
+  title: computed(() => pageTitle.value),
+});
 const isSidebarOpen = ref(false);
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
@@ -242,7 +249,7 @@ onMounted(async () => {
     arrayOfChats.value = threads.map((thread: RxDocument) => {
       if (thread.get('id') == route.params.id) {
         console.log('Current chat found:', thread.get('id'));
-        document.title = thread.get('title') || 'No title - tezz-chat';
+        pageTitle.value = thread.get('title') || 'No title';
       }
       return {
         id: thread.get('id'),
@@ -260,7 +267,7 @@ onMounted(async () => {
       let threadInfo = route.params.id
         ? await getThreadDetails(route.params.id as string)
         : {
-            title: 'New Chat - tezz-chat',
+            title: 'New Chat',
             visibility: 'na',
           };
       const { title, visibility } = threadInfo;
@@ -272,9 +279,11 @@ onMounted(async () => {
 
   // scroll to current chat on sidebar
   scrollToSelectedChat();
-  route.params.id
-    ? changeTitle(route.params.id as string)
-    : (document.title = 'New Chat - tezz-chat');
+  if (route.params.id) {
+    changeTitle(route.params.id as string);
+  } else {
+    pageTitle.value = 'New Chat';
+  }
 });
 
 const filterChats = (query: string | null | undefined) => {
@@ -307,11 +316,7 @@ const scrollToSelectedChat = () => {
 
 const changeTitle = async (newId: string) => {
   const title = await getTitle(newId);
-  if (title) {
-    document.title = title + ' - tezz-chat';
-  } else {
-    document.title = 'tezz-chat';
-  }
+  pageTitle.value = title ? `${title}` : 'New Chat';
 };
 
 watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
@@ -334,7 +339,7 @@ watch(
     // react to route changes...
     if (!newId) {
       console.warn('No chat ID provided in route params.');
-      document.title = 'New Chat - tezz-chat';
+      pageTitle.value = 'New Chat';
       visibilityRef.value = 'na';
       return;
     }
@@ -348,7 +353,7 @@ watch(
       let threadInfo = route.params.id
         ? await getThreadDetails(route.params.id as string)
         : {
-            title: 'New Chat - tezz-chat',
+            title: 'New Chat',
             visibility: 'na',
           };
       const { title, visibility } = threadInfo;
