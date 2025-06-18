@@ -152,7 +152,7 @@ const handlePrimaryAction = () => {
               >
                 <button
                   @click="handlePrimaryAction"
-                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect dark:bg-primary/20 disabled:dark:hover:bg-primary/0 disabled:dark:active:bg-primary/0 bg-primary-container hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect bg-primary/80 text-on-primary-container dark:bg-primary/20 disabled:dark:hover:bg-primary/0 disabled:dark:active:bg-primary/0 hover:bg-primary dark:hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 cursor-pointer items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-white/50 disabled:opacity-50"
                   :disabled="message.trim() === '' && status != 'streaming'"
                   data-state="closed"
                 >
