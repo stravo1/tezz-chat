@@ -34,6 +34,20 @@ const { messages, append, status, setMessages, reload, error, stop } = useChat({
   },
 });
 
+const getApiHeaders = (model?: string) => {
+  const headers: Record<string, string> = {};
+  const geminiKey = localStorage.getItem('gemini-api-key');
+  const openRouterKey = localStorage.getItem('openrouter-api-key');
+
+  if (model?.includes('gemini') && geminiKey) {
+    headers['x-gemini-api-key'] = geminiKey;
+  } else if (openRouterKey) {
+    headers['x-openrouter-api-key'] = openRouterKey;
+  }
+
+  return headers;
+};
+
 const handleSubmit = async (
   message: string,
   attachments?: UIMessage['experimental_attachments'],
@@ -51,6 +65,7 @@ const handleSubmit = async (
       intent: intentStore.selectedIntent,
       model: selectedModel || 'gemini-2.0-flash-exp',
     },
+    headers: getApiHeaders(selectedModel),
   });
   scrollToBottom();
 };

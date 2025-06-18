@@ -247,7 +247,18 @@ export default defineLazyEventHandler(async () => {
       }
 
       const body = await readBody(event);
-      console.log('Received body:', body);
+      // console.log('Received body:', body);
+
+      // Get API keys from headers if provided
+      const headers = getRequestHeaders(event);
+      const geminiApiKey = headers['x-gemini-api-key'];
+      console.log('========Gemini API Key=========' + geminiApiKey);
+      const openRouterApiKey = headers['x-openrouter-api-key'];
+
+      console.log('API Keys from headers:', {
+        hasGeminiKey: !!geminiApiKey,
+        hasOpenRouterKey: !!openRouterApiKey,
+      });
 
       const validation = chatInputSchema.safeParse(body);
       if (!validation.success) {
@@ -278,7 +289,10 @@ export default defineLazyEventHandler(async () => {
         model,
         editedFromId,
       } = validation.data;
-      const modelInstance = getModel(model as ModelType);
+      const modelInstance = getModel(model as ModelType, {
+        geminiApiKey: geminiApiKey,
+        openRouterApiKey: openRouterApiKey,
+      });
       const lastMessage = messages[messages.length - 1] as Message;
       let chatSession;
       const isEditOperation = isEdited && editedFrom;

@@ -28,29 +28,49 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
   return models.includes(modelType);
 };
 
-export function getModel(modelType: ModelType) {
+interface ModelOptions {
+  geminiApiKey?: string;
+  openRouterApiKey?: string;
+}
+
+export function getModel(modelType: ModelType, options: ModelOptions = {}) {
+  const {
+    geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    openRouterApiKey = process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+  } = options;
+
   switch (modelType) {
     case 'gemini-2.0-flash-exp':
-      return google('gemini-2.0-flash-exp');
     case 'gemini-2.5-flash-preview-05-20':
-      return google('gemini-2.5-flash-preview-05-20');
+      if (!geminiApiKey) {
+        throw new Error('Gemini API key is required but not provided');
+      }
+      return google(modelType, { apiKey: geminiApiKey });
+
     case 'deepseek-chat-v3':
       return createOpenRouter({
-        apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+        apiKey: openRouterApiKey,
       }).chat('deepseek/deepseek-chat-v3-0324:free');
+
     case 'deepseek-r1':
       return createOpenRouter({
-        apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+        apiKey: openRouterApiKey,
       }).chat('deepseek/deepseek-r1-0528:free');
+
     case 'llama-4-scout':
       return createOpenRouter({
-        apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+        apiKey: openRouterApiKey,
       }).chat('meta-llama/llama-4-scout:free');
+
     case 'qwen3-30b':
       return createOpenRouter({
-        apiKey: process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+        apiKey: openRouterApiKey,
       }).chat('qwen/qwen3-30b-a3b:free');
+
     default:
-      return google('gemini-2.0-flash-exp'); // Default model
+      if (!geminiApiKey) {
+        throw new Error('Gemini API key is required but not provided');
+      }
+      return google('gemini-2.0-flash-exp', { apiKey: geminiApiKey });
   }
 }
