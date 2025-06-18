@@ -2,6 +2,8 @@
 import { Toaster } from '@/components/ui/sonner';
 import { useDark } from '@vueuse/core';
 import 'vue-sonner/style.css';
+import { Analytics } from '@vercel/analytics/nuxt';
+
 const isDark = useDark({
   selector: 'html',
   attribute: 'class',
@@ -18,6 +20,7 @@ defineOgImageComponent('Pergel', {
 </script>
 
 <template>
+  <Analytics />
   <Toaster />
   <NuxtPwaManifest />
   <ClientOnly>
