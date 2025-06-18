@@ -87,6 +87,7 @@ interface UserProfile {
 
 const props = defineProps<{
   closeModal: () => void;
+  setIsLoading: (isLoading: boolean) => void;
 }>();
 
 // User data mock - replace with actual user store/data
@@ -141,7 +142,27 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress);
 });
 
+const deleteAllIndexDB = async () => {
+  try {
+    const dbs = await indexedDB.databases();
+    for (const db of dbs) {
+      const request = indexedDB.deleteDatabase(db.name);
+      request.onsuccess = () => {
+        console.log(`Deleted database: ${db.name}`);
+      };
+      request.onerror = event => {
+        console.error(`Error deleting database ${db.name}:`, event);
+      };
+    }
+  } catch (error) {
+    console.error('Error deleting IndexedDB databases:', error);
+  }
+};
+
 const logout = async () => {
+  props.setIsLoading(true);
+  await deleteAllIndexDB();
+  props.setIsLoading(false);
   console.log('Logging out...');
   await userStore.logOut();
   navigateTo('/auth');

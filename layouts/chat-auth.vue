@@ -151,6 +151,7 @@
       <SettingsModal
         v-if="isSettingsModalOpen"
         :close-modal="() => (isSettingsModalOpen = false)"
+        :set-is-loading="() => (isLoading = true)"
       />
     </main>
   </div>
