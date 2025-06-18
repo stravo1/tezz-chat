@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Toaster } from '@/components/ui/sonner';
 import 'vue-sonner/style.css';
-
+import { Analytics } from '@vercel/analytics/nuxt';
 defineOgImageComponent('Pergel', {
   headline: 'Open-Source ChatGPT Alternative',
   title: 'Tezz Chat',
@@ -12,6 +12,7 @@ defineOgImageComponent('Pergel', {
 </script>
 
 <template>
+  <Analytics />
   <Toaster />
   <NuxtPwaManifest />
   <ClientOnly>
