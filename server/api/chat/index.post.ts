@@ -229,7 +229,7 @@ export default defineLazyEventHandler(async () => {
       }
 
       const body = await readBody(event);
-      // console.log('Received body:', body);
+      console.log('Received body:', body);
 
       // Get API keys from headers if provided
       const headers = getRequestHeaders(event);
@@ -276,6 +276,7 @@ export default defineLazyEventHandler(async () => {
         openRouterApiKey: openRouterApiKey,
       });
       const lastMessage = messages[messages.length - 1] as Message;
+      console.log('Last message:', lastMessage);
       let chatSession;
       const isEditOperation = isEdited && editedFrom;
 
@@ -294,14 +295,15 @@ export default defineLazyEventHandler(async () => {
             chatId
           );
 
-          if (lastMessage.role === 'user' && chatSession) {
+          if (lastMessage.role === 'user' && chatSession && !isEditOperation) {
             try {
               const userMessage = await createMessageDocument(
                 databases,
                 chatSession.$id,
                 lastMessage,
                 userId,
-                deviceId || 'server'
+                deviceId || 'server',
+                lastMessage.id || null
               );
 
               if (!userMessage || !userMessage.$id) {
@@ -339,7 +341,8 @@ export default defineLazyEventHandler(async () => {
             chatSession.$id,
             lastMessage,
             userId,
-            deviceId || 'server'
+            deviceId || 'server',
+            lastMessage.id || null
           );
           if (!userMessage || !userMessage.$id) {
             throw new Error('Failed to create user message');

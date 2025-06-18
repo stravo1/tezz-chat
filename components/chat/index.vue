@@ -25,6 +25,8 @@ const { messages, append, status, setMessages, reload, error, stop } = useChat({
   body: {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   },
+  generateId: () => ID.unique(),
+  sendExtraMessageFields: true,
   headers: {
     Authorization: 'Bearer ' + (props.isPublic ? '' : await userStore.getJWT()),
   },
@@ -101,9 +103,12 @@ onMounted(() => {
     messageStore.isBranched = false; // Reset the branched state
     messageStore.messages = []; // Clear messages in store
   } else {
+    if (status.value == 'submitted') {
+      return;
+    }
     console.log('No branching detected, using initial messages');
     setMessages(props.initialMessages || []);
-    if (chatId && !props.initialMessages?.length) {
+    if (chatId && !messages.value.length) {
       navigateTo('/chat');
     }
   }
