@@ -3,7 +3,7 @@
     @click="props.closeModal"
     class="fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
   >
-    <div @click.stop class="h-fit max-h-[50vh] w-[90vw] lg:w-[55vw]">
+    <div @click.stop class="h-fit max-h-[50vh] w-[90vw] max-w-[540px] lg:w-[55vw]">
       <div
         class="bg-primary-container/20 flex w-full items-center justify-between rounded-t-lg p-4 px-6 text-black/50 dark:text-white/50"
       >
@@ -87,6 +87,7 @@ interface UserProfile {
 
 const props = defineProps<{
   closeModal: () => void;
+  setIsLoading: (isLoading: boolean) => void;
 }>();
 
 // User data mock - replace with actual user store/data
@@ -141,7 +142,28 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress);
 });
 
+const deleteAllIndexDB = async () => {
+  try {
+    const dbs = await indexedDB.databases();
+    for (const db of dbs) {
+      const request = indexedDB.deleteDatabase(db.name);
+      request.onsuccess = () => {
+        console.log(`Deleted database: ${db.name}`);
+      };
+      request.onerror = event => {
+        console.error(`Error deleting database ${db.name}:`, event);
+      };
+    }
+  } catch (error) {
+    console.error('Error deleting IndexedDB databases:', error);
+  }
+};
+
 const logout = async () => {
+  props.setIsLoading(true);
+  localStorage.clear();
+  await deleteAllIndexDB();
+  props.setIsLoading(false);
   console.log('Logging out...');
   await userStore.logOut();
   navigateTo('/auth');

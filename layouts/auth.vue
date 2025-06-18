@@ -6,9 +6,6 @@
     <LoaderCircle class="animate-spin" />
   </div>
   <div v-if="!layoutLoading" class="relative flex min-h-screen flex-col text-gray-800">
-    <header class="absolute top-0 right-0 z-50 p-4">
-      <button @click="logout" class="cursor-pointer">Logout</button>
-    </header>
     <main class="flex h-screen w-screen">
       <slot />
     </main>

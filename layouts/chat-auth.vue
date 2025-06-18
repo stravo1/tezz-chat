@@ -131,6 +131,7 @@
                     </div>
                   </NuxtLink>
                   <button
+                    @click.stop.prevent="deleteThread(chat.id)"
                     class="text-on-surface-container-highest group: from-surface-container-highest to-surface-container-highest/1 absolute top-0 right-0 bottom-0 flex w-[75px] cursor-pointer items-center justify-end rounded-r-lg bg-gradient-to-l pr-2 opacity-0 transition-all group-hover:opacity-100 hover:text-white"
                   >
                     <Trash2 :size="18" class="opacity-50 group-hover:opacity-100" />
@@ -151,6 +152,7 @@
       <SettingsModal
         v-if="isSettingsModalOpen"
         :close-modal="() => (isSettingsModalOpen = false)"
+        :set-is-loading="() => (isLoading = true)"
       />
     </main>
   </div>
@@ -390,6 +392,24 @@ const share = async () => {
     // Handle share success, e.g., show a notification or copy link to clipboard
   } catch (error) {
     console.error('Error sharing chat:', error);
+    isLoading.value = false;
+  }
+};
+
+const deleteThread = async (threadId: string) => {
+  isLoading.value = true;
+  try {
+    await $fetch(`/api/chat/${threadId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: 'Bearer ' + (await userStore.getJWT()),
+      },
+    });
+    console.log(`Thread ${threadId} deleted successfully`);
+    isLoading.value = false;
+    // Optionally, refresh the chat list or show a success message
+  } catch (error) {
+    console.error(`Error deleting thread ${threadId}:`, error);
     isLoading.value = false;
   }
 };
