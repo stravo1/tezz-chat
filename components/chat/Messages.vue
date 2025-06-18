@@ -176,7 +176,7 @@ console.log('Messages:', props.messages);
             class="text-on-secondary-container text-xs opacity-0 transition-all group-hover:opacity-100"
           >
             <ChatMessageOptions
-              v-if="status !== 'streaming' && !isPublic"
+              :class="{ invisible: status == 'streaming' || isPublic }"
               :role="message.role"
               :message-id="message.id"
               :is-editing="isBeingEdited"
