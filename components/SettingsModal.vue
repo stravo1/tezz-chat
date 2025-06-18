@@ -161,6 +161,7 @@ const deleteAllIndexDB = async () => {
 
 const logout = async () => {
   props.setIsLoading(true);
+  localStorage.clear();
   await deleteAllIndexDB();
   props.setIsLoading(false);
   console.log('Logging out...');
