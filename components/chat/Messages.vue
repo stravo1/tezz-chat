@@ -180,7 +180,7 @@ console.log('Messages:', props.messages);
               </div>
             </div>
           </div>
-          <div v-else>
+          <div v-else-if="message.role == 'user'">
             <div v-if="message.experimental_attachments?.length">
               <div v-for="file in message.experimental_attachments">
                 <File v-if="!file.contentType?.includes('image')" />
