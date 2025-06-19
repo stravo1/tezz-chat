@@ -319,9 +319,15 @@ const changeTitle = async (newId: string) => {
   pageTitle.value = title ? `${title}` : 'New Chat';
 };
 
-watch([isAuthenticated, isAuthChecked], ([authenticated, checked]) => {
+watch([isAuthenticated, isAuthChecked], async ([authenticated, checked]) => {
   if (checked && !authenticated) {
-    navigateTo('/auth');
+    console.warn('User is not authenticated, redirecting to auth page');
+    try {
+      await navigateTo('/auth');
+      console.log('Redirected to auth page');
+    } catch (error) {
+      console.error('Error navigating to auth page:', error);
+    }
   }
 });
 
