@@ -18,7 +18,7 @@
         >
           <button
             v-if="visibilityRef != 'na'"
-            @click="copy"
+            @click="copy()"
             class="text-tertiary/50 hover:text-tertiary hidden cursor-pointer rounded bg-transparent p-2 transition-all group-hover:flex"
           >
             <Link2 v-if="visibilityRef == 'public'" />
