@@ -17,6 +17,7 @@
 - 🌐 Web search and get latest info!
 - 📱 Responsive & mobile-friendly
 - 📌 Local first
+- 🔑 Option to Bring Your Own Keys ;)
 
 ## Architecture
 
