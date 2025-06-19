@@ -201,7 +201,7 @@ console.log('Database initialized');
 const route = useRoute();
 const userStore = useUserStore();
 const { isAuthenticated, isAuthChecked, isLoading: isUserStateLoading } = storeToRefs(userStore);
-const layoutLoading = computed(() => isUserStateLoading.value || !isAuthChecked.value);
+const layoutLoading = ref(true);
 
 const arrayOfChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
 const allChats = ref([] as { id: string; title: string; isBranched: boolean }[]);
@@ -225,7 +225,13 @@ const isSettingsModalOpen = ref(false);
 onMounted(async () => {
   if (!isAuthChecked.value) {
     await userStore.fetchUser();
+    if (!isAuthenticated.value) {
+      console.warn('User is not authenticated, redirecting to auth page');
+      navigateTo('/auth');
+      return;
+    }
   }
+  layoutLoading.value = false;
   let threads = await (await getThreads()).exec();
   if (threads.length === 0) {
     console.log('No threads found, redirecting to create thread page');
