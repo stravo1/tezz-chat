@@ -132,9 +132,12 @@
                   </NuxtLink>
                   <button
                     @click.stop.prevent="deleteThread(chat.id)"
-                    class="text-on-surface-container-highest group: from-surface-container-highest to-surface-container-highest/1 absolute top-0 right-0 bottom-0 flex w-[75px] cursor-pointer items-center justify-end rounded-r-lg bg-gradient-to-l pr-2 opacity-0 transition-all group-hover:opacity-100 hover:text-white"
+                    class="text-on-surface-container-highest group from-surface-container-lowest to-surface-container-lowest/1 lg:from-surface-container-highest lg:to-surface-container-highest/1 absolute top-0 right-0 bottom-0 flex w-[75px] cursor-pointer items-center justify-end rounded-r-lg bg-gradient-to-l pr-2 transition-all lg:opacity-0 lg:group-hover:opacity-100 lg:hover:text-white"
                   >
-                    <Trash2 :size="18" class="opacity-50 group-hover:opacity-100" />
+                    <Trash2
+                      :size="18"
+                      class="opacity-100 lg:opacity-50 lg:group-hover:opacity-100"
+                    />
                   </button>
                 </div>
               </div>
@@ -416,6 +419,13 @@ const share = async () => {
 };
 
 const deleteThread = async (threadId: string) => {
+  const confirmDelete = confirm(
+    'Are you sure you want to delete this chat? This action cannot be undone.'
+  );
+  if (!confirmDelete) {
+    console.log('Thread deletion cancelled');
+    return;
+  }
   isLoading.value = true;
   try {
     await $fetch(`/api/chat/${threadId}`, {
