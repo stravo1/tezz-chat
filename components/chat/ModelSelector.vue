@@ -9,6 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import gemini from '../../assets/svg/gemini.vue';
+import meta from '../../assets/svg/meta.vue';
+import qwen from '../../assets/svg/qwen.vue';
+import deepseek from '../../assets/svg/deepseek.vue';
 
 export type ModelType =
   | 'gemini-2.0-flash-exp'
@@ -22,26 +26,32 @@ const models = [
   {
     title: 'Gemini 2.0 Flash Exp',
     value: 'gemini-2.0-flash-exp',
+    icon: gemini,
   },
   {
     title: 'Gemini 2.5 Flash Preview 05-20',
     value: 'gemini-2.5-flash-preview-05-20',
+    icon: gemini,
   },
   {
     title: 'Deepseek Chat V3',
     value: 'deepseek-chat-v3',
-  },
-  {
-    title: 'Qwen3 30B',
-    value: 'qwen3-30b',
+    icon: deepseek,
   },
   {
     title: 'Deepseek R1',
     value: 'deepseek-r1',
+    icon: deepseek,
+  },
+  {
+    title: 'Qwen3 30B',
+    value: 'qwen3-30b',
+    icon: qwen,
   },
   {
     title: 'Llama 4 Scout',
     value: 'llama-4-scout',
+    icon: meta,
   },
 ];
 
@@ -80,7 +90,10 @@ onMounted(() => {
             'bg-secondary/30 text-on-secondary-container': selectedModel === model.value,
           }"
         >
-          {{ model.title }}
+          <div class="flex items-center gap-2">
+            <component :is="model.icon" class="h-5 w-5" />
+            <span>{{ model.title }}</span>
+          </div>
         </DropdownMenuRadioItem>
       </DropdownMenuRadioGroup>
     </DropdownMenuContent>
