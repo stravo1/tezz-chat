@@ -2,7 +2,7 @@
 import type { ChatRequestOptions, UIMessage } from 'ai';
 
 import { useTextareaAutosize } from '@vueuse/core';
-import { File } from 'lucide-vue-next';
+import { File, LoaderCircle } from 'lucide-vue-next';
 
 const props = defineProps<{
   chatId?: string;
@@ -238,6 +238,9 @@ console.log('Messages:', props.messages);
         </div>
       </div>
       <ChatLoader v-if="haventGottenFirstChunk" />
+      <div class="h-6 w-6" v-if="intentStore.selectedIntent == 'image' && status == 'streaming'">
+        <LoaderCircle class="animate-spin" />
+      </div>
       <div id="padding" class="pb-[200px]"></div>
     </div>
   </div>
