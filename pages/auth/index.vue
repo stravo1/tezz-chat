@@ -11,7 +11,7 @@
       </svg>
       Sign in with GitHub
     </button>
-    <div>OR</div>
+    <div class="text-on-surface">OR</div>
     <button
       @click="loginWithGoogle"
       class="bg-surface border-on-surface text-on-surface hover:bg-surface/90 focus:ring-surface/50 flex w-[240px] cursor-pointer items-center justify-center gap-3 rounded-md border px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
