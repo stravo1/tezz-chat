@@ -7,7 +7,7 @@ const props = defineProps<{
   id: string;
 }>();
 
-const isExpanded = ref(true);
+const isExpanded = ref(false);
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value;
 };
@@ -27,8 +27,12 @@ console.log('MessageReasoning component initialized with message:', props.messag
       <span>Reasoning</span>
     </button>
 
-    <div v-if="isExpanded" class="bg-secondary/10 rounded-md border p-4 text-xs">
-      <ChatMessageMarkdown v-memo="[message, id]" :content="message" :id="id" />
+    <div
+      v-if="isExpanded"
+      v-memo="[id, message]"
+      class="bg-secondary/10 rounded-md border p-4 text-xs"
+    >
+      <ChatMessageMarkdown :content="message" :id="id" />
     </div>
   </div>
 </template>

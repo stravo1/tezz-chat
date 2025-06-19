@@ -134,8 +134,12 @@ console.log('Messages:', props.messages);
           ></textarea>
           <div v-else-if="message.role != 'user'">
             <div v-for="part in message.parts">
-              <div v-if="part.type == 'reasoning'" class="flec-col flex">
-                <ChatMessageReasoning :id="message.id" :message="part.reasoning" />
+              <div v-if="part.type == 'reasoning'" class="flex flex-col">
+                <ChatMessageReasoning
+                  v-memo="[message.id, part.reasoning]"
+                  :id="message.id"
+                  :message="part.reasoning"
+                />
               </div>
               <div v-else-if="part.type == 'text'">
                 <ChatMessageMarkdown
