@@ -11,7 +11,7 @@
   >
     <LoaderModal v-if="isLoading" />
     <main class="flex h-screen w-screen">
-      <div class="absolute top-5 right-4 z-50 flex">
+      <div class="absolute top-5 right-4 z-30 flex">
         <div
           class="group flex rounded-lg px-2"
           :class="{ 'hover:bg-surface-container-low': visibilityRef == 'public' }"
