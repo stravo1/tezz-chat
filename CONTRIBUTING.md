@@ -51,11 +51,9 @@ As you gain experience, please help answer other people's questions too! :pray:
    # or npm install / yarn install / bun install
    ```
 3. **Set Up Environment Variables**
-
    - Copy `.env.example` to `.env` and fill in the required values.
 
 4. **Appwrite Setup**
-
    - Create a project on [Appwrite](https://appwrite.io).
    - Install the [Appwrite CLI](https://appwrite.io/docs/tooling/command-line/installation):
      ```bash
@@ -160,6 +158,6 @@ tezz-chat/
 tezz.chat is powered by a friendly community. If you have questions, want to discuss ideas, or just want to hang out:
 
 - [GitHub Issues](https://github.com/stravo1/tezz-chat/issues)
-- [Discord](https://discord.gg/tezzchat)
+- [Discord](https://discord.gg/7wFjkVFcMz)
 
 Thanks for making tezz.chat better! :rocket:
