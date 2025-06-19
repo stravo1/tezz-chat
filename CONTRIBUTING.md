@@ -10,7 +10,7 @@ We're thrilled that you're interested in contributing to **tezz.chat**! Whether 
 ## Where to Ask Questions?
 
 1. Browse our [GitHub Issues](https://github.com/stravo1/tezz-chat/issues) to see if your question has already been answered.
-2. Join our community on [Discord](https://discord.gg/tezzchat) and ask away! We're happy to help.
+2. Join our community on [Discord](https://discord.gg/tkRsEPx6Zz) and ask away! We're happy to help.
 
 As you gain experience, please help answer other people's questions too! :pray:
 
@@ -158,6 +158,6 @@ tezz-chat/
 tezz.chat is powered by a friendly community. If you have questions, want to discuss ideas, or just want to hang out:
 
 - [GitHub Issues](https://github.com/stravo1/tezz-chat/issues)
-- [Discord](https://discord.gg/7wFjkVFcMz)
+- [Discord](https://discord.gg/tkRsEPx6Zz)
 
 Thanks for making tezz.chat better! :rocket:

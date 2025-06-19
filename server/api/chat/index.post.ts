@@ -319,7 +319,10 @@ export default defineLazyEventHandler(async () => {
             }
           }
         } catch (error) {
-          const chatTitle = await generateChatTitle({ message: lastMessage });
+          const chatTitle = await generateChatTitle({
+            message: lastMessage,
+            fallbackModel: modelInstance,
+          });
           const now = createTimestamp();
 
           chatSession = await databases.createDocument(
