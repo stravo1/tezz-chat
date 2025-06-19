@@ -174,7 +174,7 @@ const handleAfterEditDeletion = async (
     const messagesToUpdate = await withRetry(() =>
       databases.listDocuments(appwriteConfig.databaseId, COLLECTION_NAMES.CHAT_MESSAGES, [
         Query.equal('chatId', chatId),
-        Query.greaterThan('$createdAt', messagebeingEdited.$createdAt),
+        Query.greaterThan('createdAt', messagebeingEdited.createdAt),
       ])
     );
 
