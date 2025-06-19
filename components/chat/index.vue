@@ -84,7 +84,7 @@ watch(
   messages,
   newMessages => {
     console.log('Messages updated:', newMessages);
-    scrollToBottom();
+    // scrollToBottom();
   },
   { deep: true }
 );

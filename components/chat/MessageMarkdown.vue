@@ -72,7 +72,12 @@ watch(
 </script>
 <template>
   <div class="markdown-content" v-memo="[content, id]">
-    <div v-for="(block, index) in blocks" :key="`key-${index}-${id}`" class="markdown-block">
+    <div
+      v-for="(block, index) in blocks"
+      v-memo="[block, id]"
+      :key="`key-${index}-${id}`"
+      class="markdown-block"
+    >
       <MarkdownPreview
         v-memo="[block]"
         :components="components"

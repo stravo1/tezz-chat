@@ -133,15 +133,19 @@ console.log('Messages:', props.messages);
             rows="2"
           ></textarea>
           <div v-else-if="message.role != 'user'">
-            <div v-for="part in message.parts">
-              <div v-if="part.type == 'reasoning'" class="flex flex-col">
-                <ChatMessageReasoning
-                  v-memo="[message.id, part.reasoning]"
-                  :id="message.id"
-                  :message="part.reasoning"
-                />
+            <div
+              v-for="(part, index) in message.parts"
+              class="mb-2"
+              v-memo="[part, message.id, index]"
+            >
+              <div
+                v-if="part.type == 'reasoning'"
+                v-memo="[message.id, part.reasoning]"
+                class="flex flex-col"
+              >
+                <ChatMessageReasoning :id="message.id" :message="part.reasoning" />
               </div>
-              <div v-else-if="part.type == 'text'">
+              <div v-else-if="part.type == 'text'" v-memo="[message.id, part.text]">
                 <ChatMessageMarkdown
                   v-if="part.text"
                   :content="part.text"
@@ -151,7 +155,7 @@ console.log('Messages:', props.messages);
               </div>
               <div v-else-if="part.type == 'file'">
                 <img
-                  class="max-h-[480px] max-w-[480px]"
+                  class="max-h-[240px] max-w-[240px] lg:max-h-[480px] lg:max-w-[480px]"
                   :src="'data:' + part.mimeType + ';base64,' + part.data"
                   :alt="'Image'"
                 />
