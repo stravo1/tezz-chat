@@ -23,6 +23,7 @@ export const useUserStore = defineStore('user', {
     isAuthChecked: false,
     isLoading: true,
     jwtToken: undefined, // Initialize as undefined
+    lastJwtCreatedAt: undefined, // Initialize as undefined
   }),
 
   actions: {
