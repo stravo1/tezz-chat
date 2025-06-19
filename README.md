@@ -1,30 +1,43 @@
-# tezz.chat
+# [tezz.chat](https://tezz.chat) 🚀
+<a href="https://discord.gg/7wFjkVFcMz">
+<img src="https://img.shields.io/discord/1385282512300802171?logo=discord" alt="chat on Discord">
+</a>
 
-## Contributing
+**tezz.chat** is an open-source multi-model, fast AI-powered chat app. Enjoy real-time conversations, image generation, chat branching, and more — all with a modern, beautiful UI.
 
-<!-- Add open source contributing guide -->
+## Features
 
-All of our code is open source and we welcome contributions from the community.
+- 💬 Chat with multiple models like Gemini, DeepSeek (and more coming soon!)
+- 🔄 Sync history across devices 
+- 🖼️ Image generation
+- 🌳 Chat branching (fork a new chat from any message)
+- 💡 Dynamic code highlighting (theme-aware)
+- 📎 Attachment support: upload images and pdfs and ask questions on them!
+- 📤 Shareable chats!
+- 🌐 Web search and get latest info!
+- 📱 Responsive & mobile-friendly
+- 📌 Local first
 
-<!-- prettier-ignore -->
-> [!NOTE] 
-> If your change also requires infrastructure changes, please reach out
-> and we can work together to make the necessary changes on our end.
+## Architecture
 
-<!-- prettier-ignore-end -->
+tezz.chat is built with three main layers:
 
-# Setup
+1. **Frontend**: Nuxt 3 (Vue) app for chat UI, code highlighting, and RxDB (with Dexie) for syncing database.
+2. **Backend**: Nuxt server API routes, Appwrite SDK for database/auth, Vercel's AI SDK for everything else.
+3. **Appwrite**: Handles user accounts, chat/message storage, file uploads.
 
-1. Fork and clone the repository
-2. Ensure you have the LTS version of Node.js installed, as well as the latest
-   version of [pnpm](https://pnpm.io).
-3. Install the dependencies by running `pnpm install` in the root directory.
-4. Copy the `.env.example` file to `.env` and fill in the required environment variables.
-   - Make sure to set up the .env variables
-5. Create a project on appwrite, login to appwrite-cli.
-6. Make sure to update the projectId and projectName to your created project in appwrite.
-7. Update the `.env` NUXT_PUBLIC_APPWRITE_PROJECT_ID, NUXT_PUBLIC_APPWRITE_URL, NUXT_PUBLIC_APPWRITE_REALTIME_URL to your projectId and endpoint url, and NUXT_PUBLIC_APPWRITE_DATABASE_ID to this 6846ad30003030d86061.
-8. Setup appwrite by running the command `appwrite push collections` `appwrite push buckets`, make sure appwrite-cli is installed.
-9. Run the development server with `pnpm dev` or `npm run dev` or `yarn dev` or `bun run dev`.
-   - This will start the Next.js development server and you can view the application in your browser at `http://localhost:3000`.
-10. Implement your changes in the appropriate files.
+
+## Quick Start
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, development, and contribution instructions.
+
+## Community & Support
+
+- **Discord**: [Join our tezz.chat Discord](https://discord.gg/7wFjkVFcMz) for real-time help and troubleshooting!.
+- **GitHub Issues**: [Report bugs or request features](https://github.com/stravo1/tezz-chat/issues)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
