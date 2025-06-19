@@ -23,6 +23,20 @@ const { textarea, input: contentBeingEdited } = useTextareaAutosize();
 const isBeingEdited = ref(false);
 const timeStampOfMessageBeingEdited = ref<string | null>(null);
 
+const getApiHeaders = (model?: string) => {
+  const headers: Record<string, string> = {};
+  const geminiKey = localStorage.getItem('gemini-api-key');
+  const openRouterKey = localStorage.getItem('openrouter-api-key');
+
+  if (model?.includes('gemini') && geminiKey) {
+    headers['x-gemini-api-key'] = geminiKey;
+  } else if (openRouterKey) {
+    headers['x-openrouter-api-key'] = openRouterKey;
+  }
+
+  return headers;
+};
+
 const handleBranch = async (id: string, createdAt: any) => {
   // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
   const filteredMessages = props.messages.filter(message => {
@@ -90,6 +104,10 @@ const handleEdit = async (createdAt: any, content?: string) => {
       editedFromId: filteredMessages[filteredMessages.length - 1].id,
       intent: intentStore.selectedIntent,
       model: modelStore.selectedModel,
+    },
+    headers: {
+      Authorization: 'Bearer ' + (await userStore.getJWT()),
+      ...getApiHeaders(modelStore.selectedModel),
     },
   });
 };

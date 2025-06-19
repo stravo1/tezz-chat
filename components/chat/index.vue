@@ -27,9 +27,6 @@ const { messages, append, status, setMessages, reload, error, stop } = useChat({
   },
   generateId: () => ID.unique(),
   sendExtraMessageFields: true,
-  headers: {
-    Authorization: 'Bearer ' + (props.isPublic ? '' : await userStore.getJWT()),
-  },
   onError: err => {
     console.error('Chat error:', err);
     error.value = err;
@@ -67,7 +64,10 @@ const handleSubmit = async (
       intent: intentStore.selectedIntent,
       model: selectedModel || 'gemini-2.0-flash-exp',
     },
-    headers: getApiHeaders(selectedModel),
+    headers: {
+      Authorization: 'Bearer ' + (await userStore.getJWT()),
+      ...getApiHeaders(selectedModel),
+    },
   });
   scrollToBottom();
 };

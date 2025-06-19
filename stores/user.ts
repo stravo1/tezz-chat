@@ -86,6 +86,7 @@ export const useUserStore = defineStore('user', {
       }
 
       try {
+        console.log('Fetching new JWT token');
         const { account } = useAppwrite();
         this.jwtToken = (await account.createJWT()).jwt;
         this.lastJwtCreatedAt = Date.now();
