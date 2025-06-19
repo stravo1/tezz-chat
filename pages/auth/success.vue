@@ -47,7 +47,7 @@ const logout = async () => {
 </script>
 
 <template>
-  <div class="bg-inverse-surface flex min-h-screen items-center justify-center p-4">
+  <div class="bg-inverse-surface flex min-h-[100dvh] items-center justify-center p-4">
     <div class="w-full max-w-md rounded-lg p-8 text-center">
       <!-- Loading spinner -->
       <div v-if="isLoading" class="mb-6 flex items-center justify-center">

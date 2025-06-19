@@ -1,16 +1,16 @@
 <template>
   <div
     v-if="layoutLoading"
-    class="bg-inverse-surface text-inverse-on-surface fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center backdrop-blur-2xl"
+    class="bg-inverse-surface text-inverse-on-surface fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center backdrop-blur-2xl"
   >
     <LoaderCircle class="animate-spin" />
   </div>
   <div
     v-if="!layoutLoading"
-    class="bg-surface-container text-on-surface relative flex min-h-screen flex-col"
+    class="bg-surface-container text-on-surface relative flex min-h-[100dvh] flex-col"
   >
     <LoaderModal v-if="isLoading" />
-    <main class="flex h-screen w-screen">
+    <main class="flex h-[100dvh] w-screen">
       <div class="absolute top-5 right-4 z-30 flex">
         <div
           class="group flex rounded-lg px-2"

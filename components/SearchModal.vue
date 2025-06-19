@@ -1,7 +1,7 @@
 <template>
   <div
     @click="closeModal"
-    class="fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
+    class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
   >
     <div class="h-[60vh] w-[80vw] lg:h-[40vh] lg:w-[55vw]">
       <div

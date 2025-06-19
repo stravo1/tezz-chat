@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-surface flex min-h-screen flex-col items-center justify-center gap-4">
+  <div class="bg-surface flex min-h-[100dvh] flex-col items-center justify-center gap-4">
     <button
       @click="loginWithGithub"
       class="bg-primary text-on-primary hover:bg-primary/90 focus:ring-primary/50 flex w-[240px] cursor-pointer items-center justify-center gap-3 rounded-md border border-transparent px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"

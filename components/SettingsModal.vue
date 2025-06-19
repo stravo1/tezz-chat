@@ -1,7 +1,7 @@
 <template>
   <div
     @click="props.closeModal"
-    class="fixed inset-0 z-[100] flex h-screen w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
+    class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
   >
     <div @click.stop class="h-fit max-h-[50vh] w-[90vw] max-w-[540px] lg:w-[55vw]">
       <div
