@@ -199,7 +199,7 @@ console.log('Messages:', props.messages);
             </div>
           </div>
           <div
-            class="text-on-secondary-container text-xs opacity-0 transition-all group-hover:opacity-100"
+            class="text-on-secondary-container text-xs transition-all lg:opacity-0 lg:group-hover:opacity-100"
           >
             <ChatMessageOptions
               :class="{ invisible: status == 'streaming' || isPublic }"
