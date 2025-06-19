@@ -18,7 +18,7 @@ const intentStore = useIntentStore();
 if (!chatId) {
   console.warn('No chat ID provided!');
 }
-
+await userStore.getJWT();
 const { messages, append, status, setMessages, reload, error, stop } = useChat({
   id: chatId,
   initialMessages: props.initialMessages || [],
