@@ -5,6 +5,10 @@ import { createAppError, ErrorCode } from '../../../utils/errors';
 export default defineEventHandler(async event => {
   const { account } = createAdminClient();
 
+  console.log('Creating OAuth token for Google with redirect URLL', {
+    success: process.env.NUXT_APP_DOMAIN + '/auth/success',
+    failure: process.env.NUXT_APP_DOMAIN + '/api/auth/oauth/failure',
+  });
   try {
     // Create OAuth token and get redirect URL
     const redirectURL = await account.createOAuth2Token(
