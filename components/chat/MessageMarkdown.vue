@@ -43,7 +43,7 @@ const components = {
     const language = options.class?.replace('language-', '') || 'plaintext';
     return (
       <div class="keep-tailwind my-10 w-full">
-        <div class="text-on-secondary-container bg-secondary-container flex w-full items-center justify-between rounded-tl-lg rounded-tr-lg px-3 py-2 text-xs">
+        <div class="text-on-secondary-container bg-secondary-container sticky top-0 flex w-full items-center justify-between rounded-tl-lg rounded-tr-lg px-3 py-2 text-xs">
           <span class="font-mono">{language}</span>
           <span class="cursor-pointer" data-copy-button={id} onClick={clickCopied}>
             Copy
