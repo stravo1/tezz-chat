@@ -230,7 +230,7 @@ export default defineLazyEventHandler(async () => {
       }
 
       const body = await readBody(event);
-      console.log('Received body:', body);
+      // console.log('Received body:', body);
 
       // Get API keys from headers if provided
       const headers = getRequestHeaders(event);
@@ -250,17 +250,17 @@ export default defineLazyEventHandler(async () => {
           `Invalid input: ${validation.error.errors[0]?.message}`
         );
       }
-      // const controller = new AbortController();
-      // try {
-      //   event.node.req.socket.on('close', () => {
-      //     console.log('Request closed, aborting stream');
-      //     controller.abort();
-      //     // Handle request close event if needed
-      //   });
-      // } catch (error) {
-      //   console.error('Error setting up request close listener:', error);
-      //   console.log('Continuing without request close listener', event);
-      // }
+      const controller = new AbortController();
+      try {
+        event.node.req.socket.on('close', () => {
+          console.log('Request closed, aborting stream');
+          controller.abort();
+          // Handle request close event if needed
+        });
+      } catch (error) {
+        console.error('Error setting up request close listener:', error);
+        console.log('Continuing without request close listener', event);
+      }
 
       const {
         messages,
@@ -455,7 +455,7 @@ export default defineLazyEventHandler(async () => {
         maxSteps: MAX_STEPS,
         maxRetries: MAX_RETRIES,
         experimental_generateMessageId: () => ID.unique(),
-        // abortSignal: controller.signal,
+        abortSignal: controller.signal,
         tools: doesSupportToolCalls(model as ModelType)
           ? {
               web_search: tool({
