@@ -10,8 +10,8 @@
       v-if="isEditing && role === 'user'"
       @click="handleSave"
       class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Copy message"
-      title="Copy"
+      aria-label="Save changes"
+      title="Save"
     >
       <Check :size="18" />
     </button>
@@ -19,8 +19,8 @@
       v-if="isEditing && role === 'user'"
       @click="handleDiscard"
       class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Copy message"
-      title="Copy"
+      aria-label="Cancel edit"
+      title="Cancel"
     >
       <X :size="18" />
     </button>
@@ -38,8 +38,8 @@
       v-if="!isEditing && role !== 'user' && role !== 'data'"
       @click="handleBranch"
       class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Copy message"
-      title="Copy"
+      aria-label="Branch message"
+      title="Branch"
     >
       <Split :size="18" />
     </button>
