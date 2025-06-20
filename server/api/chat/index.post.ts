@@ -223,6 +223,7 @@ export default defineLazyEventHandler(async () => {
     try {
       const { databases } = createJWTClient(event);
       const userId = event.context.session?.userId;
+      console.log({ event }, { eventString: JSON.stringify(event) });
 
       if (!userId) {
         throw createAppError(ErrorCode.UNAUTHORIZED, 'User not authenticated');
