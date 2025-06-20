@@ -35,8 +35,6 @@ p {
   all: revert;
 }
 
-@supports (-webkit-backdrop-filter: blur()) and (not (backdrop-filter: blur())) {
-  .backdrop-blur-lg {
-    -webkit-backdrop-filter: blur(16px) !important;
-  }
+.backdrop-blur-lg {
+  -webkit-backdrop-filter: blur(16px) !important;
 }
