@@ -79,8 +79,13 @@ const selectedModel = ref('gemini-2.0-flash-exp');
 const selectedModelTitle = ref('Gemini 2.0 Flash Exp');
 const open = ref(false);
 
-watch(selectedModel, newModel => {
+watch(selectedModel, (newModel, oldModel) => {
   console.log('Selected model:', newModel);
+  if (oldModel === newModel) return;
+  if (!newModel) {
+    selectedModel.value = oldModel;
+    return;
+  }
   selectedModelTitle.value = models.find(model => model.value === newModel)?.title || '';
   modelStore.selectedModel = newModel;
 });
