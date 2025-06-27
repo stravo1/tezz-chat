@@ -23,7 +23,10 @@
       <ChatSidebar @new-chat="startNewChat" @trigger-search="() => (isSearchModalOpen = true)" />
 
       <!-- Main Content Area -->
-      <SidebarInset class="bg-sidebar box-border w-full p-2" :class="{ 'pl-0': isSidebarOpen }">
+      <SidebarInset
+        class="bg-sidebar box-border w-full p-2 pb-0 lg:pb-2"
+        :class="{ 'pl-0': isSidebarOpen }"
+      >
         <!-- Top right controls -->
         <div class="absolute top-5 right-4 z-30 flex">
           <div
@@ -224,6 +227,7 @@ watch(
       console.warn('No chat ID provided in route params.');
       pageTitle.value = 'New Chat';
       visibilityRef.value = 'na';
+      if (isMobile) isSidebarOpen.value = false; // Ensure sidebar is open on new chat
       return;
     }
     if (threadDetailsSubscription.value) {
@@ -249,6 +253,7 @@ watch(
     changeTitle(newId as string);
     if (isMobile.value) {
       isSidebarOpen.value = false; // Close sidebar on mobile when route changes
+      isSearchModalOpen.value = false; // Close search modal on mobile when route changes
     }
     // scrollToSelectedChat();
   }
