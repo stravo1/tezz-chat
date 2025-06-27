@@ -3,8 +3,9 @@
     @click="closeModal"
     class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.25)] backdrop-blur-lg"
   >
-    <div @click.stop class="h-[60vh] w-[80vw] lg:h-[40vh] lg:w-[55vw]">
+    <div class="h-[60vh] w-[80vw] lg:h-[40vh] lg:w-[55vw]">
       <div
+        @click.stop
         :class="{ 'rounded-b-lg': matchedThrads.length === 0 }"
         class="bg-background text-foreground flex w-full items-center justify-center gap-2 rounded-t-lg p-4 px-6 dark:text-white/50"
       >
