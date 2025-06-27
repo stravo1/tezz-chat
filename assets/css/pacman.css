@@ -14,7 +14,7 @@
 .la-pacman {
   display: block;
   font-size: 0;
-  color: var(--color-secondary);
+  color: var(--color-foreground);
 }
 
 .la-pacman.la-dark {
