@@ -7,7 +7,8 @@ export type ModelType =
   | 'deepseek-chat-v3'
   | 'deepseek-r1'
   | 'llama-4-scout'
-  | 'qwen3-30b';
+  | 'qwen3-30b'
+  | 'mistral-small';
 
 export const supportedModels = [
   'gemini-2.0-flash-exp',
@@ -16,6 +17,7 @@ export const supportedModels = [
   'deepseek-r1',
   'llama-4-scout',
   'qwen3-30b',
+  'mistral-small',
 ];
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
@@ -24,6 +26,7 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'gemini-2.5-flash-preview-05-20',
     'deepseek-chat-v3',
     'llama-4-scout',
+    'mistral-small',
   ];
   return models.includes(modelType);
 };
@@ -68,6 +71,10 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('qwen/qwen3-30b-a3b:free');
+    case 'mistral-small':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('mistralai/mistral-small-3.2-24b-instruct-2506:free');
 
     default:
       if (!geminiApiKey) {

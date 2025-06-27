@@ -19,6 +19,7 @@ import gemini from '../../assets/svg/gemini.vue';
 import meta from '../../assets/svg/meta.vue';
 import qwen from '../../assets/svg/qwen.vue';
 import deepseek from '../../assets/svg/deepseek.vue';
+import mistral from '../../assets/svg/mistral.vue';
 import { useMediaQuery } from '@vueuse/core';
 
 export type ModelType =
@@ -54,6 +55,11 @@ const models = [
     title: 'Qwen3 30B',
     value: 'qwen3-30b',
     icon: qwen,
+  },
+  {
+    title: 'Mistral Small',
+    value: 'mistral-small',
+    icon: mistral,
   },
   {
     title: 'Llama 4 Scout',
