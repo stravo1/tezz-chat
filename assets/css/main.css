@@ -61,14 +61,14 @@ body {
 }
 
 /* thin scrollbar */
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
   width: 2px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-accent) 50%, transparent);
   border-radius: 4px;
-}
+} */
 
 /* mobile layout */
 @media (max-width: 768px) {
