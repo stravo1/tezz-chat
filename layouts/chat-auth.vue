@@ -227,7 +227,7 @@ watch(
       console.warn('No chat ID provided in route params.');
       pageTitle.value = 'New Chat';
       visibilityRef.value = 'na';
-      if (isMobile) isSidebarOpen.value = false; // Ensure sidebar is open on new chat
+      if (isMobile.value) isSidebarOpen.value = false; // Ensure sidebar is open on new chat
       return;
     }
     if (threadDetailsSubscription.value) {
