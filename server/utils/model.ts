@@ -8,7 +8,8 @@ export type ModelType =
   | 'deepseek-r1'
   | 'llama-4-scout'
   | 'qwen3-30b'
-  | 'mistral-small';
+  | 'mistral-small'
+  | 'devstral-small';
 
 export const supportedModels = [
   'gemini-2.0-flash-exp',
@@ -18,6 +19,7 @@ export const supportedModels = [
   'llama-4-scout',
   'qwen3-30b',
   'mistral-small',
+  'devstral-small',
 ];
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
@@ -25,8 +27,9 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'gemini-2.0-flash-exp',
     'gemini-2.5-flash-preview-05-20',
     'deepseek-chat-v3',
-    'llama-4-scout',
+    // 'llama-4-scout',
     'mistral-small',
+    'devstral-small',
   ];
   return models.includes(modelType);
 };
@@ -75,6 +78,10 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('mistralai/mistral-small-3.2-24b-instruct-2506:free');
+    case 'devstral-small':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('mistralai/devstral-small:free');
 
     default:
       if (!geminiApiKey) {

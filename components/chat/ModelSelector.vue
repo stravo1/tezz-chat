@@ -42,6 +42,16 @@ const models = [
     icon: gemini,
   },
   {
+    title: 'Devstral Small',
+    value: 'devstral-small',
+    icon: mistral,
+  },
+  {
+    title: 'Mistral Small',
+    value: 'mistral-small',
+    icon: mistral,
+  },
+  {
     title: 'Deepseek Chat V3',
     value: 'deepseek-chat-v3',
     icon: deepseek,
@@ -55,11 +65,6 @@ const models = [
     title: 'Qwen3 30B',
     value: 'qwen3-30b',
     icon: qwen,
-  },
-  {
-    title: 'Mistral Small',
-    value: 'mistral-small',
-    icon: mistral,
   },
   {
     title: 'Llama 4 Scout',
