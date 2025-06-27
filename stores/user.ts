@@ -58,13 +58,13 @@ export const useUserStore = defineStore('user', {
       this.isLoading = true;
       const { account } = useAppwrite();
       try {
-        try {
-          await $fetch('/api/auth/oauth/logout', {
-            method: 'POST',
-          });
-        } catch (error) {
-          console.error('Error during OAuth logout:', error);
-        }
+        // try {
+        //   await $fetch('/api/auth/oauth/logout', {
+        //     method: 'POST',
+        //   });
+        // } catch (error) {
+        //   console.error('Error during OAuth logout:', error);
+        // }
         await account.deleteSession('current');
         console.log('Session deleted successfully.');
         this.clearUser();
@@ -100,7 +100,6 @@ export const useUserStore = defineStore('user', {
     clearUser() {
       this.currentUser = null;
       this.isAuthenticated = false;
-      this.isAuthChecked = false;
     },
   },
 });
