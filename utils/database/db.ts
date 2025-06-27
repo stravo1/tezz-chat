@@ -114,7 +114,7 @@ export const useDatabase = async () => {
     dbInstance = await createRxDatabase({
       name: 'tezz-local',
       storage: wrappedValidateAjvStorage({ storage: getRxStorageDexie() }),
-      closeDuplicates: true,
+      // closeDuplicates: true,
     });
 
     collectionsInstance = await dbInstance.addCollections({

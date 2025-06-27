@@ -15,6 +15,8 @@ export const getThreads = async () => {
   const db = await initDb();
   return db.threads.find({
     sort: [{ updatedAt: 'desc' }],
+    // TODO: Add pagination
+    // limit: 10,
   });
 };
 

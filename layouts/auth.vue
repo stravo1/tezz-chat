@@ -1,11 +1,11 @@
 <template>
   <div
     v-if="layoutLoading"
-    class="fixed inset-0 flex h-[100dvh] w-screen items-center justify-center bg-white"
+    class="bg-background text-foreground fixed inset-0 flex h-[100dvh] w-screen items-center justify-center"
   >
     <LoaderCircle class="animate-spin" />
   </div>
-  <div v-if="!layoutLoading" class="relative flex min-h-[100dvh] flex-col text-gray-800">
+  <div v-if="!layoutLoading" class="relative flex min-h-[100dvh] flex-col">
     <main class="flex h-[100dvh] w-screen">
       <slot />
     </main>

@@ -15,7 +15,7 @@ const toggleExpand = () => {
 </script>
 
 <template>
-  <div class="flex w-full max-w-3xl flex-col gap-2 pb-2" v-memo="[message, id, isExpanded]">
+  <div class="flex w-full flex-col gap-2 pb-2 lg:max-w-3xl" v-memo="[message, id, isExpanded]">
     <button
       @click="toggleExpand"
       class="text-muted-foreground flex cursor-pointer items-center gap-2"
@@ -27,7 +27,7 @@ const toggleExpand = () => {
       <span>Reasoning</span>
     </button>
 
-    <div v-if="isExpanded" class="bg-secondary/10 rounded-md border p-4 text-xs">
+    <div v-if="isExpanded" class="bg-secondary/10 rounded-md border p-4 opacity-75">
       <ChatMessageMarkdown :content="message" :id="id" />
     </div>
   </div>

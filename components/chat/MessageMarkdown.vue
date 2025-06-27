@@ -42,14 +42,14 @@ const components = {
 
     const language = options.class?.replace('language-', '') || 'plaintext';
     return (
-      <div class="keep-tailwind my-10 w-full">
-        <div class="text-on-secondary-container bg-secondary-container sticky top-0 flex w-full items-center justify-between rounded-tl-lg rounded-tr-lg px-3 py-2 text-xs">
+      <div class="my-10 w-full">
+        <div class="border-border bg-muted sticky top-0 flex items-center justify-between gap-2 rounded-t-md rounded-tl-lg rounded-tr-lg border-b px-3 py-2 text-xs">
           <span class="font-mono">{language}</span>
           <span class="cursor-pointer" data-copy-button={id} onClick={clickCopied}>
             Copy
           </span>
         </div>
-        <pre class="hljs">
+        <pre class="hljs not-prose">
           <code id={id} {...options}>
             {children}
           </code>
@@ -76,12 +76,15 @@ watch(
       v-for="(block, index) in blocks"
       v-memo="[block, id]"
       :key="`key-${index}-${id}`"
-      class="markdown-block"
+      class="markdown-block p-1"
     >
       <MarkdownPreview
         v-memo="[block]"
         :components="components"
-        class="no-tailwind"
+        :class="[
+          'prose dark:prose-invert sm:prose-sm md:prose-base prose-ol:my-2 prose-p:my-0 prose-pre:my-2 prose-ul:my-2 prose-li:mt-1 prose-li:mb-0 prose-pre:bg-transparent prose-pre:p-0 font-claude-message prose-headings:font-semibold prose-strong:font-medium prose-pre:text-foreground [&_pre>div]:border-0.5 [&_pre>div]:border-border [&_pre>div]:bg-background relative max-w-none leading-[1.65rem] [&_.ignore-pre-bg>div]:bg-transparent [&>div>div>:is(p,blockquote,h1,h2,h3,h4,h5,h6)]:pl-2 [&>div>div>:is(p,blockquote,ul,ol,h1,h2,h3,h4,h5,h6)]:pr-8',
+          'prose-img:mx-auto prose-img:my-4 prose-pre:grid prose-code:before:hidden prose-code:after:hidden',
+        ]"
         :rehype-plugins="[[rehypeHighlight]]"
       >
         {{ block }}

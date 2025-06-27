@@ -2,7 +2,7 @@
   <div class="bg-surface flex min-h-[100dvh] flex-col items-center justify-center gap-4">
     <button
       @click="loginWithGithub"
-      class="bg-primary text-on-primary hover:bg-primary/90 focus:ring-primary/50 flex w-[240px] cursor-pointer items-center justify-center gap-3 rounded-md border border-transparent px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+      class="bg-primary text-primary-foreground flex w-[240px] cursor-pointer items-center justify-center gap-3 rounded-md border border-transparent px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
     >
       <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
         <path
@@ -11,10 +11,10 @@
       </svg>
       Sign in with GitHub
     </button>
-    <div class="text-on-surface">OR</div>
+    <div class="text-foreground">OR</div>
     <button
       @click="loginWithGoogle"
-      class="bg-surface border-on-surface text-on-surface hover:bg-surface/90 focus:ring-surface/50 flex w-[240px] cursor-pointer items-center justify-center gap-3 rounded-md border px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
+      class="text-foreground flex w-[240px] cursor-pointer items-center justify-center gap-3 rounded-md border px-4 py-3 text-sm font-medium focus:outline-none"
     >
       <Icon name="logos:google-icon" />
       Sign in with Google

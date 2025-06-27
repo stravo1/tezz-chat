@@ -1,14 +1,14 @@
 <template>
   <div
     @click="closeModal"
-    class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
+    class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.25)] backdrop-blur-lg"
   >
-    <div class="h-[60vh] w-[80vw] lg:h-[40vh] lg:w-[55vw]">
+    <div @click.stop class="h-[60vh] w-[80vw] lg:h-[40vh] lg:w-[55vw]">
       <div
         :class="{ 'rounded-b-lg': matchedThrads.length === 0 }"
-        class="bg-surface dark:bg-primary-container/60 text-primary flex w-full items-center justify-center gap-2 rounded-t-lg p-4 px-6 dark:text-white/50"
+        class="bg-background text-foreground flex w-full items-center justify-center gap-2 rounded-t-lg p-4 px-6 dark:text-white/50"
       >
-        <Search class="text-primary dark:text-white/50" />
+        <Search class="text-foreground/50" />
         <input
           ref="searchInput"
           @keydown="handleKeyPress"
@@ -18,13 +18,13 @@
           @input="listAllMatches(($event.target as HTMLInputElement).value)"
         />
       </div>
-      <div class="h-[45vh] overflow-y-auto lg:h-[33vh]">
-        <div class="flex list-none flex-col p-0">
+      <div class="h-[45vh] overflow-y-auto rounded-b-lg lg:h-[33vh]">
+        <div class="group flex list-none flex-col p-0">
           <NuxtLink
             v-for="thread in matchedThrads"
             :key="thread.id"
             :to="`/chat/${thread.id}`"
-            class="bg-surface-container-low dark:bg-secondary-container/10 text-on-secondary-container hover:bg-secondary-container dark:hover:bg-secondary-container/30 border-secondary/50 cursor-pointer overflow-hidden border-b p-4 text-ellipsis whitespace-nowrap"
+            class="bg-background text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer overflow-hidden p-4 text-ellipsis whitespace-nowrap"
           >
             {{ thread.title }}
           </NuxtLink>

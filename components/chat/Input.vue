@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, Image, Paperclip } from 'lucide-vue-next';
+import { ArrowUp, Image, LoaderCircle, Paperclip } from 'lucide-vue-next';
 import { useTextareaAutosize } from '@vueuse/core';
 import type { UIMessage } from 'ai';
 const { textarea, input: message } = useTextareaAutosize();
@@ -114,29 +114,19 @@ const handlePrimaryAction = () => {
         @change="handleFileSelect"
       />
       <div class="z-10 flex w-full items-end gap-2">
-        <form
-          @submit.prevent="handleSubmit"
-          class="text-primary dark:bg-primary-container/[0.045] outline-tertiary/[0.05] relative flex w-full flex-col items-stretch gap-2 rounded-t-xl border border-b-0 border-white/70 bg-[--chat-input-background] px-3 pt-3 pb-3 outline-8 backdrop-blur-lg max-sm:pb-6 sm:max-w-3xl dark:border-[hsl(0,0%,83%)]/[0.04]"
-          style="
-            box-shadow:
-              rgba(0, 0, 0, 0.1) 0px 80px 50px 0px,
-              rgba(0, 0, 0, 0.07) 0px 50px 30px 0px,
-              rgba(0, 0, 0, 0.06) 0px 30px 15px 0px,
-              rgba(0, 0, 0, 0.04) 0px 15px 8px,
-              rgba(0, 0, 0, 0.04) 0px 6px 4px,
-              rgba(0, 0, 0, 0.02) 0px 2px 2px;
-          "
+        <div
+          class="border-input bg-background/80 dark:bg-input/70 mx-auto w-full max-w-2xl rounded-t-lg border-2 p-2 shadow-xs backdrop-blur-lg md:rounded-lg"
         >
-          <div class="flex flex-grow flex-col">
-            <div class="flex flex-grow flex-row items-start">
+          <form @submit.prevent="handleSubmit" class="flex w-full flex-col gap-2">
+            <div class="flex flex-grow flex-col">
               <textarea
                 ref="textarea"
                 v-model="message"
                 @keydown.enter.exact.prevent="handleSubmit"
                 name="input"
                 id="chat-input"
-                placeholder="Type your message here..."
-                class="text-on-secondary-container placeholder:text-secondary/60 max-h-[240px] min-h-[48px] w-full resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-0"
+                placeholder="Ask me anything..."
+                class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-foreground flex field-sizing-content max-h-[240px] min-h-[44px] w-full resize-none rounded-md border border-none bg-transparent px-3 py-2 text-base shadow-none transition-[color,box-shadow] outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                 aria-label="Message input"
                 aria-describedby="chat-input-description"
                 autocomplete="off"
@@ -145,67 +135,65 @@ const handlePrimaryAction = () => {
                 Press Enter to send, Shift + Enter for new line
               </div>
             </div>
-            <div class="mt-2 -mb-px flex w-full flex-row-reverse justify-between">
-              <div
-                class="-mt-0.5 -mr-0.5 flex items-center justify-center gap-2"
-                aria-label="Message actions"
-              >
+            <div class="flex items-center justify-between gap-2 pt-2">
+              <div class="flex items-center gap-2">
                 <button
-                  @click="handlePrimaryAction"
-                  class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border-reflect button-reflect bg-primary/80 text-on-primary-container dark:bg-primary/20 disabled:dark:hover:bg-primary/0 disabled:dark:active:bg-primary/0 hover:bg-primary dark:hover:bg-primary-container hover:text-on-primary-container relative inline-flex h-9 w-9 cursor-pointer items-center justify-center gap-2 rounded-lg p-2 text-sm font-semibold whitespace-nowrap shadow transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-white/50 disabled:opacity-50"
-                  :disabled="message.trim() === '' && status != 'streaming'"
+                  v-if="intentStore.selectedIntent != 'image'"
+                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 bg-secondary/70 inline-flex h-8 shrink-0 items-center justify-center gap-0.5 rounded-md px-1.5 py-2 text-xs font-normal whitespace-nowrap backdrop-blur-lg transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 min-[390px]:gap-2 min-[390px]:px-2 sm:text-sm md:rounded-md [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                  type="button"
+                  id="radix-:r8:"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
                   data-state="closed"
                 >
-                  <div v-if="status == 'streaming'" class="h-5 w-5 shrink-0 rounded bg-white"></div>
-                  <ArrowUp v-else />
+                  <ChatModelSelector class="flex items-center gap-1" />
+                </button>
+                <button
+                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 bg-secondary/70 text-foreground hover:bg-secondary/80 flex size-8 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap backdrop-blur-lg transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                  aria-label="Attaching files is a subscriber-only feature"
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                  aria-controls="radix-:rb:"
+                  data-state="closed"
+                  @click="fileInput && fileInput.click()"
+                >
+                  <Paperclip :size="18" class="-rotate-45" />
+                </button>
+                <button
+                  :class="{
+                    'text-primary border-dashed': intentStore.selectedIntent != 'image',
+                    'text-primary-foreground bg-primary': intentStore.selectedIntent == 'image',
+                  }"
+                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border-primary hover:bg-primary/90 hover:border-primary/90 inline-flex size-8 shrink-0 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                  aria-label="Attaching files is a subscriber-only feature"
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                  aria-controls="radix-:rb:"
+                  data-state="closed"
+                  @click="handleToggleIntent"
+                >
+                  <Image :size="18" />
                 </button>
               </div>
-              <div class="flex flex-col gap-2 pr-2 sm:flex-row sm:items-center">
-                <div class="ml-[-7px] flex items-center gap-1">
-                  <button
-                    v-if="intentStore.selectedIntent != 'image'"
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-primary disabled:hover:text-primary/50 text-primary/70 relative -mb-2 inline-flex h-8 items-center justify-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-                    type="button"
-                    id="radix-:r8:"
-                    aria-haspopup="menu"
-                    aria-expanded="false"
-                    data-state="closed"
-                  >
-                    <ChatModelSelector class="flex items-center gap-1" />
-                  </button>
-                  <button
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-primary disabled:hover:text-primary/50 text-primary/70 -mb-1.5 inline-flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full px-6 py-1.5 pr-2.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
-                    aria-label="Attaching files is a subscriber-only feature"
-                    type="button"
-                    aria-haspopup="dialog"
-                    aria-expanded="false"
-                    aria-controls="radix-:rb:"
-                    data-state="closed"
-                    @click="fileInput && fileInput.click()"
-                  >
-                    <Paperclip :size="18" />
-                  </button>
-                  <button
-                    :class="{
-                      'text-primary/40 border-dashed': intentStore.selectedIntent != 'image',
-                      'text-primary bg-primary/10': intentStore.selectedIntent == 'image',
-                    }"
-                    class="focus-visible:ring-ring [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-muted/40 hover:text-primary disabled:hover:text-primary/50 -mb-1.5 ml-3 flex h-auto cursor-pointer items-center justify-center gap-2 rounded-full border px-6 py-1.5 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent max-sm:p-2"
-                    aria-label="Attaching files is a subscriber-only feature"
-                    type="button"
-                    aria-haspopup="dialog"
-                    aria-expanded="false"
-                    aria-controls="radix-:rb:"
-                    data-state="closed"
-                    @click="handleToggleIntent"
-                  >
-                    <Image :size="18" />
-                  </button>
-                </div>
-              </div>
+              <button
+                @click="handlePrimaryAction"
+                class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary/90 inline-flex size-8 shrink-0 items-center justify-center gap-2 rounded-md border text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                :disabled="message.trim() === '' && status != 'streaming'"
+                data-state="closed"
+                type="submit"
+              >
+                <LoaderCircle class="animate-spin" v-if="status == 'submitted'" />
+                <div
+                  v-else-if="status == 'streaming'"
+                  class="h-5 w-5 shrink-0 rounded bg-white"
+                ></div>
+                <ArrowUp v-else />
+              </button>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   </div>

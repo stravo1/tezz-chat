@@ -51,9 +51,9 @@ console.log('Chat ID:', chatId.value);
 <template>
   <div
     v-if="isLoading"
-    class="bg-inverse-surface fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center backdrop-blur-2xl"
+    class="bg-background fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center backdrop-blur-2xl"
   >
-    <LoaderCircle class="text-inverse-on-surface animate-spin" />
+    <LoaderCircle class="text-foreground animate-spin" />
   </div>
   <Chat
     v-if="messages.length"

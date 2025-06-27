@@ -1,34 +1,36 @@
 <template>
   <div
     @click="props.closeModal"
-    class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg"
+    class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg dark:backdrop-blur-sm"
   >
     <div @click.stop class="h-fit max-h-[50vh] w-[90vw] max-w-[540px] lg:w-[55vw]">
       <div
-        class="bg-surface-container-low dark:bg-primary-container/60 flex w-full items-center justify-between rounded-t-lg p-4 px-6 text-black/50 dark:text-white/50"
+        class="bg-background text-foreground flex w-full items-center justify-between rounded-t-lg p-4 px-6"
       >
         <div class="flex items-center gap-2">
-          <Settings2 class="text-black/50 dark:text-white/50" />
+          <Settings2 />
         </div>
         <X class="cursor-pointer hover:opacity-75" @click="props.closeModal" />
       </div>
 
-      <div
-        class="bg-surface dark:bg-secondary-container/10 h-full overflow-y-auto rounded-b-lg p-6"
-      >
+      <div class="bg-background h-full overflow-y-auto rounded-b-lg p-6">
         <!-- User Profile Section -->
         <div class="mb-8 flex justify-between">
           <div class="flex items-center gap-4">
             <User :size="32" />
             <div>
               <p class="font-medium">{{ userProfile.name || 'Anonymous User' }}</p>
-              <p class="text-sm opacity-75">{{ userProfile.email || 'No email provided' }}</p>
+              <p
+                class="max-w-[35vw] overflow-hidden text-sm text-ellipsis whitespace-nowrap opacity-75"
+              >
+                {{ userProfile.email || 'No email provided' }}
+              </p>
             </div>
           </div>
           <div class="flex items-center justify-center gap-2">
             <button
               @click="toggleDarkMode()"
-              class="text-primary/50 hover:bg-primary/10 cursor-pointer rounded px-4 py-2"
+              class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
             >
               <Sun v-if="isDark" />
               <Moon v-else />
@@ -55,7 +57,7 @@
               />
               <button
                 @click="saveGeminiKey"
-                class="text-primary/50 hover:bg-primary/10 cursor-pointer rounded px-4 py-2"
+                class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
               >
                 <Save />
               </button>
@@ -73,7 +75,7 @@
               />
               <button
                 @click="saveOpenRouterKey"
-                class="text-primary/50 hover:bg-primary/10 cursor-pointer rounded px-4 py-2"
+                class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
               >
                 <Save />
               </button>

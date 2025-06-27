@@ -128,7 +128,7 @@ console.log('Messages:', props.messages);
 
 <template>
   <div class="flex h-full w-full flex-col items-center overflow-y-scroll" id="messages-container">
-    <div class="w-full max-w-3xl space-y-4">
+    <div class="w-full space-y-4 lg:max-w-2xl">
       <div
         v-for="message in props.messages"
         :key="message.id"
@@ -137,7 +137,7 @@ console.log('Messages:', props.messages);
       >
         <div
           v-memo="[message]"
-          :class="`${message.role === 'user' ? 'flex max-w-[50vw] flex-col items-end lg:max-w-[33vw]' : 'text-on-secondary-container w-full'}`"
+          :class="`${message.role === 'user' ? 'flex max-w-[50vw] flex-col items-end lg:max-w-[40vw]' : 'w-full'}`"
           class="group"
         >
           <textarea
@@ -194,13 +194,13 @@ console.log('Messages:', props.messages);
                 {{ file.name }}
               </div>
             </div>
-            <div class="bg-secondary-container text-on-secondary-container rounded-lg p-2 px-4">
+            <div
+              class="border-border bg-secondary/50 text-foreground ml-auto w-fit max-w-md rounded-lg border px-4 py-2"
+            >
               {{ message.content }}
             </div>
           </div>
-          <div
-            class="text-on-secondary-container text-xs transition-all lg:opacity-0 lg:group-hover:opacity-100"
-          >
+          <div class="text-xs transition-all lg:opacity-0 lg:group-hover:opacity-100">
             <ChatMessageOptions
               :class="{ invisible: status == 'streaming' || isPublic }"
               :role="message.role"

@@ -6,66 +6,116 @@
       'mt-2': role === 'assistant' || role === 'system',
     }"
   >
-    <button
-      v-if="isEditing && role === 'user'"
-      @click="handleSave"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Save changes"
-      title="Save"
-    >
-      <Check :size="18" />
-    </button>
-    <button
-      v-if="isEditing && role === 'user'"
-      @click="handleDiscard"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Cancel edit"
-      title="Cancel"
-    >
-      <X :size="18" />
-    </button>
-    <button
-      v-if="!isEditing"
-      @click="handleCopy"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Copy message"
-      title="Copy"
-    >
-      <Copy v-if="!copied" :size="18" />
-      <Check v-else :size="18" />
-    </button>
-    <button
-      v-if="!isEditing && role !== 'user' && role !== 'data'"
-      @click="handleBranch"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Branch message"
-      title="Branch"
-    >
-      <Split :size="18" />
-    </button>
-    <button
-      v-if="!isEditing && (role === 'user' || role === 'data')"
-      @click="handleEdit"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Edit message"
-      title="Edit"
-    >
-      <Edit3 :size="18" />
-    </button>
-    <button
-      v-if="!isEditing"
-      @click="handleRetry"
-      class="action-button hover:bg-secondary-container rounded p-2"
-      aria-label="Retry generation"
-      title="Retry"
-    >
-      <RefreshCw :size="18" />
-    </button>
+    <Tooltip :delayDuration="150">
+      <TooltipTrigger asChild>
+        <Button
+          v-if="isEditing && role === 'user'"
+          @click="handleSave"
+          variant="ghost"
+          size="icon"
+          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+        >
+          <Check class="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Save</p>
+      </TooltipContent>
+    </Tooltip>
+
+    <Tooltip :delayDuration="150">
+      <TooltipTrigger asChild>
+        <Button
+          v-if="isEditing && role === 'user'"
+          @click="handleDiscard"
+          variant="ghost"
+          size="icon"
+          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+        >
+          <X class="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Cancel</p>
+      </TooltipContent>
+    </Tooltip>
+    <Tooltip :delayDuration="150">
+      <TooltipTrigger asChild>
+        <Button
+          v-if="!isEditing"
+          @click="handleCopy"
+          variant="ghost"
+          size="icon"
+          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+        >
+          <Copy v-if="!copied" class="h-3.5 w-3.5" />
+          <Check v-else class="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Copy</p>
+      </TooltipContent>
+    </Tooltip>
+
+    <Tooltip :delayDuration="150">
+      <TooltipTrigger asChild>
+        <Button
+          v-if="!isEditing && role !== 'user' && role !== 'data'"
+          @click="handleBranch"
+          variant="ghost"
+          size="icon"
+          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+        >
+          <Split class="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Branch</p>
+      </TooltipContent>
+    </Tooltip>
+
+    <Tooltip :delayDuration="150">
+      <TooltipTrigger asChild>
+        <Button
+          v-if="!isEditing && (role === 'user' || role === 'data')"
+          @click="handleEdit"
+          variant="ghost"
+          size="icon"
+          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+        >
+          <Edit3 class="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Edit</p>
+      </TooltipContent>
+    </Tooltip>
+
+    <Tooltip :delayDuration="150">
+      <TooltipTrigger asChild>
+        <Button
+          v-if="!isEditing"
+          @click="handleRetry"
+          variant="ghost"
+          size="icon"
+          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+        >
+          <RefreshCw class="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Retry</p>
+      </TooltipContent>
+    </Tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Check, Copy, Cross, Edit3, RefreshCw, Split, Trash2, X } from 'lucide-vue-next';
+import Tooltip from '../ui/tooltip/Tooltip.vue';
+import TooltipTrigger from '../ui/tooltip/TooltipTrigger.vue';
+import Button from '../ui/button/Button.vue';
+import TooltipContent from '../ui/tooltip/TooltipContent.vue';
 
 const props = defineProps<{
   role: 'user' | 'data' | 'system' | 'assistant';
