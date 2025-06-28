@@ -129,6 +129,7 @@ console.log('Messages:', props.messages);
 <template>
   <div class="flex h-full w-full flex-col items-center overflow-y-scroll" id="messages-container">
     <div class="w-full space-y-4 lg:max-w-2xl">
+      <div id="padding-top" class="pb-[15vh] lg:pb-[20vh]"></div>
       <div
         v-for="message in props.messages"
         :key="message.id"
@@ -241,7 +242,7 @@ console.log('Messages:', props.messages);
       <div class="h-6 w-6" v-if="intentStore.selectedIntent == 'image' && status == 'streaming'">
         <LoaderCircle class="animate-spin" />
       </div>
-      <div id="padding" class="pb-[200px]"></div>
+      <div id="padding-bottom" class="pb-[200px]"></div>
     </div>
   </div>
 </template>
