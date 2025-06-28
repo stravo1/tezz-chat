@@ -20,7 +20,11 @@
       class="flex h-[100dvh] w-screen"
     >
       <!-- New Shadcn-vue Sidebar -->
-      <ChatSidebar @new-chat="startNewChat" @trigger-search="() => (isSearchModalOpen = true)" />
+      <ChatSidebar
+        @new-chat="startNewChat"
+        @trigger-search="() => (isSearchModalOpen = true)"
+        @open-settings="() => (isSettingsModalOpen = true)"
+      />
 
       <!-- Main Content Area -->
       <SidebarInset
@@ -28,39 +32,82 @@
         :class="{ 'pl-0': isSidebarOpen }"
       >
         <!-- Top right controls -->
-        <div class="absolute top-5 right-4 z-30 flex">
-          <div
-            class="group flex rounded-lg px-2"
-            :class="{ 'hover:bg-surface-container-low': visibilityRef == 'public' }"
-          >
-            <Button
-              size="icon"
-              variant="outline"
-              v-if="visibilityRef == 'public'"
-              @click="copy()"
-              class="text-foreground hover:!bg-accent border-border/70 mr-2 hidden cursor-pointer rounded border p-2 transition-all group-hover:flex"
-            >
-              <Link2 v-if="visibilityRef == 'public'" />
-            </Button>
-            <Button
-              size="icon"
-              variant="outline"
-              v-if="visibilityRef != 'na'"
-              @click="share"
-              class="text-foreground hover:!bg-accent border-border/70 cursor-pointer rounded border p-2 transition-all"
-            >
-              <Share2 v-if="visibilityRef == 'private'" />
-              <EyeOff v-if="visibilityRef == 'public'" />
-            </Button>
+        <div class="absolute top-5 right-4 z-30 flex gap-2">
+          <div class="hidden items-center gap-2 lg:flex">
+            <Tooltip v-if="visibilityRef != 'na'" :delayDuration="300">
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  @click="share()"
+                  class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                >
+                  <Share2 v-if="visibilityRef == 'private'" />
+                  <EyeOff v-if="visibilityRef == 'public'" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p v-if="visibilityRef == 'private'">Share Chat</p>
+                <p v-else>Make Chat Private</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip v-if="visibilityRef == 'public'" :delayDuration="300">
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  @click="copy()"
+                  class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                >
+                  <Link2 />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Copy Link</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip :delayDuration="300" v-if="visibilityRef != 'na'">
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                >
+                  <ListTree />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Chat Navigator</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Button
-            size="icon"
-            variant="outline"
-            @click="() => (isSettingsModalOpen = true)"
-            class="text-foreground hover:!bg-accent border-border/70 cursor-pointer rounded border p-2 transition-all"
-          >
-            <Settings2 />
-          </Button>
+          <div class="flex items-center gap-2 lg:hidden">
+            <Button
+              size="sm"
+              variant="outline"
+              class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
+            >
+              <ListTree class="h-3 w-3" />
+            </Button>
+            <DropdownMenu v-model:open="isMobileChatOptionMenuOpen">
+              <DropdownMenuTrigger as-child>
+                <Button variant="outline" size="sm" class="h-6 w-6 p-0" @click.prevent>
+                  <MoreHorizontal class="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="border-border/50 lg:border-border w-48">
+                <DropdownMenuItem v-if="visibilityRef == 'public'" @click="copy()">
+                  <Link2 class="mr-2 h-4 w-4" />
+                  Share Link
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="share()">
+                  <Share2 v-if="visibilityRef == 'private'" class="mr-2 h-4 w-4" />
+                  <EyeOff v-if="visibilityRef == 'public'" class="mr-2 h-4 w-4" />
+                  {{ visibilityRef == 'private' ? 'Share Chat' : 'Make Chat Private' }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <!-- Top left controls (mobile) -->
@@ -82,11 +129,14 @@
         <!-- Chat view content -->
         <div
           id="chat-view"
-          class="bg-background relative box-border flex h-full w-full justify-center overflow-hidden rounded-lg px-2 pt-24 lg:px-4"
+          class="bg-background relative box-border flex h-full w-full justify-center overflow-hidden rounded-lg px-2 pt-0 lg:px-4"
         >
+          <div
+            class="from-background to-background/0 absolute top-0 left-0 z-10 h-[20vh] w-full bg-gradient-to-b"
+          ></div>
           <NuxtPage />
           <SidebarTrigger
-            class="text-foreground absolute top-4 left-4 cursor-pointer rounded p-2 transition-all"
+            class="text-foreground hover:!bg-accent absolute top-4 left-4 z-20 cursor-pointer rounded p-2 transition-all"
           />
         </div>
       </SidebarInset>
@@ -107,7 +157,16 @@ import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
 import { onMounted, computed, watch, ref } from 'vue';
 import { useHead } from '#imports'; // Import useHead from #imports
-import { EyeOff, Link2, LoaderCircle, Settings2, Share2 } from 'lucide-vue-next';
+import {
+  EyeOff,
+  Link2,
+  ListTree,
+  LoaderCircle,
+  MoreHorizontal,
+  Settings2,
+  Share2,
+  Trash2,
+} from 'lucide-vue-next';
 // @ts-ignore
 import { toast } from 'vue-sonner';
 
@@ -126,6 +185,13 @@ import ChatSidebar from '~/components/chat/Sidebar.vue';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '~/components/ui/sidebar';
 import { useEventListener, useMediaQuery } from '@vueuse/core';
 import Button from '~/components/ui/button/Button.vue';
+import TooltipTrigger from '~/components/ui/tooltip/TooltipTrigger.vue';
+import TooltipContent from '~/components/ui/tooltip/TooltipContent.vue';
+import Tooltip from '~/components/ui/tooltip/Tooltip.vue';
+import DropdownMenu from '~/components/ui/dropdown-menu/DropdownMenu.vue';
+import DropdownMenuTrigger from '~/components/ui/dropdown-menu/DropdownMenuTrigger.vue';
+import DropdownMenuContent from '~/components/ui/dropdown-menu/DropdownMenuContent.vue';
+import DropdownMenuItem from '~/components/ui/dropdown-menu/DropdownMenuItem.vue';
 
 useDatabase();
 console.log('Database initialized');
@@ -152,6 +218,7 @@ const visibilityRef = ref<'na' | 'public' | 'private'>('na');
 const threadDetailsSubscription = ref<Subscription>();
 const isSearchModalOpen = ref(false);
 const isSettingsModalOpen = ref(false);
+const isMobileChatOptionMenuOpen = ref(false);
 
 onMounted(async () => {
   if (!isAuthChecked.value) {

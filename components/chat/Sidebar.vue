@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia';
 import { useUserStore } from '~/stores/user';
 import { getThreads } from '~/utils/database/queries';
 import type { RxDocument, RxQuery } from 'rxdb';
-import { Search } from 'lucide-vue-next';
+import { Search, Settings2 } from 'lucide-vue-next';
 
 import {
   Sidebar,
@@ -23,6 +23,7 @@ import RenameModal from './RenameModal.vue';
 const emit = defineEmits<{
   newChat: [];
   triggerSearch: [];
+  openSettings: [];
 }>();
 
 // Reactive data
@@ -279,7 +280,7 @@ watch(isAuthenticated, authenticated => {
 
           <!-- Search Input -->
           <Button
-            @click="() => $emit('triggerSearch')"
+            @click="emit('triggerSearch')"
             variant="outline"
             class="text-foreground hover:text-foreground/50 w-full"
           >
@@ -351,8 +352,14 @@ watch(isAuthenticated, authenticated => {
     </SidebarContent>
 
     <SidebarFooter>
-      <div class="text-muted-foreground p-2 text-center text-xs">
+      <div class="text-muted-foreground relative p-2 text-center text-xs">
         {{ totalChatCount }} chat{{ totalChatCount !== 1 ? 's' : '' }}
+        <button
+          @click="emit('openSettings')"
+          class="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
+        >
+          <Settings2 class="h-4 w-4" />
+        </button>
       </div>
     </SidebarFooter>
 
