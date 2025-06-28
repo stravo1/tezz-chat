@@ -31,85 +31,6 @@
         class="bg-sidebar box-border w-full p-2 pb-0 lg:pb-2"
         :class="{ 'pl-0': isSidebarOpen }"
       >
-        <!-- Top right controls -->
-        <div class="absolute top-5 right-4 z-30 flex gap-2">
-          <div class="hidden items-center gap-2 lg:flex">
-            <Tooltip v-if="visibilityRef != 'na'" :delayDuration="300">
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  @click="share()"
-                  class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
-                >
-                  <Share2 v-if="visibilityRef == 'private'" />
-                  <EyeOff v-if="visibilityRef == 'public'" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p v-if="visibilityRef == 'private'">Share Chat</p>
-                <p v-else>Make Chat Private</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip v-if="visibilityRef == 'public'" :delayDuration="300">
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  @click="copy()"
-                  class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
-                >
-                  <Link2 />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Copy Link</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip :delayDuration="300" v-if="visibilityRef != 'na'">
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
-                >
-                  <ListTree />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Chat Navigator</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div class="flex items-center gap-2 lg:hidden">
-            <Button
-              size="sm"
-              variant="outline"
-              class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
-            >
-              <ListTree class="h-3 w-3" />
-            </Button>
-            <DropdownMenu v-model:open="isMobileChatOptionMenuOpen">
-              <DropdownMenuTrigger as-child>
-                <Button variant="outline" size="sm" class="h-6 w-6 p-0" @click.prevent>
-                  <MoreHorizontal class="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" class="border-border/50 lg:border-border w-48">
-                <DropdownMenuItem v-if="visibilityRef == 'public'" @click="copy()">
-                  <Link2 class="mr-2 h-4 w-4" />
-                  Share Link
-                </DropdownMenuItem>
-                <DropdownMenuItem @click="share()">
-                  <Share2 v-if="visibilityRef == 'private'" class="mr-2 h-4 w-4" />
-                  <EyeOff v-if="visibilityRef == 'public'" class="mr-2 h-4 w-4" />
-                  {{ visibilityRef == 'private' ? 'Share Chat' : 'Make Chat Private' }}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
         <!-- Top left controls (mobile) -->
         <!-- <div class="absolute top-5 left-4 z-50 flex lg:hidden">
           <button
@@ -131,6 +52,84 @@
           id="chat-view"
           class="bg-background relative box-border flex h-full w-full justify-center overflow-hidden rounded-lg px-2 pt-0 lg:px-4"
         >
+          <!-- Top right controls -->
+          <div class="absolute top-4 right-4 z-30 flex gap-2">
+            <div class="hidden items-center gap-2 lg:flex">
+              <Tooltip v-if="visibilityRef != 'na'" :delayDuration="300">
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    @click="share()"
+                    class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                  >
+                    <Share2 v-if="visibilityRef == 'private'" />
+                    <EyeOff v-if="visibilityRef == 'public'" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p v-if="visibilityRef == 'private'">Share Chat</p>
+                  <p v-else>Make Chat Private</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip v-if="visibilityRef == 'public'" :delayDuration="300">
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    @click="copy()"
+                    class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                  >
+                    <Link2 />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Copy Link</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip :delayDuration="300" v-if="visibilityRef != 'na'">
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                  >
+                    <ListTree />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Chat Navigator</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div class="flex items-center gap-2 lg:hidden">
+              <Button
+                size="sm"
+                variant="outline"
+                class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
+              >
+                <ListTree class="h-3 w-3" />
+              </Button>
+              <DropdownMenu v-model:open="isMobileChatOptionMenuOpen">
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" size="sm" class="h-6 w-6 p-0" @click.prevent>
+                    <MoreHorizontal class="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" class="border-border/50 lg:border-border w-48">
+                  <DropdownMenuItem v-if="visibilityRef == 'public'" @click="copy()">
+                    <Link2 class="mr-2 h-4 w-4" />
+                    Share Link
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="share()">
+                    <Share2 v-if="visibilityRef == 'private'" class="mr-2 h-4 w-4" />
+                    <EyeOff v-if="visibilityRef == 'public'" class="mr-2 h-4 w-4" />
+                    {{ visibilityRef == 'private' ? 'Share Chat' : 'Make Chat Private' }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
           <div
             class="from-background to-background/0 absolute top-0 left-0 z-10 h-[20vh] w-full bg-gradient-to-b"
           ></div>
