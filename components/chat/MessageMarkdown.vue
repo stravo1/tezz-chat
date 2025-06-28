@@ -4,6 +4,7 @@ import MarkdownPreview from '@uivjs/vue-markdown-preview';
 import rehypeHighlight from 'rehype-highlight';
 import { ID } from 'appwrite';
 import { marked } from 'marked';
+import { Copy, WrapText } from 'lucide-vue-next';
 const props = defineProps<{
   content: string;
   id: string;
@@ -39,17 +40,28 @@ const components = {
         }, 2000);
       }
     };
+    const toggleWrap = () => {
+      const codeElement = document.getElementById(`pre-${id}`);
+      if (codeElement) {
+        codeElement.classList.toggle('wrap');
+      }
+    };
 
     const language = options.class?.replace('language-', '') || 'plaintext';
     return (
       <div class="my-10 w-full">
         <div class="border-border bg-muted sticky top-0 flex items-center justify-between gap-2 rounded-t-md rounded-tl-lg rounded-tr-lg border-b px-3 py-2 text-xs">
           <span class="font-mono">{language}</span>
-          <span class="cursor-pointer" data-copy-button={id} onClick={clickCopied}>
-            Copy
-          </span>
+          <div class="flex items-center gap-2">
+            <button class="h-6 w-6 cursor-pointer" data-copy-button={id} onClick={toggleWrap}>
+              <WrapText class="h-4 w-4" />
+            </button>
+            <button class="h-6 w-6 cursor-pointer" data-copy-button={id} onClick={clickCopied}>
+              <Copy class="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <pre class="hljs not-prose">
+        <pre id={`pre-${id}`} class="hljs not-prose">
           <code id={id} {...options}>
             {children}
           </code>
