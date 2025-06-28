@@ -91,10 +91,18 @@ const handlePrimaryAction = () => {
 };
 
 const submitKey = keys['enter'];
+const ctrlEnterPressed = keys['cmd+enter'];
 const isShiftPressed = keys['shift'];
 watch(submitKey, isPressed => {
-  if (isPressed && !isShiftPressed.value && !isMobile.value) {
+  if (isPressed && !ctrlEnterPressed.value && !isShiftPressed.value && !isMobile.value) {
     console.log('Submitting message');
+    handlePrimaryAction();
+    message.value = '';
+  }
+});
+watch(ctrlEnterPressed, isPressed => {
+  if (isPressed) {
+    console.log('Submitting message with Ctrl+Enter');
     handlePrimaryAction();
     message.value = '';
   }

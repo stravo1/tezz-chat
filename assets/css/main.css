@@ -33,6 +33,13 @@ pre {
   font-size: 0.9rem;
 }
 
+.wrap {
+  white-space: pre-wrap;
+  word-break: keep-all;
+  word-wrap: normal;
+  hyphens: auto;
+}
+
 .copied {
   display: none;
 }

@@ -50,7 +50,7 @@
         <!-- Chat view content -->
         <div
           id="chat-view"
-          class="bg-background relative box-border flex h-full w-full justify-center overflow-hidden rounded-lg px-2 pt-0 lg:px-4"
+          class="bg-background relative box-border flex h-full w-full justify-center overflow-hidden rounded-lg px-2 pt-16 lg:px-4 lg:pt-20"
         >
           <!-- Top right controls -->
           <div class="absolute top-4 right-4 z-30 flex gap-2">
@@ -130,9 +130,9 @@
               </DropdownMenu>
             </div>
           </div>
-          <div
+          <!-- <div
             class="from-background to-background/0 absolute top-0 left-0 z-10 h-[20vh] w-full bg-gradient-to-b"
-          ></div>
+          ></div> -->
           <NuxtPage />
           <SidebarTrigger
             class="text-foreground hover:!bg-accent absolute top-4 left-4 z-20 cursor-pointer rounded p-2 transition-all"

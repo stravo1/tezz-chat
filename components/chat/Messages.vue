@@ -138,7 +138,7 @@ console.log('Messages:', props.messages);
       >
         <div
           v-memo="[message]"
-          :class="`${message.role === 'user' ? 'flex max-w-[50vw] flex-col items-end lg:max-w-[40vw]' : 'w-full'}`"
+          :class="`${message.role === 'user' ? 'flex max-w-[70vw] flex-col items-end lg:max-w-[40vw]' : 'w-full'}`"
           class="group"
         >
           <textarea
@@ -196,7 +196,7 @@ console.log('Messages:', props.messages);
               </div>
             </div>
             <div
-              class="border-border bg-secondary/50 text-foreground ml-auto w-fit max-w-md rounded-lg border px-4 py-2"
+              class="border-border bg-secondary/50 text-foreground ml-auto max-w-md rounded-lg border px-4 py-2"
             >
               {{ message.content }}
             </div>
