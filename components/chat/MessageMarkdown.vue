@@ -32,13 +32,6 @@ const components = {
       if (!elem) return;
       console.log(elem);
       elem?.click();
-      let copyButtonSpan = document.querySelector(`[data-copy-button="${id}"]`);
-      if (copyButtonSpan) {
-        copyButtonSpan.textContent = 'Copied!';
-        setTimeout(() => {
-          copyButtonSpan.textContent = 'Copy';
-        }, 2000);
-      }
     };
     const toggleWrap = () => {
       const codeElement = document.getElementById(`pre-${id}`);
