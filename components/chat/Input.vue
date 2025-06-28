@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowUp, Image, LoaderCircle, Paperclip } from 'lucide-vue-next';
-import { useTextareaAutosize } from '@vueuse/core';
+import { useMagicKeys, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
 import type { UIMessage } from 'ai';
 const { textarea, input: message } = useTextareaAutosize();
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -17,8 +17,10 @@ const props = defineProps<{
   stop: () => void;
 }>();
 
+const keys = useMagicKeys();
 const modelStore = useModelStore();
 const intentStore = useIntentStore();
+const isMobile = useMediaQuery('(max-width: 640px)');
 
 const handleToggleIntent = () => {
   intentStore.toggleIntent();
@@ -87,6 +89,21 @@ const handlePrimaryAction = () => {
     handleSubmit();
   }
 };
+
+const submitKey = keys['enter'];
+const isShiftPressed = keys['shift'];
+watch(submitKey, isPressed => {
+  if (isPressed && !isShiftPressed.value && !isMobile.value) {
+    console.log('Submitting message');
+    handlePrimaryAction();
+    message.value = '';
+  }
+});
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && !event.shiftKey && !isMobile.value) {
+    event.preventDefault();
+  }
+};
 </script>
 
 <template>
@@ -122,7 +139,6 @@ const handlePrimaryAction = () => {
               <textarea
                 ref="textarea"
                 v-model="message"
-                @keydown.enter.exact.prevent="handleSubmit"
                 name="input"
                 id="chat-input"
                 placeholder="Ask me anything..."
@@ -130,6 +146,7 @@ const handlePrimaryAction = () => {
                 aria-label="Message input"
                 aria-describedby="chat-input-description"
                 autocomplete="off"
+                @keydown="handleKeydown"
               ></textarea>
               <div id="chat-input-description" class="sr-only">
                 Press Enter to send, Shift + Enter for new line
@@ -182,7 +199,6 @@ const handlePrimaryAction = () => {
                 class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary/90 inline-flex size-8 shrink-0 items-center justify-center gap-2 rounded-md border text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                 :disabled="message.trim() === '' && status != 'streaming'"
                 data-state="closed"
-                type="submit"
               >
                 <LoaderCircle class="animate-spin" v-if="status == 'submitted'" />
                 <div
