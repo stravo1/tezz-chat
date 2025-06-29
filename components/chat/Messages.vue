@@ -129,7 +129,7 @@ console.log('Messages:', props.messages);
 <template>
   <div class="flex h-full w-full flex-col items-center overflow-y-scroll" id="messages-container">
     <div class="w-full space-y-4 lg:max-w-2xl">
-      <div id="padding-top" class="pb-[15vh] lg:pb-[20vh]"></div>
+      <!-- <div id="padding-top" class="pb-[15vh] lg:pb-[20vh]"></div> -->
       <div
         v-for="message in props.messages"
         :key="message.id"

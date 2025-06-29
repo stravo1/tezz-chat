@@ -116,7 +116,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 <template>
   <div class="absolute right-2 bottom-0 left-2 flex justify-center gap-2">
-    <div class="w-full sm:max-w-3xl">
+    <div class="w-full max-w-2xl">
       <div
         v-if="selectedFiles.length"
         class="bg-surface-container-low flex items-center gap-2 rounded-lg p-2 pb-3"

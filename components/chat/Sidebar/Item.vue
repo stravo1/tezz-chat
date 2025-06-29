@@ -37,7 +37,11 @@ const open = ref(false);
 
 <template>
   <SidebarMenuItem>
-    <SidebarMenuButton :as-child="true" :data-active="isActive" class="group/thread w-full">
+    <SidebarMenuButton
+      :as-child="true"
+      :data-active="isActive"
+      class="group/thread w-full cursor-pointer"
+    >
       <NuxtLink :to="`/chat/${chat.id}`" class="flex w-full items-center justify-between gap-2">
         <div class="flex min-w-0 flex-1 items-center gap-2">
           <Split v-if="chat.isBranched" class="h-4 w-4 shrink-0 opacity-50" />
@@ -51,16 +55,22 @@ const open = ref(false);
         >
           <DropdownMenu v-model:open="open">
             <DropdownMenuTrigger as-child>
-              <Button variant="ghost" size="sm" class="h-6 w-6 p-0" @click.prevent>
+              <Button variant="ghost" size="sm" class="h-6 w-6 cursor-pointer p-0" @click.prevent>
                 <MoreHorizontal class="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="border-border/50 lg:border-border w-48">
-              <DropdownMenuItem @click="emit('startRename', chat.id, chat.title)">
+              <DropdownMenuItem
+                class="cursor-pointer"
+                @click="emit('startRename', chat.id, chat.title)"
+              >
                 <Edit class="mr-2 h-4 w-4" />
                 Rename
               </DropdownMenuItem>
-              <DropdownMenuItem @click="emit('shareChat', chat.id, chat.visibility || 'private')">
+              <DropdownMenuItem
+                class="cursor-pointer"
+                @click="emit('shareChat', chat.id, chat.visibility || 'private')"
+              >
                 <component
                   :is="chat.visibility === 'public' ? EyeOff : Share"
                   class="mr-2 h-4 w-4"
@@ -70,9 +80,9 @@ const open = ref(false);
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 @click="emit('deleteThread', chat.id)"
-                class="text-destructive focus:text-destructive"
+                class="group/delete text-destructive hover:text-destructive-foreground focus:text-destructive-foreground hover:bg-destructive/90 focus:bg-destructive/90 cursor-pointer"
               >
-                <Trash2 class="mr-2 h-4 w-4" />
+                <Trash2 class="group-hover/delete:text-destructive-foreground mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
