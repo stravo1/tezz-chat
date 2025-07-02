@@ -137,6 +137,7 @@ const haventGottenFirstChunk = computed(() => {
       :haventGottenFirstChunk
       :status
       :is-public
+      :scroll-to-bottom
     />
     <ChatInput v-if="!isPublic" :handleSubmit :status :stop />
   </div>

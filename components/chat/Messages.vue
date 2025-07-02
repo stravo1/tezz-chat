@@ -2,7 +2,21 @@
 import type { ChatRequestOptions, UIMessage } from 'ai';
 
 import { useTextareaAutosize } from '@vueuse/core';
-import { File, LoaderCircle } from 'lucide-vue-next';
+import { ChevronsDown, File, LoaderCircle } from 'lucide-vue-next';
+import { useScroll } from '@vueuse/core';
+import { useTemplateRef } from 'vue';
+import Button from '../ui/button/Button.vue';
+
+const el = useTemplateRef<HTMLElement>('messages-container');
+const { x, y, isScrolling, arrivedState, directions } = useScroll(el);
+
+watch(
+  arrivedState,
+  newState => {
+    console.log('Arrived bottom:', newState.bottom);
+  },
+  { immediate: true }
+);
 
 const props = defineProps<{
   chatId?: string;
@@ -12,6 +26,7 @@ const props = defineProps<{
   reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>;
   status: string;
   isPublic?: boolean;
+  scrollToBottom: () => void;
 }>();
 
 const messageStore = useMessageStore();
@@ -127,7 +142,11 @@ console.log('Messages:', props.messages);
 </script>
 
 <template>
-  <div class="flex h-full w-full flex-col items-center overflow-y-scroll" id="messages-container">
+  <div
+    class="flex h-full w-full flex-col items-center overflow-y-scroll"
+    id="messages-container"
+    ref="messages-container"
+  >
     <div class="w-full space-y-4 lg:max-w-2xl">
       <!-- <div id="padding-top" class="pb-[15vh] lg:pb-[20vh]"></div> -->
       <div
@@ -243,6 +262,15 @@ console.log('Messages:', props.messages);
         <LoaderCircle class="animate-spin" />
       </div>
       <div id="padding-bottom" class="pb-[200px]"></div>
+      <Button
+        v-if="!arrivedState.bottom"
+        class="absolute bottom-[20%] left-1/2 -translate-x-1/2 cursor-pointer text-sm opacity-50 hover:opacity-100"
+        variant="secondary"
+        @click="scrollToBottom"
+      >
+        <ChevronsDown class="h-4 w-4" />
+        Scroll to Bottom
+      </Button>
     </div>
   </div>
 </template>
