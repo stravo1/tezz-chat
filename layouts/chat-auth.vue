@@ -102,7 +102,7 @@
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div class="flex items-center gap-2 lg:hidden">
+            <div class="flex items-center gap-2 lg:hidden" v-if="visibilityRef != 'na'">
               <Button
                 size="sm"
                 variant="outline"

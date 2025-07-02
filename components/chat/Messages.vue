@@ -264,7 +264,7 @@ console.log('Messages:', props.messages);
       <div id="padding-bottom" class="pb-[200px]"></div>
       <Button
         v-if="!arrivedState.bottom"
-        class="absolute bottom-[20%] left-1/2 -translate-x-1/2 cursor-pointer text-sm opacity-50 hover:opacity-100"
+        class="absolute bottom-[125px] left-1/2 -translate-x-1/2 cursor-pointer text-sm opacity-50 hover:opacity-100"
         variant="secondary"
         @click="scrollToBottom"
       >
