@@ -7,17 +7,6 @@ import { useScroll } from '@vueuse/core';
 import { useTemplateRef } from 'vue';
 import Button from '../ui/button/Button.vue';
 
-const el = useTemplateRef<HTMLElement>('messages-container');
-const { x, y, isScrolling, arrivedState, directions } = useScroll(el);
-
-watch(
-  arrivedState,
-  newState => {
-    console.log('Arrived bottom:', newState.bottom);
-  },
-  { immediate: true }
-);
-
 const props = defineProps<{
   chatId?: string;
   messages: UIMessage[];
@@ -35,8 +24,13 @@ const modelStore = useModelStore();
 const intentStore = useIntentStore();
 
 const { textarea, input: contentBeingEdited } = useTextareaAutosize();
+const el = useTemplateRef<HTMLElement>('messages-container');
+const { isScrolling, arrivedState } = useScroll(el);
+
 const isBeingEdited = ref(false);
 const timeStampOfMessageBeingEdited = ref<string | null>(null);
+const isScrollToBottomVisible = ref(false);
+const scrollToBottomTimeout = ref<NodeJS.Timeout | null>(null);
 
 const getApiHeaders = (model?: string) => {
   const headers: Record<string, string> = {};
@@ -137,6 +131,26 @@ const handleCopy = (text: string) => {
       console.error('Failed to copy text:', err);
     });
 };
+
+watch(
+  [arrivedState, isScrolling],
+  ([newState, isScrolling]) => {
+    // make the button visible while scrolling and if not already at bottom (using newState.bottom) and make it visible for a sec if idle
+    if (isScrolling && !newState.bottom) {
+      isScrollToBottomVisible.value = true;
+      if (scrollToBottomTimeout.value) {
+        clearTimeout(scrollToBottomTimeout.value);
+      }
+      scrollToBottomTimeout.value = setTimeout(() => {
+        isScrollToBottomVisible.value = false;
+      }, 2000);
+    } else {
+      isScrollToBottomVisible.value = newState.bottom ? false : true;
+    }
+    console.log('Scrolling state:', newState, 'isScrolling:', isScrolling);
+  },
+  { immediate: true }
+);
 
 console.log('Messages:', props.messages);
 </script>
@@ -264,8 +278,9 @@ console.log('Messages:', props.messages);
       </div>
       <div id="padding-bottom" class="pb-[200px]"></div>
       <Button
-        v-if="!arrivedState.bottom"
-        class="absolute bottom-[125px] left-1/2 -translate-x-1/2 cursor-pointer text-sm opacity-50 hover:opacity-100"
+        v-if="isScrollToBottomVisible"
+        class="absolute left-1/2 z-10 -translate-x-1/2 cursor-pointer text-sm opacity-50 hover:opacity-100"
+        :class="{ 'bottom-[125px]': !isPublic, 'bottom-[50px]': isPublic }"
         variant="secondary"
         @click="scrollToBottom"
       >
