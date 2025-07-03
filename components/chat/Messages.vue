@@ -147,7 +147,6 @@ watch(
     } else {
       isScrollToBottomVisible.value = newState.bottom ? false : true;
     }
-    console.log('Scrolling state:', newState, 'isScrolling:', isScrolling);
   },
   { immediate: true }
 );
@@ -279,7 +278,7 @@ console.log('Messages:', props.messages);
       <div id="padding-bottom" class="pb-[200px]"></div>
       <Button
         v-if="isScrollToBottomVisible"
-        class="absolute left-1/2 z-10 -translate-x-1/2 cursor-pointer text-sm opacity-50 hover:opacity-100"
+        class="absolute left-1/2 z-10 -translate-x-1/2 cursor-pointer text-sm opacity-75 hover:opacity-100 lg:opacity-50"
         :class="{ 'bottom-[125px]': !isPublic, 'bottom-[50px]': isPublic }"
         variant="secondary"
         @click="scrollToBottom"

@@ -6,107 +6,109 @@
       'mt-2': role === 'assistant' || role === 'system',
     }"
   >
-    <Tooltip :delayDuration="150">
-      <TooltipTrigger asChild>
-        <Button
-          v-if="isEditing && role === 'user'"
-          @click="handleSave"
-          variant="ghost"
-          size="icon"
-          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
-        >
-          <Check class="h-3.5 w-3.5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p>Save</p>
-      </TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="isEditing && role === 'user'"
+            @click="handleSave"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <Check class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Save</p>
+        </TooltipContent>
+      </Tooltip>
 
-    <Tooltip :delayDuration="150">
-      <TooltipTrigger asChild>
-        <Button
-          v-if="isEditing && role === 'user'"
-          @click="handleDiscard"
-          variant="ghost"
-          size="icon"
-          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
-        >
-          <X class="h-3.5 w-3.5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p>Cancel</p>
-      </TooltipContent>
-    </Tooltip>
-    <Tooltip :delayDuration="150">
-      <TooltipTrigger asChild>
-        <Button
-          v-if="!isEditing"
-          @click="handleCopy"
-          variant="ghost"
-          size="icon"
-          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
-        >
-          <Copy v-if="!copied" class="h-3.5 w-3.5" />
-          <Check v-else class="h-3.5 w-3.5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p>Copy</p>
-      </TooltipContent>
-    </Tooltip>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="isEditing && role === 'user'"
+            @click="handleDiscard"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <X class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Cancel</p>
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="!isEditing"
+            @click="handleCopy"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <Copy v-if="!copied" class="h-3.5 w-3.5" />
+            <Check v-else class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Copy</p>
+        </TooltipContent>
+      </Tooltip>
 
-    <Tooltip :delayDuration="150">
-      <TooltipTrigger asChild>
-        <Button
-          v-if="!isEditing && role !== 'user' && role !== 'data'"
-          @click="handleBranch"
-          variant="ghost"
-          size="icon"
-          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
-        >
-          <Split class="h-3.5 w-3.5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p>Branch</p>
-      </TooltipContent>
-    </Tooltip>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="!isEditing && role !== 'user' && role !== 'data'"
+            @click="handleBranch"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <Split class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Branch</p>
+        </TooltipContent>
+      </Tooltip>
 
-    <Tooltip :delayDuration="150">
-      <TooltipTrigger asChild>
-        <Button
-          v-if="!isEditing && (role === 'user' || role === 'data')"
-          @click="handleEdit"
-          variant="ghost"
-          size="icon"
-          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
-        >
-          <Edit3 class="h-3.5 w-3.5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p>Edit</p>
-      </TooltipContent>
-    </Tooltip>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="!isEditing && (role === 'user' || role === 'data')"
+            @click="handleEdit"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <Edit3 class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Edit</p>
+        </TooltipContent>
+      </Tooltip>
 
-    <Tooltip :delayDuration="150">
-      <TooltipTrigger asChild>
-        <Button
-          v-if="!isEditing"
-          @click="handleRetry"
-          variant="ghost"
-          size="icon"
-          class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
-        >
-          <RefreshCw class="h-3.5 w-3.5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p>Retry</p>
-      </TooltipContent>
-    </Tooltip>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="!isEditing"
+            @click="handleRetry"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <RefreshCw class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Retry</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   </div>
 </template>
 
@@ -116,6 +118,7 @@ import Tooltip from '../ui/tooltip/Tooltip.vue';
 import TooltipTrigger from '../ui/tooltip/TooltipTrigger.vue';
 import Button from '../ui/button/Button.vue';
 import TooltipContent from '../ui/tooltip/TooltipContent.vue';
+import TooltipProvider from '../ui/tooltip/TooltipProvider.vue';
 
 const props = defineProps<{
   role: 'user' | 'data' | 'system' | 'assistant';
