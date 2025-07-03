@@ -67,10 +67,8 @@ const handleScrollToMessage = (messageId: string) => {
           </li>
         </ul>
       </div>
-      <SheetFooter>
-        <SheetClose as-child>
-          <Button variant="secondary"> Close </Button>
-        </SheetClose>
+      <SheetFooter class="text-foreground/70 flex items-center justify-center text-xs">
+        {{ messageStore.messages.length }} messages
       </SheetFooter>
     </SheetContent>
   </Sheet>
