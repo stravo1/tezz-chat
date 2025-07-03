@@ -157,6 +157,7 @@ console.log('Messages:', props.messages);
       >
         <div
           v-memo="[message]"
+          :id="`message-${message.id}`"
           :class="`${message.role === 'user' ? 'flex max-w-[70vw] flex-col items-end lg:max-w-[40vw]' : 'w-full'}`"
           class="group"
         >

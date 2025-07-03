@@ -93,6 +93,7 @@
                     size="icon"
                     variant="outline"
                     class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+                    @click="isChatNavigatorOpen = true"
                   >
                     <ListTree />
                   </Button>
@@ -107,6 +108,7 @@
                 size="sm"
                 variant="outline"
                 class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
+                @click="isChatNavigatorOpen = true"
               >
                 <ListTree class="h-3 w-3" />
               </Button>
@@ -148,6 +150,7 @@
       :close-modal="() => (isSettingsModalOpen = false)"
       :set-is-loading="() => (isLoading = true)"
     />
+    <ChatNavigator :open="isChatNavigatorOpen" @update:open="val => (isChatNavigatorOpen = val)" />
   </div>
 </template>
 
@@ -218,6 +221,7 @@ const threadDetailsSubscription = ref<Subscription>();
 const isSearchModalOpen = ref(false);
 const isSettingsModalOpen = ref(false);
 const isMobileChatOptionMenuOpen = ref(false);
+const isChatNavigatorOpen = ref(false);
 
 onMounted(async () => {
   if (!isAuthChecked.value) {

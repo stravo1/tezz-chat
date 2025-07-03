@@ -82,8 +82,10 @@ const scrollToBottom = () => {
 
 watch(
   messages,
-  newMessages => {
+  (newMessages: UIMessage[]) => {
     console.log('Messages updated:', newMessages);
+    // @ts-ignore
+    messageStore.messages = newMessages;
     // scrollToBottom();
   },
   { deep: true }
