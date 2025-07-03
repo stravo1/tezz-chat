@@ -11,7 +11,6 @@ const isLoading = ref(true);
 
 const convertToUIMessages = (messages: any, parse: boolean = true) => {
   return messages?.map((message: any) => {
-    console.log('Converting message:', message);
     return {
       id: message.$id,
       role: message.role,
@@ -36,7 +35,7 @@ onMounted(async () => {
       method: 'GET',
     });
     console.log('Chat details fetched successfully:', chatDetails);
-    messages.value = convertToUIMessages(chatDetails.chatMessageId || [], false);
+    messages.value = convertToUIMessages(chatDetails.chatMessageId || []);
     document.title = chatDetails.title || 'Chat';
     isLoading.value = false;
   } catch (error) {
@@ -59,7 +58,7 @@ console.log('Chat ID:', chatId.value);
     v-if="messages.length"
     :key="chatId"
     :chatId="chatId"
-    :initialMessages="convertToUIMessages(messages)"
+    :initialMessages="messages"
     :is-public="true"
   />
 </template>
