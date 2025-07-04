@@ -22,7 +22,6 @@ defineOgImageComponent('Pergel', {
 <template>
   <Analytics />
   <Toaster />
-  <NuxtPwaManifest />
   <ClientOnly>
     <NuxtLayout>
       <NuxtPage />

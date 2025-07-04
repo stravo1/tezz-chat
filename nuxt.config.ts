@@ -8,7 +8,7 @@ import vueJsxPlugin from '@vitejs/plugin-vue-jsx';
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
-  modules: ['@nuxt/icon', '@pinia/nuxt', '@vite-pwa/nuxt', 'nuxt-og-image', 'nuxt-seo-utils'],
+  modules: ['@nuxt/icon', '@pinia/nuxt', 'nuxt-og-image', 'nuxt-seo-utils'],
   site: {
     url: 'https://www.tezz.chat',
     name: 'Tezz Chat',
@@ -40,7 +40,7 @@ export default defineNuxtConfig({
   css: ['./assets/css/main.css'],
   $production: {
     build: {
-      transpile: ['@uivjs/vue-markdown-preview', 'dexie', 'rxdb'],
+      transpile: ['dexie', 'rxdb'],
     },
     // pwa: {
     //   strategies: sw ? 'injectManifest' : 'generateSW',
