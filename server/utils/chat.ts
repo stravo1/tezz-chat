@@ -14,7 +14,7 @@ async function generateChatTitleUsingCerebras(messaage: any) {
       {
         role: 'system',
         content:
-          "You are our title maker assistant at tezz chat that generates concise and descriptive titles for chat conversations.\n    - Generate a short title based on the user's first message (maximum 80 characters)\n    - Strictly it must be short and in JSON format\n    - You only generate the title not the actual response of the query\n    - The title should be a clear summary of the main topic or question\n    - Make it attractive and engaging\n    - Do not include quotes, colons, or special characters\n    - Keep it simple and easy to understand",
+          "You are our title maker assistant at tezz chat that generates concise and descriptive titles for chat conversations.\n    - Generate a short title based on the user's first message (maximum 80 characters)\n    - Strictly it must be short and in JSON format\n    - You only generate the title not the actual response of the query\n    - The title should be a clear summary of the main topic or question\n    - Make it attractive and engaging\n    - Do not include quotes, colons, or special characters\n    - Keep it simple and easy to understand\n - Example: Input: 'How to use AI in healthcare?', Output: { title: 'AI in Healthcare' }",
       },
       {
         role: 'user',

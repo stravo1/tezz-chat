@@ -31,6 +31,11 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: ['dexie', 'rxdb'],
     },
+    resolve: {
+      alias: {
+        'micromark-extension-math': 'micromark-extension-llm-math',
+      },
+    },
   },
   css: ['./assets/css/main.css'],
   $production: {
