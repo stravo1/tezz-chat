@@ -5,6 +5,7 @@ import { useElementHover, useTextareaAutosize } from '@vueuse/core';
 import { ChevronsDown, File, LoaderCircle } from 'lucide-vue-next';
 import { useScroll } from '@vueuse/core';
 import { useTemplateRef } from 'vue';
+import { useVueToPrint } from 'vue-to-print';
 import Button from '../ui/button/Button.vue';
 
 const props = defineProps<{
@@ -33,6 +34,18 @@ const isBeingEdited = ref(false);
 const timeStampOfMessageBeingEdited = ref<string | null>(null);
 const isScrollToBottomVisible = ref(false);
 const scrollToBottomTimeout = ref<NodeJS.Timeout | null>(null);
+
+// Initialize an object to store refs for each message
+const messageRefs = ref<{ [key: string]: any }>({});
+// Function to handle printing for a specific message
+const handleMessagePrint = (messageId: string) => {
+  const { handlePrint } = useVueToPrint({
+    content: messageRefs.value[messageId],
+    documentTitle: `Chat Message - ${document.title}`,
+    copyStyles: true,
+  });
+  handlePrint();
+};
 
 const getApiHeaders = (model?: string) => {
   const headers: Record<string, string> = {};
@@ -197,6 +210,7 @@ console.log('Messages:', props.messages);
               v-for="(part, index) in message.parts"
               class="mb-2"
               v-memo="[part, message.id, index]"
+              :ref="el => (messageRefs[message.id] = el)"
             >
               <div
                 v-if="part.type == 'reasoning'"
@@ -250,6 +264,7 @@ console.log('Messages:', props.messages);
               :is-editing="isBeingEdited"
               :handle-copy="() => handleCopy(message.content)"
               :handle-branch="() => handleBranch(message.id, message.createdAt)"
+              :handle-print="() => handleMessagePrint(message.id)"
               :handle-edit="
                 () => {
                   isBeingEdited = true;

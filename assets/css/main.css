@@ -90,3 +90,9 @@ body {
     background: var(--color-popover) !important;
   }
 }
+
+@media print {
+  @page {
+    margin: 5mm;
+  }
+}

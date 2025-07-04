@@ -72,6 +72,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@vitejs/plugin-vue-jsx": "^4.2.0",
     "prettier": "^3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.12"
+    "prettier-plugin-tailwindcss": "^0.6.12",
+    "vue-to-print": "^1.4.0"
   }
 }

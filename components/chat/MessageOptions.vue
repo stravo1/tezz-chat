@@ -108,12 +108,28 @@
           <p>Retry</p>
         </TooltipContent>
       </Tooltip>
+      <Tooltip :delayDuration="150">
+        <TooltipTrigger asChild>
+          <Button
+            v-if="!isEditing && role === 'assistant'"
+            @click="handlePrint"
+            variant="ghost"
+            size="icon"
+            class="border-border/70 text-foreground hover:!bg-accent h-7 w-7 cursor-pointer border shadow-md backdrop-blur-sm"
+          >
+            <Download class="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>Save</p>
+        </TooltipContent>
+      </Tooltip>
     </TooltipProvider>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Check, Copy, Cross, Edit3, RefreshCw, Split, Trash2, X } from 'lucide-vue-next';
+import { Check, Copy, Download, Edit3, RefreshCw, Split, X } from 'lucide-vue-next';
 import Tooltip from '../ui/tooltip/Tooltip.vue';
 import TooltipTrigger from '../ui/tooltip/TooltipTrigger.vue';
 import Button from '../ui/button/Button.vue';
@@ -130,11 +146,10 @@ const props = defineProps<{
   handleRetry?: () => void;
   handleSave?: () => void;
   handleDiscard?: () => void;
+  handlePrint?: () => void;
 }>();
 
 const copied = ref(false);
-// Define emits for actions if needed, e.g.,
-// const emit = defineEmits(['copy', 'edit', 'retry', 'delete']);
 
 const handleCopy = () => {
   console.log('Copy action triggered');
@@ -143,7 +158,6 @@ const handleCopy = () => {
   setTimeout(() => {
     copied.value = false;
   }, 2000);
-  // emit('copy');
 };
 </script>
 
