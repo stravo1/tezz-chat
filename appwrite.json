@@ -29,11 +29,11 @@
       "security": {
         "duration": 31536000,
         "limit": 0,
-        "sessionsLimit": 10,
+        "sessionsLimit": 4,
         "passwordHistory": 0,
         "passwordDictionary": false,
         "personalDataCheck": false,
-        "sessionAlerts": false,
+        "sessionAlerts": true,
         "mockNumbers": []
       }
     }
@@ -226,7 +226,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 5000000,
           "default": null
         }
       ],
@@ -287,8 +287,13 @@
     },
     {
       "$id": "authenticated-files",
-      "$permissions": [],
-      "fileSecurity": false,
+      "$permissions": [
+        "create(\"users\")",
+        "read(\"users\")",
+        "update(\"users\")",
+        "delete(\"users\")"
+      ],
+      "fileSecurity": true,
       "name": "authenticated-files",
       "enabled": true,
       "maximumFileSize": 5000000000,
@@ -299,7 +304,7 @@
     },
     {
       "$id": "public-files",
-      "$permissions": [],
+      "$permissions": ["create(\"any\")", "read(\"any\")"],
       "fileSecurity": false,
       "name": "public-files",
       "enabled": true,

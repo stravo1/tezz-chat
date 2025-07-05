@@ -1,7 +1,7 @@
 import { H3Event } from 'h3';
-import { z } from 'zod';
 import { createError, readMultipartFormData } from 'h3';
-import { storage } from '~/server/appwrite/config';
+import { Tokens } from 'node-appwrite';
+import { createJWTClient, client } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
 import { ID } from 'node-appwrite';
@@ -15,18 +15,17 @@ const fileToFile = (file: { data: Uint8Array; type?: string; filename?: string }
   return new File([blob], file.filename, { type: file.type || '' });
 };
 
-// File validation schema
-const FileSchema = z.object({
-  data: z.instanceof(Uint8Array, { message: 'Invalid file data' }),
-  filename: z.string().min(1, 'Filename is required'),
-  type: z.string().min(1, 'Type is required'),
-  size: z.number().max(5 * 1024 * 1024, 'File size should be less than 5MB'),
-});
-
-const getDownloadUrl = (fileId: string, bucketId: string) => {
+const getFileDownloadURL = (bucketId: string, fileId: string, token: string) => {
   const { projectId, url } = appwriteConfig;
-  return `${url}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
+  return `${url}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}&token=${token}`;
 };
+
+// This doesn't work somehow....
+// const createPermissions = (userId: string) => [
+//   Permission.read(Role.user(userId)),
+//   Permission.update(Role.user(userId)),
+//   Permission.delete(Role.user(userId)),
+// ];
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -50,6 +49,9 @@ const STORAGE_BUCKETS = {
 export default defineEventHandler(async (event: H3Event) => {
   try {
     const isAuthenticated = event.context.session?.userId;
+
+    const { storage } = createJWTClient(event);
+
     console.log('File upload request received', {
       isAuthenticated,
       userId: event.context.session?.userId || 'guest',
@@ -77,13 +79,6 @@ export default defineEventHandler(async (event: H3Event) => {
       );
     }
 
-    // Create a unique filename with path
-    const fileExt = file.filename.split('.').pop();
-    const prefix = isAuthenticated ? 'auth' : 'public';
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const fileName = `${prefix}-${uniqueSuffix}.${fileExt}`;
-    const path = `uploads/${fileName}`;
-
     // Convert the file to a File object
     const fileObj = fileToFile({
       data: file.data,
@@ -95,25 +90,17 @@ export default defineEventHandler(async (event: H3Event) => {
     const bucketId = isAuthenticated ? STORAGE_BUCKETS.AUTHENTICATED : STORAGE_BUCKETS.PUBLIC;
     const fileId = ID.unique();
 
-    const uploadedFile = await storage.createFile(bucketId, fileId, fileObj);
+    await storage.createFile(bucketId, fileId, fileObj);
 
     // Get file details
     const fileDetails = await storage.getFile(bucketId, fileId);
 
-    // Get file download URL
-    const downloadUrl = getDownloadUrl(fileId, bucketId);
+    // Create file token using server-side client (which has tokens.write scope)
+    const serverTokens = new Tokens(client);
+    const token = await serverTokens.createFileToken(bucketId, fileId);
 
-    // Get file preview URL (for images)
-    const previewUrl = file.type.startsWith('image/')
-      ? storage.getFilePreview(
-          bucketId,
-          fileId,
-          800, // width
-          800, // height
-          undefined, // gravity
-          100 // quality
-        )
-      : null;
+    const downloadUrl = getFileDownloadURL(bucketId, fileId, token.secret);
+    console.log('File download URL', downloadUrl);
 
     return {
       success: true,
