@@ -116,6 +116,41 @@ export default defineNuxtConfig({
     head: {
       viewport:
         'width=device-width,initial-scale=1,user-scalable=no,interactive-widget=resizes-content',
+      title: 'Tezz Chat',
+      link: [
+        {
+          rel: 'shortcut icon',
+          type: 'image/x-icon',
+          href: 'favicon.ico',
+        },
+        {
+          rel: 'apple-touch-icon',
+          sizes: '180x180',
+          href: '/apple-touch-icon.png',
+        },
+        {
+          rel: 'apple-touch-startup-image',
+          href: '/apple-touch-icon.png',
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '32x32',
+          href: '/favicon-32x32.png',
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '192x192',
+          href: '/android-chrome-192x192.png',
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '512x512',
+          href: '/android-chrome-512x512.png',
+        },
+      ],
     },
   },
 });
