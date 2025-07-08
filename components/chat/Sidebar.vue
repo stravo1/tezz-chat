@@ -274,7 +274,11 @@ watch(isAuthenticated, authenticated => {
       <SidebarGroup>
         <SidebarGroupContent class="space-y-3">
           <!-- New Chat Button -->
-          <Button @click="startNewChat" class="w-full justify-center gap-2" variant="default">
+          <Button
+            @click="startNewChat"
+            class="w-full cursor-pointer justify-center gap-2"
+            variant="default"
+          >
             New Chat
           </Button>
 
@@ -282,7 +286,7 @@ watch(isAuthenticated, authenticated => {
           <Button
             @click="emit('triggerSearch')"
             variant="outline"
-            class="text-foreground hover:text-foreground/50 w-full"
+            class="text-foreground hover:text-foreground/50 w-full cursor-pointer"
           >
             <Search className="h-4 w-4" />
             Search chats
