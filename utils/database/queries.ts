@@ -47,21 +47,56 @@ export const getThreadByNameMatching = async (name: string) => {
   const db = await initDb();
   const query = db.threads.find({
     selector: {
-      title: {
-        $regex: `.*${name}.*`,
-        $options: 'i', // case-insensitive search
-      },
+      $or: [
+        {
+          title: {
+            $regex: `.*${name}.*`,
+            $options: 'i', // case-insensitive search
+          },
+        },
+        {
+          'chatMessageId.content': {
+            $regex: `.*${name}.*`,
+            $options: 'i', // case-insensitive search
+          },
+        },
+      ],
     },
     sort: [{ updatedAt: 'desc' }],
   });
   const result = await query.exec();
   if (result.length === 0) {
-    throw new Error(`No threads found matching name: ${name}`);
+    return [];
   }
-  return result.map((thread: any) => ({
-    id: thread.get('id'),
-    title: thread.get('title'),
-  }));
+  let resultAggregate = result.map((thread: any) => {
+    let content =
+      (thread.get('chatMessageId') as UIMessage[]).filter((msg: UIMessage) =>
+        msg.content.toLowerCase().includes(name.toLowerCase())
+      )[0]?.content || ''; // Get the first message content that matches the search term
+
+    let splitContent = content.split(' ');
+    let matchingTermIndex = splitContent.findIndex(word =>
+      word.toLowerCase().includes(name.toLowerCase())
+    );
+    let sectionOfContentWhichMatches = '';
+    if (matchingTermIndex !== -1) {
+      // Get a section of content around the matching term
+      const start = Math.max(0, matchingTermIndex - 5); // Get 5 words before the matching term
+      const end = Math.min(splitContent.length, matchingTermIndex + 5); // Get 5 words after the matching term
+      sectionOfContentWhichMatches = splitContent
+        .slice(start, end)
+        .join(' ')
+        .replace(new RegExp(`(${name})`, 'gi'), '<mark>$1</mark>'); // Highlight the matching term
+    }
+
+    return {
+      id: thread.get('id'),
+      title: thread.get('title'),
+      sectionOfContentWhichMatches, // Get the section of content that matches the search term
+    };
+  });
+  console.log('Result aggregate:', resultAggregate);
+  return resultAggregate;
 };
 export const getThreadDetailsQuery = async (threadId: string) => {
   const db = await initDb();
