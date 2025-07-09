@@ -231,13 +231,20 @@ const isChatNavigatorOpen = ref(false);
 
 onMounted(async () => {
   if (!isAuthChecked.value) {
-    await userStore.fetchUser();
-    if (!isAuthenticated.value) {
-      console.warn('User is not authenticated, redirecting to auth page');
+    try {
+      await userStore.fetchUser();
+    } catch (err) {
+      console.error('Error fetching user:', err);
       navigateTo('/auth');
       return;
     }
   }
+  if (!isAuthenticated.value) {
+    console.warn('User is not authenticated, redirecting to auth page');
+    navigateTo('/auth');
+    return;
+  }
+
   layoutLoading.value = false;
 
   if (route.params.id) {
