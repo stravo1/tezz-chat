@@ -10,14 +10,14 @@ const isChatNavigatorOpen = ref(false);
 </script>
 
 <template>
-  <main class="flex h-[100dvh] w-screen">
-    <div
-      id="chat-view"
-      class="bg-background text-foreground relative box-border flex h-full w-full justify-center overflow-hidden px-4 pt-24"
-    >
-      <div class="absolute top-4 right-4 z-30 flex gap-2">
-        <div class="hidden items-center gap-2 lg:flex">
-          <TooltipProvider>
+  <TooltipProvider>
+    <main class="flex h-[100dvh] w-screen">
+      <div
+        id="chat-view"
+        class="bg-background text-foreground relative box-border flex h-full w-full justify-center overflow-hidden px-4 pt-24"
+      >
+        <div class="absolute top-4 right-4 z-30 flex gap-2">
+          <div class="hidden items-center gap-2 lg:flex">
             <Tooltip :delayDuration="300">
               <TooltipTrigger asChild>
                 <Button
@@ -33,25 +33,25 @@ const isChatNavigatorOpen = ref(false);
                 <p>Chat Navigator</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </div>
+          <div class="flex items-center gap-2 lg:hidden">
+            <Button
+              size="sm"
+              variant="outline"
+              class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
+              @click="isChatNavigatorOpen = true"
+            >
+              <ListTree class="h-3 w-3" />
+            </Button>
+          </div>
         </div>
-        <div class="flex items-center gap-2 lg:hidden">
-          <Button
-            size="sm"
-            variant="outline"
-            class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
-            @click="isChatNavigatorOpen = true"
-          >
-            <ListTree class="h-3 w-3" />
-          </Button>
-        </div>
+        <NuxtPage />
+        <ChatNavigator
+          v-if="isChatNavigatorOpen"
+          :open="isChatNavigatorOpen"
+          @update:open="isChatNavigatorOpen = $event"
+        />
       </div>
-      <NuxtPage />
-      <ChatNavigator
-        v-if="isChatNavigatorOpen"
-        :open="isChatNavigatorOpen"
-        @update:open="isChatNavigatorOpen = $event"
-      />
-    </div>
-  </main>
+    </main>
+  </TooltipProvider>
 </template>
