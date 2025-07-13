@@ -81,7 +81,7 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
     case 'devstral-small':
       return createOpenRouter({
         apiKey: openRouterApiKey,
-      }).chat('mistralai/devstral-small:free');
+      }).chat('mistralai/devstral-small-2505:free');
 
     default:
       if (!geminiApiKey) {
