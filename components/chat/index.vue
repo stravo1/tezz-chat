@@ -73,7 +73,6 @@ const handleSubmit = async (
 };
 
 const scrollToBottom = () => {
-  if (props.isPublic) return; // Skip scrolling for public chats
   document.getElementById('messages-container')?.scrollTo({
     top: document.getElementById('messages-container')?.scrollHeight,
     behavior: 'smooth',
@@ -114,7 +113,11 @@ onMounted(() => {
       navigateTo('/chat');
     }
   }
-  scrollToBottom();
+  if (!props.isPublic) {
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  }
 });
 
 const haventGottenFirstChunk = computed(() => {

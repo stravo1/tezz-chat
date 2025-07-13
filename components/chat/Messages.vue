@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import type { ChatRequestOptions, UIMessage } from 'ai';
 
-import { useElementHover, useTextareaAutosize } from '@vueuse/core';
+import { useElementHover, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
 import { ChevronsDown, File, LoaderCircle } from 'lucide-vue-next';
 import { useScroll } from '@vueuse/core';
 import { useTemplateRef } from 'vue';
@@ -29,6 +29,7 @@ const el = useTemplateRef<HTMLElement>('messages-container');
 const { isScrolling, arrivedState } = useScroll(el);
 const myHoverableElement = useTemplateRef<HTMLButtonElement>('scroll-to-bottom-button');
 const isHovered = useElementHover(myHoverableElement);
+const isMobile = useMediaQuery('(max-width: 640px)');
 
 const isBeingEdited = ref(false);
 const timeStampOfMessageBeingEdited = ref<string | null>(null);
@@ -151,7 +152,7 @@ watch(
   [arrivedState, isScrolling, isHovered],
   ([newState, isScrolling, isHovered]) => {
     // make the button visible while scrolling and if not already at bottom (using newState.bottom) and make it visible for a sec if idle
-    if (isHovered) {
+    if (isHovered && !isMobile.value) {
       if (scrollToBottomTimeout.value) {
         clearTimeout(scrollToBottomTimeout.value);
       }
