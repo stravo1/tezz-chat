@@ -569,6 +569,18 @@ export default defineLazyEventHandler(async () => {
             }
           : undefined,
         toolChoice: doesSupportToolCalls(model as ModelType) ? 'auto' : undefined,
+        providerOptions: {
+          openrouter: {
+            plugins: [
+              {
+                id: 'file-parser',
+                pdf: {
+                  engine: 'pdf-text', // defaults to "mistral-ocr". See Pricing above
+                },
+              },
+            ],
+          },
+        },
         onChunk(event) {
           if (event.chunk.type === 'tool-call') {
             console.log('Called Tool: ', event.chunk.toolName);
