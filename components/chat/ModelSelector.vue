@@ -20,15 +20,9 @@ import meta from '../../assets/svg/meta.vue';
 import qwen from '../../assets/svg/qwen.vue';
 import deepseek from '../../assets/svg/deepseek.vue';
 import mistral from '../../assets/svg/mistral.vue';
-import { useMediaQuery } from '@vueuse/core';
+import moonshot from '~/assets/svg/moonshot.vue';
 
-export type ModelType =
-  | 'gemini-2.0-flash-exp'
-  | 'gemini-2.5-flash-preview-05-20'
-  | 'deepseek-chat-v3'
-  | 'deepseek-r1'
-  | 'llama-4-scout'
-  | 'qwen3-30b';
+import { useMediaQuery } from '@vueuse/core';
 
 const models = [
   {
@@ -40,6 +34,11 @@ const models = [
     title: 'Gemini 2.5 Flash Preview 05-20',
     value: 'gemini-2.5-flash-preview-05-20',
     icon: gemini,
+  },
+  {
+    title: 'MoonshotAI Kimi K2',
+    value: 'kimi-k2',
+    icon: moonshot,
   },
   {
     title: 'Devstral Small',
@@ -65,11 +64,6 @@ const models = [
     title: 'Qwen3 30B',
     value: 'qwen3-30b',
     icon: qwen,
-  },
-  {
-    title: 'Llama 4 Scout',
-    value: 'llama-4-scout',
-    icon: meta,
   },
 ];
 

@@ -6,20 +6,20 @@ export type ModelType =
   | 'gemini-2.5-flash-preview-05-20'
   | 'deepseek-chat-v3'
   | 'deepseek-r1'
-  | 'llama-4-scout'
   | 'qwen3-30b'
   | 'mistral-small'
-  | 'devstral-small';
+  | 'devstral-small'
+  | 'kimi-k2';
 
 export const supportedModels = [
   'gemini-2.0-flash-exp',
   'gemini-2.5-flash-preview-05-20',
   'deepseek-chat-v3',
   'deepseek-r1',
-  'llama-4-scout',
   'qwen3-30b',
   'mistral-small',
   'devstral-small',
+  'kimi-k2',
 ];
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
@@ -27,9 +27,9 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'gemini-2.0-flash-exp',
     'gemini-2.5-flash-preview-05-20',
     'deepseek-chat-v3',
-    // 'llama-4-scout',
     'mistral-small',
     'devstral-small',
+    'kimi-k2',
   ];
   return models.includes(modelType);
 };
@@ -65,10 +65,10 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
         apiKey: openRouterApiKey,
       }).chat('deepseek/deepseek-r1-0528:free');
 
-    case 'llama-4-scout':
+    case 'kimi-k2':
       return createOpenRouter({
         apiKey: openRouterApiKey,
-      }).chat('meta-llama/llama-4-scout:free');
+      }).chat('moonshotai/kimi-k2:free');
 
     case 'qwen3-30b':
       return createOpenRouter({
