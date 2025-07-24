@@ -2,7 +2,7 @@
 import type { ChatRequestOptions, UIMessage } from 'ai';
 
 import { useElementHover, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
-import { ChevronsDown, File, LoaderCircle } from 'lucide-vue-next';
+import { ChevronsDown, FileText, LoaderCircle } from 'lucide-vue-next';
 import { useScroll } from '@vueuse/core';
 import { useTemplateRef } from 'vue';
 import { useVueToPrint } from 'vue-to-print';
@@ -237,16 +237,16 @@ console.log('Messages:', props.messages);
               </div>
             </div>
           </div>
-          <div v-else-if="message.role == 'user'">
+          <div v-else-if="message.role == 'user'" class="flex flex-col items-end">
             <div v-if="message.experimental_attachments?.length">
-              <div class="mb-2" v-for="file in message.experimental_attachments">
+              <div class="mr-2 mb-2" v-for="file in message.experimental_attachments">
                 <a
                   class="cursor-pointer"
                   title="View Document"
                   target="_blank"
                   :href="file.url"
                   v-if="!file.contentType?.includes('image')"
-                  ><File class="h-12 w-12" :stroke-width="1.25"
+                  ><FileText class="h-8 w-8" :stroke-width="1.5"
                 /></a>
                 <img
                   v-else
