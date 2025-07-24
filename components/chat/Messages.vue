@@ -239,15 +239,21 @@ console.log('Messages:', props.messages);
           </div>
           <div v-else-if="message.role == 'user'">
             <div v-if="message.experimental_attachments?.length">
-              <div v-for="file in message.experimental_attachments">
-                <File v-if="!file.contentType?.includes('image')" />
+              <div class="mb-2" v-for="file in message.experimental_attachments">
+                <a
+                  class="cursor-pointer"
+                  title="View Document"
+                  target="_blank"
+                  :href="file.url"
+                  v-if="!file.contentType?.includes('image')"
+                  ><File class="h-12 w-12" :stroke-width="1.25"
+                /></a>
                 <img
                   v-else
                   :src="file.url"
                   :alt="file.name"
                   class="max-h-40 max-w-full rounded-lg object-cover"
                 />
-                <br />
                 {{ file.name }}
               </div>
             </div>
