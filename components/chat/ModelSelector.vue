@@ -65,6 +65,11 @@ const models = [
     value: 'qwen3-30b',
     icon: qwen,
   },
+  {
+    title: 'Qwen3 Coder',
+    value: 'qwen3-coder',
+    icon: qwen,
+  },
 ];
 
 const modelStore = useModelStore();

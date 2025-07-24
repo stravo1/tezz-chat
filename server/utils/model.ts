@@ -7,6 +7,7 @@ export type ModelType =
   | 'deepseek-chat-v3'
   | 'deepseek-r1'
   | 'qwen3-30b'
+  | 'qwen3-coder'
   | 'mistral-small'
   | 'devstral-small'
   | 'kimi-k2';
@@ -17,6 +18,7 @@ export const supportedModels = [
   'deepseek-chat-v3',
   'deepseek-r1',
   'qwen3-30b',
+  'qwen3-coder',
   'mistral-small',
   'devstral-small',
   'kimi-k2',
@@ -30,6 +32,7 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'mistral-small',
     'devstral-small',
     'kimi-k2',
+    'qwen3-coder',
   ];
   return models.includes(modelType);
 };
@@ -74,6 +77,10 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('qwen/qwen3-30b-a3b:free');
+    case 'qwen3-coder':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('qwen/qwen3-coder:free');
     case 'mistral-small':
       return createOpenRouter({
         apiKey: openRouterApiKey,
