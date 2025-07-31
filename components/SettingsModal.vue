@@ -3,7 +3,7 @@
     @click="props.closeModal"
     class="fixed inset-0 z-[75] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg dark:backdrop-blur-sm"
   >
-    <div @click.stop class="h-fit max-h-[50vh] w-[90vw] max-w-[540px] lg:w-[55vw]">
+    <div @click.stop class="h-fit max-h-[60vh] w-[90vw] max-w-[540px] overflow-auto lg:w-[55vw]">
       <div
         class="bg-background text-foreground flex w-full items-center justify-between rounded-t-lg p-4 px-6"
       >
@@ -44,22 +44,29 @@
           </div>
         </div>
 
+        <!-- Theme Settings Section -->
+        <div class="mb-8">
+          <ThemeSettings />
+        </div>
+
         <!-- API Keys Section -->
-        <div class="space-y-6">
+        <h3 class="text-muted-foreground my-2 mt-4 text-sm font-medium">API keys</h3>
+        <div class="space-y-4">
           <!-- Gemini API Key -->
           <div class="space-y-2">
             <div class="flex gap-2">
               <input
+                type="password"
                 v-model="geminiKey"
                 placeholder="Enter your Gemini API key"
                 style="font-family: monospace"
-                class="w-full rounded border border-black/10 bg-white/10 p-3 outline-none focus:border-black/30 dark:border-white/10 dark:focus:border-white/30"
+                class="border-border bg-background focus:border-ring focus:ring-ring flex-1 rounded border p-3 text-sm outline-none focus:ring-1"
               />
               <button
                 @click="saveGeminiKey"
                 class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
               >
-                <Save />
+                <Save :size="16" />
               </button>
             </div>
           </div>
@@ -68,6 +75,7 @@
           <div class="space-y-2">
             <div class="flex gap-2">
               <input
+                type="password"
                 v-model="openRouterKey"
                 placeholder="Enter your OpenRouter API key"
                 style="font-family: monospace"
@@ -77,7 +85,7 @@
                 @click="saveOpenRouterKey"
                 class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
               >
-                <Save />
+                <Save :size="16" />
               </button>
             </div>
           </div>
