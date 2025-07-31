@@ -69,7 +69,7 @@ const chatInputSchema = z.object({
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
   editedFromId: z.string().optional(),
-  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-2.0-flash-exp'),
+  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-2.0-flash'),
 });
 
 // Types
@@ -620,7 +620,7 @@ export default defineLazyEventHandler(async () => {
               };
 
               // Create assistant message and update chat document in parallel
-              await createMessageDocument(
+              (await createMessageDocument(
                 databases,
                 chatSession.$id,
                 messageData,
@@ -630,7 +630,7 @@ export default defineLazyEventHandler(async () => {
               ),
                 await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',
-                });
+                }));
             } catch (error) {
               console.error('Error creating assistant message:', error);
             }

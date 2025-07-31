@@ -62,7 +62,7 @@ const handleSubmit = async (
     experimental_attachments: attachments?.length ? attachments : undefined,
     body: {
       intent: intentStore.selectedIntent,
-      model: selectedModel || 'gemini-2.0-flash-exp',
+      model: selectedModel || 'gemini-2.0-flash',
     },
     headers: {
       Authorization: 'Bearer ' + (await userStore.getJWT()),

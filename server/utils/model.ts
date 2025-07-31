@@ -2,8 +2,8 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 export type ModelType =
-  | 'gemini-2.0-flash-exp'
-  | 'gemini-2.5-flash-preview-05-20'
+  | 'gemini-2.0-flash'
+  | 'gemini-2.5-flash'
   | 'deepseek-chat-v3'
   | 'deepseek-r1'
   | 'qwen3-30b'
@@ -14,8 +14,8 @@ export type ModelType =
   | 'glm-4.5-air';
 
 export const supportedModels = [
-  'gemini-2.0-flash-exp',
-  'gemini-2.5-flash-preview-05-20',
+  'gemini-2.0-flash',
+  'gemini-2.5-flash',
   'deepseek-chat-v3',
   'deepseek-r1',
   'qwen3-30b',
@@ -28,8 +28,8 @@ export const supportedModels = [
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
   const models = [
-    'gemini-2.0-flash-exp',
-    'gemini-2.5-flash-preview-05-20',
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
     'deepseek-chat-v3',
     'mistral-small',
     'devstral-small',
@@ -51,8 +51,8 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
   } = options;
 
   switch (modelType) {
-    case 'gemini-2.0-flash-exp':
-    case 'gemini-2.5-flash-preview-05-20':
+    case 'gemini-2.0-flash':
+    case 'gemini-2.5-flash':
       if (!geminiApiKey) {
         throw new Error('Gemini API key is required but not provided');
       }
@@ -109,6 +109,6 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
         throw new Error('Gemini API key is required but not provided');
       }
       const googleDef = createGoogleGenerativeAI({ apiKey: geminiApiKey });
-      return googleDef('gemini-2.0-flash-exp');
+      return googleDef('gemini-2.0-flash');
   }
 }

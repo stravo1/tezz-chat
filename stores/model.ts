@@ -2,7 +2,7 @@ import { useLocalStorage } from '@vueuse/core';
 
 export const useModelStore = defineStore('model', {
   state: () => ({
-    selectedModel: useLocalStorage('selected-model', 'gemini-2.0-flash-exp'),
+    selectedModel: useLocalStorage('selected-model', 'gemini-2.0-flash'),
   }),
   actions: {
     setSelectedModel(model: string) {
