@@ -44,7 +44,10 @@
             </div>
           </NuxtLink>
         </div>
-        <div v-else class="group flex list-none items-center justify-center p-8">
+        <div
+          v-else-if="!isLoading && debouncedSearchTerm"
+          class="group flex list-none items-center justify-center p-8"
+        >
           <span class="text-foreground/50">No results found</span>
         </div>
       </div>
