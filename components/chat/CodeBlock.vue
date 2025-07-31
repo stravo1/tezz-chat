@@ -74,6 +74,11 @@ const copy = () => {
         </div>
       </div>
     </div>
-    <div :id="`code-${id}`" :class="{ wrap: isWrapped }" v-html="markedNew.parse(code)"></div>
+    <div
+      :id="`code-${id}`"
+      :class="{ wrap: isWrapped }"
+      class="bg-background"
+      v-html="markedNew.parse(code)"
+    ></div>
   </div>
 </template>

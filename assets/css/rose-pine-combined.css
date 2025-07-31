@@ -99,7 +99,7 @@
     color: #e0def4;
   }
   .hljs {
-    background: #232136;
+    background: transparent;
     color: #6e6a86;
   }
   .hljs-emphasis {
@@ -209,7 +209,7 @@
     color: #575279;
   }
   .hljs {
-    background: #faf4ed;
+    background: transparent;
     color: #575279;
   }
   .hljs-emphasis {
