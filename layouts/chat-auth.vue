@@ -451,4 +451,11 @@ useEventListener('keydown', (event: KeyboardEvent) => {
     isSearchModalOpen.value = !isSearchModalOpen.value;
   }
 });
+
+useEventListener('keydown', (event: KeyboardEvent) => {
+  if (event.key === 'o' && (event.metaKey || event.ctrlKey) && event.shiftKey) {
+    event.preventDefault();
+    startNewChat();
+  }
+});
 </script>
