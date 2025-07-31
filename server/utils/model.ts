@@ -10,7 +10,8 @@ export type ModelType =
   | 'qwen3-coder'
   | 'mistral-small'
   | 'devstral-small'
-  | 'kimi-k2';
+  | 'kimi-k2'
+  | 'glm-4.5-air';
 
 export const supportedModels = [
   'gemini-2.0-flash-exp',
@@ -22,6 +23,7 @@ export const supportedModels = [
   'mistral-small',
   'devstral-small',
   'kimi-k2',
+  'glm-4.5-air',
 ];
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
@@ -31,7 +33,6 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'deepseek-chat-v3',
     'mistral-small',
     'devstral-small',
-    'kimi-k2',
     'qwen3-coder',
   ];
   return models.includes(modelType);
@@ -71,24 +72,37 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
     case 'kimi-k2':
       return createOpenRouter({
         apiKey: openRouterApiKey,
+        extraBody: {
+          provider: {
+            only: ['parasail/fp8'],
+          },
+        },
       }).chat('moonshotai/kimi-k2:free');
 
     case 'qwen3-30b':
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('qwen/qwen3-30b-a3b:free');
+
     case 'qwen3-coder':
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('qwen/qwen3-coder:free');
+
     case 'mistral-small':
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('mistralai/mistral-small-3.2-24b-instruct-2506:free');
+
     case 'devstral-small':
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('mistralai/devstral-small-2505:free');
+
+    case 'glm-4.5-air':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('z-ai/glm-4.5-air:free');
 
     default:
       if (!geminiApiKey) {

@@ -16,11 +16,11 @@ import {
   ResponsivePopoverTrigger,
 } from '@/components/ui/responsive-popover';
 import gemini from '../../assets/svg/gemini.vue';
-import meta from '../../assets/svg/meta.vue';
 import qwen from '../../assets/svg/qwen.vue';
 import deepseek from '../../assets/svg/deepseek.vue';
 import mistral from '../../assets/svg/mistral.vue';
 import moonshot from '~/assets/svg/moonshot.vue';
+import zai from '~/assets/svg/zai.vue';
 
 import { useMediaQuery } from '@vueuse/core';
 
@@ -69,6 +69,11 @@ const models = [
     title: 'Qwen3 Coder',
     value: 'qwen3-coder',
     icon: qwen,
+  },
+  {
+    title: 'Z.AI GLM 4.5 Air',
+    value: 'glm-4.5-air',
+    icon: zai,
   },
 ];
 
