@@ -23,6 +23,7 @@ const messageStore = useMessageStore();
 const userStore = useUserStore();
 const modelStore = useModelStore();
 const intentStore = useIntentStore();
+const loadingStore = useLoadingStore();
 
 const { textarea, input: contentBeingEdited } = useTextareaAutosize();
 const el = useTemplateRef<HTMLElement>('messages-container');
@@ -63,6 +64,8 @@ const getApiHeaders = (model?: string) => {
 };
 
 const handleBranch = async (id: string, createdAt: any) => {
+  loadingStore.setLoading(true);
+  loadingStore.setLoadingMessage('Branching chat...');
   // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
   const filteredMessages = props.messages.filter(message => {
     try {
@@ -90,6 +93,9 @@ const handleBranch = async (id: string, createdAt: any) => {
   // @ts-ignore
   messageStore.messages = filteredMessages;
   messageStore.isBranched = true;
+  loadingStore.setLoading(false);
+  loadingStore.setLoadingMessage('');
+  // @ts-ignore
   navigateTo(`/chat/${res.data.chatId}`);
 };
 

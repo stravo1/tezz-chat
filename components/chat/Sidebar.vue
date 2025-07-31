@@ -29,6 +29,7 @@ const emit = defineEmits<{
 // Reactive data
 const route = useRoute();
 const userStore = useUserStore();
+const loadingStore = useLoadingStore();
 const { isAuthenticated } = storeToRefs(userStore);
 
 const arrayOfChats = ref(
@@ -39,6 +40,7 @@ const allChats = ref(
 );
 const searchQuery = ref('');
 const isLoading = ref(false);
+const loadingMessage = ref('');
 
 // Rename modal state
 const isRenameModalOpen = ref(false);
@@ -182,18 +184,24 @@ const startRename = (chatId: string, currentTitle: string) => {
 };
 
 const handleRename = async (chatId: string, newTitle: string) => {
-  // For now, just update the local state
-  // TODO: Implement API endpoint for updating chat titles
-  const chatIndex = arrayOfChats.value.findIndex(chat => chat.id === chatId);
-  if (chatIndex !== -1) {
-    arrayOfChats.value[chatIndex].title = newTitle;
-    allChats.value = [...arrayOfChats.value];
+  isLoading.value = true;
+  loadingMessage.value = 'Renaming chat...';
+  try {
+    await $fetch(`/api/chat/${chatId}/rename`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + (await userStore.getJWT()),
+      },
+      body: {
+        name: newTitle,
+      },
+    });
+  } catch (error) {
+    console.error('Error renaming chat:', error);
+    // You might want to show a toast or error message here
+  } finally {
+    isLoading.value = false;
   }
-
-  // Show a message that this is a local change only
-  console.log(
-    'Note: Title change is local only. API endpoint for updating titles needs to be implemented.'
-  );
 };
 
 const closeRenameModal = () => {
@@ -254,6 +262,19 @@ onMounted(() => {
     loadChats();
   }
 });
+
+watch(
+  () => isLoading.value,
+  loading => {
+    if (loading) {
+      loadingStore.setLoading(true);
+      loadingStore.setLoadingMessage(loadingMessage.value);
+    } else {
+      loadingStore.setLoading(false);
+      loadingStore.setLoadingMessage('');
+    }
+  }
+);
 
 watch(isAuthenticated, authenticated => {
   if (authenticated) {

@@ -12,7 +12,7 @@
       class="bg-background text-foreground relative flex min-h-[100dvh] flex-col"
       vaul-drawer-wrapper
     >
-      <LoaderModal v-if="isLoading" />
+      <LoaderModal v-if="isLoading" :message="loadingMessage" />
 
       <SidebarProvider
         :open="isSidebarOpen"
@@ -205,6 +205,7 @@ useDatabase();
 console.log('Database initialized');
 const route = useRoute();
 const userStore = useUserStore();
+const loadingStore = useLoadingStore();
 const isMobile = useMediaQuery('(max-width: 768px)');
 const { isAuthenticated, isAuthChecked, isLoading: isUserStateLoading } = storeToRefs(userStore);
 const layoutLoading = ref(true);
@@ -228,6 +229,7 @@ const isSearchModalOpen = ref(false);
 const isSettingsModalOpen = ref(false);
 const isMobileChatOptionMenuOpen = ref(false);
 const isChatNavigatorOpen = ref(false);
+const loadingMessage = ref('');
 
 onMounted(async () => {
   if (!isAuthChecked.value) {
@@ -444,6 +446,14 @@ watch([isSearchModalOpen, isSettingsModalOpen], ([searchOpen, settingsOpen]) => 
     console.log('Sidebar closed due to modal open', isSidebarOpen.value);
   }
 });
+
+watch(
+  () => loadingStore.isLoading,
+  loading => {
+    isLoading.value = loading as boolean;
+    loadingMessage.value = loadingStore.loadingMessage;
+  }
+);
 
 useEventListener('keydown', (event: KeyboardEvent) => {
   if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {

@@ -70,7 +70,7 @@ watch(
 
 <template>
   <Dialog :open="isOpen" @update:open="handleOpenChange">
-    <DialogContent class="sm:max-w-[425px]">
+    <DialogContent class="text-primary-foreground sm:max-w-[425px]">
       <DialogHeader>
         <DialogTitle>Rename Chat</DialogTitle>
         <DialogDescription> Enter a new name for this chat conversation. </DialogDescription>
