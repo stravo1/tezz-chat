@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@ai-sdk/cerebras": "^0.2.16",
-    "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/google": "^1.2.22",
     "@ai-sdk/vue": "^1.2.12",
     "@cerebras/cerebras_cloud_sdk": "^1.35.0",
     "@nuxt/icon": "1.13.0",
