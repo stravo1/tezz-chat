@@ -4,7 +4,7 @@
     <div class="space-y-4">
       <!-- API Endpoint Input -->
       <div class="space-y-2">
-        <label class="text-muted-foreground text-sm font-medium"> Theme URL (tweakcn) </label>
+        <label class="text-muted-foreground text-sm font-medium"> Theme URL </label>
         <div class="flex gap-2">
           <input
             v-model="apiEndpointInput"
@@ -28,7 +28,14 @@
           </button>
         </div>
         <p class="text-muted-foreground text-xs">
-          <li>Please do NOT use the shareable URL, use the raw URL found in the Code section.</li>
+          Find or create your own theme at:
+          <a
+            href="https://tweakcn.com/editor/theme"
+            class="underline"
+            target="_blank"
+            rel="noopener noreferrer"
+            >tweakcn</a
+          >
         </p>
       </div>
 
@@ -80,13 +87,11 @@ const {
   resetTheme: resetThemeStore,
   isLoading,
   error,
-  currentTheme,
   hasCustomEndpoint,
-  apiEndpoint,
+  themeURL,
 } = useTheme();
 
 const apiEndpointInput = ref('');
-const themeNameInput = ref('');
 
 const saveApiEndpoint = async () => {
   const endpoint = apiEndpointInput.value.trim();
@@ -115,7 +120,7 @@ const clearEndpoint = () => {
 
 onMounted(() => {
   // Initialize with current API endpoint
-  apiEndpointInput.value = apiEndpoint.value;
+  apiEndpointInput.value = themeURL.value;
 
   // Load available themes if endpoint is set
   if (hasCustomEndpoint.value) {

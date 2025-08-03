@@ -14,7 +14,7 @@ interface ThemeConfig {
 interface ThemeState {
   currentTheme: ThemeConfig | null;
   isLoading: boolean;
-  apiEndpoint: string;
+  themeURL: string;
   error: string | null;
 }
 
@@ -22,25 +22,25 @@ export const useThemeStore = defineStore('theme', {
   state: (): ThemeState => ({
     currentTheme: null,
     isLoading: false,
-    apiEndpoint: '',
+    themeURL: '',
     error: null,
   }),
 
   getters: {
-    hasCustomEndpoint: state => Boolean(state.apiEndpoint),
+    hasCustomEndpoint: state => Boolean(state.themeURL),
     isThemeLoaded: state => Boolean(state.currentTheme),
   },
 
   actions: {
     setApiEndpoint(endpoint: string) {
-      this.apiEndpoint = endpoint;
+      this.themeURL = endpoint;
       // Save to localStorage for persistence
       localStorage.setItem('theme-api-endpoint', endpoint);
       this.loadThemeFromApi();
     },
 
     async loadThemeFromApi(): Promise<boolean> {
-      if (!this.apiEndpoint) {
+      if (!this.themeURL) {
         this.error = 'No API endpoint configured';
         return false;
       }
@@ -49,7 +49,37 @@ export const useThemeStore = defineStore('theme', {
       this.error = null;
 
       try {
-        const url = new URL(this.apiEndpoint);
+        // transform endpoint to the correct URL format
+        const rawCustomThemeURL = /^https:\/\/tweakcn\.com\/r\/themes\/[a-zA-Z0-9]+$/;
+        const rawPresetThemeURL = /^https:\/\/tweakcn\.com\/r\/themes\/[a-zA-Z0-9-]+\.json$/;
+
+        const sharedCustomThemeURL = /^https:\/\/tweakcn\.com\/themes\/[a-zA-Z0-9]+$/;
+        const sharedPresetThemeURL =
+          /^https:\/\/tweakcn\.com\/editor\/theme\?theme=[a-zA-Z0-9-_]+$/;
+
+        let properURL;
+
+        // all shared theme urls are to be transformed to their raw versions
+        if (sharedCustomThemeURL.test(this.themeURL)) {
+          properURL = this.themeURL.replace(
+            'https://tweakcn.com/themes/',
+            'https://tweakcn.com/r/themes/'
+          );
+        } else if (sharedPresetThemeURL.test(this.themeURL)) {
+          properURL = this.themeURL.replace(
+            'https://tweakcn.com/editor/theme?theme=',
+            'https://tweakcn.com/r/themes/'
+          );
+          properURL += '.json';
+        } else if (rawCustomThemeURL.test(this.themeURL)) {
+          properURL = this.themeURL;
+        } else if (rawPresetThemeURL.test(this.themeURL)) {
+          properURL = this.themeURL;
+        } else {
+          throw new Error('Invalid theme URL format');
+        }
+
+        const url = new URL(properURL);
 
         const response = await fetch(url.toString());
 
@@ -213,7 +243,7 @@ export const useThemeStore = defineStore('theme', {
       const savedThemeName = localStorage.getItem('current-theme-name');
 
       if (savedEndpoint) {
-        this.apiEndpoint = savedEndpoint;
+        this.themeURL = savedEndpoint;
       }
 
       if (savedEndpoint && savedThemeName) {
@@ -222,11 +252,11 @@ export const useThemeStore = defineStore('theme', {
     },
 
     async fetchAvailableThemes(): Promise<string[]> {
-      if (!this.apiEndpoint) return [];
+      if (!this.themeURL) return [];
 
       try {
         // Assuming the API has an endpoint to list available themes
-        const url = new URL(this.apiEndpoint);
+        const url = new URL(this.themeURL);
         url.searchParams.set('action', 'list');
 
         const response = await fetch(url.toString());
@@ -256,7 +286,7 @@ export const useThemeStore = defineStore('theme', {
     },
 
     clearApiEndpoint() {
-      this.apiEndpoint = '';
+      this.themeURL = '';
       this.resetToDefault();
       localStorage.removeItem('theme-api-endpoint');
     },

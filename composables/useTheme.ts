@@ -26,7 +26,7 @@ export const useTheme = () => {
   const error = computed(() => themeStore.error);
   const currentTheme = computed(() => themeStore.currentTheme);
   const hasCustomEndpoint = computed(() => themeStore.hasCustomEndpoint);
-  const apiEndpoint = computed(() => themeStore.apiEndpoint);
+  const themeURL = computed(() => themeStore.themeURL);
 
   return {
     // Actions
@@ -41,6 +41,6 @@ export const useTheme = () => {
     error: readonly(error),
     currentTheme: readonly(currentTheme),
     hasCustomEndpoint: readonly(hasCustomEndpoint),
-    apiEndpoint: readonly(apiEndpoint),
+    themeURL: readonly(themeURL),
   };
 };
