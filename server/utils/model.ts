@@ -92,7 +92,7 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
     case 'mistral-small':
       return createOpenRouter({
         apiKey: openRouterApiKey,
-      }).chat('mistralai/mistral-small-3.2-24b-instruct-2506:free');
+      }).chat('mistralai/mistral-small-3.2-24b-instruct:free');
 
     case 'devstral-small':
       return createOpenRouter({
