@@ -164,7 +164,7 @@ const handleKeydown = (event: KeyboardEvent) => {
               <div class="flex items-center gap-2">
                 <button
                   v-if="intentStore.selectedIntent != 'image'"
-                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 bg-secondary/70 inline-flex h-8 shrink-0 items-center justify-center gap-0.5 rounded-md text-xs font-normal whitespace-nowrap backdrop-blur-lg transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 min-[390px]:gap-2 sm:text-sm md:rounded-md [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 dark:bg-background/30 bg-secondary/70 inline-flex h-8 shrink-0 items-center justify-center gap-0.5 rounded-md text-xs font-normal whitespace-nowrap backdrop-blur-lg transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 min-[390px]:gap-2 sm:text-sm md:rounded-md [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                   type="button"
                   id="radix-:r8:"
                   aria-haspopup="menu"
@@ -174,7 +174,7 @@ const handleKeydown = (event: KeyboardEvent) => {
                   <ChatModelSelector class="flex items-center gap-1" />
                 </button>
                 <button
-                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 bg-secondary/70 text-foreground hover:bg-secondary/80 flex size-8 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap backdrop-blur-lg transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                  class="focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 dark:bg-background/30 bg-secondary/70 text-foreground hover:bg-secondary/80 flex size-8 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap backdrop-blur-lg transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 has-[>svg]:px-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                   aria-label="Attaching files is a subscriber-only feature"
                   type="button"
                   aria-haspopup="dialog"

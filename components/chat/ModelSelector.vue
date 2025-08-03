@@ -110,7 +110,7 @@ const handleModelSelect = (modelValue: string) => {
       <Button
         variant="ghost"
         :aria-expanded="open"
-        class="bg-secondary/70 h-8 gap-0.5 !px-1.5 text-xs font-normal backdrop-blur-lg min-[390px]:gap-2 min-[390px]:!px-2 sm:text-sm md:rounded-md"
+        class="h-8 gap-0.5 !px-1.5 text-xs font-normal backdrop-blur-lg min-[390px]:gap-2 min-[390px]:!px-2 sm:text-sm md:rounded-md"
       >
         <div class="flex items-center gap-2">
           <span class="max-w-28 overflow-hidden text-ellipsis whitespace-nowrap">
