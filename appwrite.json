@@ -270,6 +270,67 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "$id": "6890eef20016657c1a1a",
+      "$permissions": [],
+      "databaseId": "6846ad30003030d86061",
+      "name": "Spaces",
+      "enabled": true,
+      "documentSecurity": false,
+      "attributes": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 50,
+          "default": null
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100,
+          "default": null
+        },
+        {
+          "key": "customPrompt",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 1000,
+          "default": null
+        },
+        {
+          "key": "archive",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "deleted",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "chats",
+          "type": "relationship",
+          "required": false,
+          "array": false,
+          "relatedCollection": "chats",
+          "relationType": "oneToMany",
+          "twoWay": false,
+          "twoWayKey": "6890f10e002414f09b58",
+          "onDelete": "cascade",
+          "side": "parent"
+        }
+      ],
+      "indexes": []
     }
   ],
   "buckets": [
