@@ -21,6 +21,7 @@ import deepseek from '../../assets/svg/deepseek.vue';
 import mistral from '../../assets/svg/mistral.vue';
 import moonshot from '~/assets/svg/moonshot.vue';
 import zai from '~/assets/svg/zai.vue';
+import openai from '~/assets/svg/openai.vue';
 
 import { useMediaQuery } from '@vueuse/core';
 
@@ -34,6 +35,11 @@ const models = [
     title: 'Gemini 2.5 Flash',
     value: 'gemini-2.5-flash',
     icon: gemini,
+  },
+  {
+    title: 'OpenAI GPT OSS',
+    value: 'gpt-oss-20b',
+    icon: openai,
   },
   {
     title: 'MoonshotAI Kimi K2',

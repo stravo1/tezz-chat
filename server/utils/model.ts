@@ -4,6 +4,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 export type ModelType =
   | 'gemini-2.0-flash'
   | 'gemini-2.5-flash'
+  | 'gpt-oss-20b'
   | 'deepseek-chat-v3'
   | 'deepseek-r1'
   | 'qwen3-30b'
@@ -16,6 +17,7 @@ export type ModelType =
 export const supportedModels = [
   'gemini-2.0-flash',
   'gemini-2.5-flash',
+  'gpt-oss-20b',
   'deepseek-chat-v3',
   'deepseek-r1',
   'qwen3-30b',
@@ -58,6 +60,10 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       }
       let google = createGoogleGenerativeAI({ apiKey: geminiApiKey });
       return google(modelType);
+    case 'gpt-oss-20b':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('openai/gpt-oss-20b:free');
 
     case 'deepseek-chat-v3':
       return createOpenRouter({
