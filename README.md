@@ -1,4 +1,4 @@
-# [tezz.chat](https://tezz.chat) 🚀
+# [tezz.chat](https://tezz.chat) ⚡️
 <a href="https://discord.gg/7wFjkVFcMz">
 <img src="https://img.shields.io/discord/1385282512300802171?logo=discord" alt="chat on Discord">
 </a>
