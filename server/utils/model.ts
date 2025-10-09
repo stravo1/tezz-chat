@@ -12,7 +12,11 @@ export type ModelType =
   | 'mistral-small'
   | 'devstral-small'
   | 'kimi-k2'
-  | 'glm-4.5-air';
+  | 'glm-4.5-air'
+  | 'dolphin-mistral-24b'
+  | 'llama-4-maverick'
+  | 'grok-4-fast' //not free use with byok
+  ;
 
 export const supportedModels = [
   'gemini-2.0-flash',
@@ -26,6 +30,9 @@ export const supportedModels = [
   'devstral-small',
   'kimi-k2',
   'glm-4.5-air',
+  'dolphin-mistral-24b',
+  'llama-4-maverick',
+  'grok-4-fast' //not free use with byok
 ];
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
@@ -36,6 +43,7 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'mistral-small',
     'devstral-small',
     'qwen3-coder',
+    'grok-4-fast'
   ];
   return models.includes(modelType);
 };
@@ -110,6 +118,20 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
         apiKey: openRouterApiKey,
       }).chat('z-ai/glm-4.5-air:free');
 
+    case 'dolphin-mistral-24b':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('cognitivecomputations/dolphin-mistral-24b-venice-edition:free');
+    case 'llama-4-maverick': 
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('meta-llama/llama-4-maverick:free');
+
+    case 'grok-4-fast':
+      return createOpenRouter({
+        apiKey: openRouterApiKey,
+      }).chat('x-ai/grok-4-fast'); //not free use with byok
+      
     default:
       if (!geminiApiKey) {
         throw new Error('Gemini API key is required but not provided');
