@@ -21,6 +21,7 @@ import deepseek from '../../assets/svg/deepseek.vue';
 import mistral from '../../assets/svg/mistral.vue';
 import moonshot from '~/assets/svg/moonshot.vue';
 import zai from '~/assets/svg/zai.vue';
+import meta from '~/assets/svg/meta.vue';
 
 import { useMediaQuery } from '@vueuse/core';
 
@@ -51,6 +52,11 @@ const models = [
     icon: mistral,
   },
   {
+    title: 'Dolphin Mistral 24B',
+    value: 'dolphin-mistral-24b',
+    icon: mistral,
+  },
+  {
     title: 'Deepseek Chat V3',
     value: 'deepseek-chat-v3',
     icon: deepseek,
@@ -69,6 +75,16 @@ const models = [
     title: 'Qwen3 Coder',
     value: 'qwen3-coder',
     icon: qwen,
+  },
+  {
+    title: 'Llama 4 Maverick',
+    value: 'llama-4-maverick',
+    icon: meta,
+  },
+  {
+    title: 'Grok 4 Fast',
+    value: 'grok-4-fast',
+    icon: meta,
   },
   {
     title: 'Z.AI GLM 4.5 Air',
