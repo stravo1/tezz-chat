@@ -21,7 +21,7 @@ async function generateChatTitleUsingCerebras(messaage: any) {
         content: messaage.content,
       },
     ],
-    model: 'llama-4-scout-17b-16e-instruct',
+    model: 'gpt-oss-120b',
     stream: false,
     max_completion_tokens: 2048,
     temperature: 0.2,
