@@ -14,7 +14,7 @@ export type ModelType =
   | 'glm-4.5-air'
   | 'dolphin-mistral-24b'
   | 'llama-4-maverick'
-  | 'grok-4-fast' //not free use with byok
+  | 'grok-4-fast' // not free use with byok
   ;
 
 export const supportedModels = [
@@ -26,7 +26,7 @@ export const supportedModels = [
   'qwen3-coder',
   'mistral-small',
   'devstral-small',
-  'kimi-k2',
+  'kimi-dev',
   'glm-4.5-air',
   'dolphin-mistral-24b',
   'llama-4-maverick',
@@ -41,6 +41,7 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'mistral-small',
     'devstral-small',
     'qwen3-coder',
+    'kimi-dev',
     'grok-4-fast'
   ];
   return models.includes(modelType);
@@ -77,15 +78,10 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
         apiKey: openRouterApiKey,
       }).chat('deepseek/deepseek-r1-0528:free');
 
-    case 'kimi-k2':
+    case 'kimi-dev':
       return createOpenRouter({
         apiKey: openRouterApiKey,
-        extraBody: {
-          provider: {
-            only: ['parasail/fp8'],
-          },
-        },
-      }).chat('moonshotai/kimi-k2:free');
+      }).chat('moonshotai/kimi-dev-72b');
 
     case 'qwen3-30b':
       return createOpenRouter({
