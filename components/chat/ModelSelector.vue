@@ -38,6 +38,7 @@ const models = [
     icon: gemini,
   },
   {
+<<<<<<< HEAD
     title: 'OpenAI GPT OSS',
     value: 'gpt-oss-20b',
     icon: openai,
@@ -45,6 +46,10 @@ const models = [
   {
     title: 'MoonshotAI Kimi K2',
     value: 'kimi-k2',
+=======
+    title: 'MoonshotAI Kimi Dev',
+    value: 'kimi-dev',
+>>>>>>> a258fa7 (feat(kimi): update model in UI)
     icon: moonshot,
   },
   {
