@@ -37,8 +37,8 @@ const models = [
     icon: gemini,
   },
   {
-    title: 'MoonshotAI Kimi K2',
-    value: 'kimi-k2',
+    title: 'MoonshotAI Kimi Dev',
+    value: 'kimi-dev',
     icon: moonshot,
   },
   {
