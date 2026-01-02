@@ -37,8 +37,8 @@ const models = [
     icon: gemini,
   },
   {
-    title: 'MoonshotAI Kimi Dev',
-    value: 'kimi-dev',
+    title: 'MoonshotAI Kimi K2 Thinking',
+    value: 'kimi-thinking',
     icon: moonshot,
   },
   {
@@ -52,23 +52,13 @@ const models = [
     icon: mistral,
   },
   {
-    title: 'Dolphin Mistral 24B',
-    value: 'dolphin-mistral-24b',
-    icon: mistral,
-  },
-  {
     title: 'Deepseek Chat V3',
     value: 'deepseek-chat-v3',
     icon: deepseek,
   },
   {
-    title: 'Deepseek R1',
-    value: 'deepseek-r1',
-    icon: deepseek,
-  },
-  {
-    title: 'Qwen3 30B',
-    value: 'qwen3-30b',
+    title: 'Qwen3 32B',
+    value: 'qwen3-32b',
     icon: qwen,
   },
   {
