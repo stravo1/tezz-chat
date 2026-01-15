@@ -132,13 +132,16 @@ export const useDatabase = async () => {
       deletedField: 'deleted',
       collection: collectionsInstance.threads,
       pull: { batchSize: 10 },
+      push: { batchSize: 10 },
+      live: true, // Enable live/realtime replication
+      retryTime: 5000, // Retry on errors or disconnections
     });
 
-    replicationState.received$.subscribe(doc => console.dir(doc));
-    replicationState.sent$.subscribe(doc => console.dir(doc));
-    replicationState.error$.subscribe(error => console.dir(error));
-    replicationState.canceled$.subscribe(bool => console.dir(bool));
-    replicationState.active$.subscribe(bool => console.dir(bool));
+    replicationState.received$.subscribe(doc => console.log('[RxDB Replication] Received:', doc));
+    replicationState.sent$.subscribe(doc => console.log('[RxDB Replication] Sent:', doc));
+    replicationState.error$.subscribe(error => console.error('[RxDB Replication] Error:', error));
+    replicationState.canceled$.subscribe(bool => console.log('[RxDB Replication] Canceled:', bool));
+    replicationState.active$.subscribe(bool => console.log('[RxDB Replication] Active:', bool));
   }
 
   return {
