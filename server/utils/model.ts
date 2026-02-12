@@ -2,7 +2,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 export type ModelType =
-  | 'gemini-2.0-flash'
+  | 'gemini-3-flash-preview'
   | 'gemini-2.5-flash'
   | 'gpt-oss-20b'
   | 'deepseek-chat-v3'
@@ -16,7 +16,7 @@ export type ModelType =
   | 'grok-4-fast'; // not free use with byok
 
 export const supportedModels = [
-  'gemini-2.0-flash',
+  'gemini-3-flash-preview',
   'gemini-2.5-flash',
   'gpt-oss-20b',
   'deepseek-chat-v3',
@@ -32,7 +32,7 @@ export const supportedModels = [
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
   const models = [
-    'gemini-2.0-flash',
+    'gemini-3-flash-preview',
     'gemini-2.5-flash',
     'deepseek-chat-v3',
     'mistral-small',
@@ -58,7 +58,7 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
 
   console.log(openRouterApiKey);
   switch (modelType) {
-    case 'gemini-2.0-flash':
+    case 'gemini-3-flash-preview':
     case 'gemini-2.5-flash':
       if (!geminiApiKey) {
         throw new Error('Gemini API key is required but not provided');
@@ -120,6 +120,6 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
         throw new Error('Gemini API key is required but not provided');
       }
       const googleDef = createGoogleGenerativeAI({ apiKey: geminiApiKey });
-      return googleDef('gemini-2.0-flash');
+      return googleDef('gemini-3-flash-preview');
   }
 }

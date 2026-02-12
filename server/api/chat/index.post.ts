@@ -69,7 +69,7 @@ const chatInputSchema = z.object({
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
   editedFromId: z.string().optional(),
-  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-2.0-flash'),
+  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-3-flash-preview'),
 });
 
 // Types
@@ -379,7 +379,7 @@ export default defineLazyEventHandler(async () => {
           }),
           maxSteps: MAX_STEPS,
           maxRetries: MAX_RETRIES,
-          model: google('gemini-2.0-flash-exp'),
+          model: google('gemini-3-flash-preview'),
           providerOptions: {
             google: { responseModalities: ['TEXT', 'IMAGE'] },
           },
