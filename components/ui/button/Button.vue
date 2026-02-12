@@ -8,19 +8,22 @@ interface Props extends /* @vue-ignore */ PrimitiveProps {
   variant?: ButtonVariants['variant'];
   size?: ButtonVariants['size'];
   class?: HTMLAttributes['class'];
+  as?: PrimitiveProps['as'];
+  asChild?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: 'button',
+  asChild: false,
 });
 </script>
 
 <template>
   <Primitive
     data-slot="button"
-    :as="as"
-    :as-child="asChild"
-    :class="cn(buttonVariants({ variant, size }), props.class)"
+    :as="props.as"
+    :as-child="props.asChild"
+    :class="cn(buttonVariants({ variant: props.variant, size: props.size }), props.class)"
   >
     <slot />
   </Primitive>
