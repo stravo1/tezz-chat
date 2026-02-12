@@ -1,9 +1,6 @@
-import type { UIMessage } from 'ai';
-
-import { createRxDatabase } from 'rxdb/plugins/core';
+import { createRxDatabase, addRxPlugin } from 'rxdb/plugins/core';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
-import { addRxPlugin } from 'rxdb/plugins/core';
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
 import { replicateAppwrite } from 'rxdb/plugins/replication-appwrite';
 
@@ -12,23 +9,14 @@ interface Thread {
   title: string;
   createdAt: Date;
   updatedAt: Date;
-  lastMessageAt: Date;
 }
 
 interface DBMessage {
   id: string;
   threadId: string;
-  parts: UIMessage['parts'];
+  parts: unknown[];
   content: string;
   role: 'user' | 'assistant' | 'system' | 'data';
-  createdAt: Date;
-}
-
-interface MessageSummary {
-  id: string;
-  threadId: string;
-  messageId: string;
-  content: string;
   createdAt: Date;
 }
 
@@ -41,7 +29,6 @@ const threadSchema = {
     title: { type: 'string' },
     createdAt: { type: 'string' },
     updatedAt: { type: 'string' },
-    // lastMessageAt: { type: "string" }
     visibility: {
       type: 'string',
       enum: ['private', 'public'],
@@ -63,58 +50,23 @@ const messageSchema = {
   type: 'object',
   properties: {
     id: { type: 'string', maxLength: 36 },
-    // chatId is a relationship field from Appwrite - stored as object with $id
     chatId: { type: 'object' },
-    parts: { type: ['string', 'null'] }, // Stored as JSON string
+    parts: { type: ['string', 'null'] },
     content: { type: 'string' },
-    attachments: { type: ['string', 'null'] }, // Stored as JSON string
+    attachments: { type: ['string', 'null'] },
     role: { type: 'string', maxLength: 20 },
     createdAt: { type: 'string', maxLength: 30 },
     updatedAt: { type: 'string', maxLength: 30 },
-
     lastModifiedBy: { type: 'string', maxLength: 255, default: 'server' },
-    // Note: RxDB handles deletion internally with _deleted field
-    // The deletedField option in replication maps Appwrite's 'deleted' to RxDB's _deleted
   },
   required: ['id', 'content', 'role', 'createdAt'],
-  // Note: Cannot index chatId as it's an object type (Appwrite relationship)
-  // Filtering by chatId is done in-memory in queries.ts
   indexes: ['createdAt'],
 };
-
-// const messageSummarySchema = {
-//   version: 0,
-//   primaryKey: "id",
-//   type: "object",
-//   properties: {
-//     id: { type: "string", maxLength: 36 },
-//     threadId: { type: "string", maxLength: 36 },
-//     messageId: { type: "string", maxLength: 36 },
-//     content: { type: "string" },
-//     createdAt: { type: "string", maxLength: 24 },
-//   },
-//   required: ["id", "threadId", "messageId", "content", "createdAt"],
-//   indexes: ["threadId", ["threadId", "createdAt"]],
-// };
-
-// const aSimpleSchema = {
-//   version: 0,
-//   primaryKey: "id",
-//   type: "object",
-//   properties: {
-//     id: { type: "string", maxLength: 36 },
-//     name: { type: "string", maxLength: 100 },
-//     userId: { type: "string", maxLength: 36 },
-//   },
-//   required: ["id", "name", "userId"],
-//   indexes: ["name"],
-// };
 
 // Database version - increment this when schema changes to force recreation
 const DB_VERSION = 8;
 const DB_NAME = 'tezz-local-v' + DB_VERSION;
 
-// First create the db instance
 let dbInstance: Awaited<ReturnType<typeof createRxDatabase>> | null = null;
 let collectionsInstance: any | null = null;
 
@@ -133,8 +85,6 @@ export const useDatabase = async () => {
       });
     } catch (error) {
       console.error('[RxDB] Error creating database, attempting to recreate:', error);
-      // If there's a schema mismatch, we need to delete and recreate
-      // This can happen when schema changes
       const { removeRxDatabase } = await import('rxdb/plugins/core');
       await removeRxDatabase(DB_NAME, getRxStorageDexie());
       dbInstance = await createRxDatabase({
@@ -149,7 +99,6 @@ export const useDatabase = async () => {
       messages: { schema: messageSchema },
     });
 
-    // Replicate chats collection
     const threadsReplicationState = replicateAppwrite({
       replicationIdentifier: 'threads-appwrite-replication',
       client,
@@ -163,9 +112,6 @@ export const useDatabase = async () => {
       retryTime: 5000,
     });
 
-    // Replicate chat_messages collection
-    // Note: deletedField tells RxDB which field Appwrite uses for deletion
-    // RxDB internally uses _deleted and maps it automatically
     const messagesReplicationState = replicateAppwrite({
       replicationIdentifier: 'messages-appwrite-replication',
       client,
@@ -179,7 +125,6 @@ export const useDatabase = async () => {
       retryTime: 5000,
     });
 
-    // Subscribe to threads replication events
     threadsReplicationState.received$.subscribe(doc =>
       console.log('[RxDB Threads Replication] Received:', doc)
     );
@@ -196,7 +141,6 @@ export const useDatabase = async () => {
       console.log('[RxDB Threads Replication] Active:', bool)
     );
 
-    // Subscribe to messages replication events
     messagesReplicationState.received$.subscribe(doc =>
       console.log('[RxDB Messages Replication] Received:', doc)
     );
