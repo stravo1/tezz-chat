@@ -27,8 +27,8 @@ import { useMediaQuery } from '@vueuse/core';
 
 const models = [
   {
-    title: 'Gemini 2.0 Flash',
-    value: 'gemini-2.0-flash',
+    title: 'Gemini 3 Flash Preview',
+    value: 'gemini-3-flash-preview',
     icon: gemini,
   },
   {
@@ -85,8 +85,8 @@ const models = [
 
 const modelStore = useModelStore();
 const isMobile = useMediaQuery('(max-width: 768px)');
-const selectedModel = ref('gemini-2.0-flash');
-const selectedModelTitle = ref('Gemini 2.0 Flash');
+const selectedModel = ref('gemini-3-flash-preview');
+const selectedModelTitle = ref('Gemini 3.0 Flash Preview');
 const open = ref(false);
 
 watch(selectedModel, (newModel, oldModel) => {
@@ -101,7 +101,7 @@ watch(selectedModel, (newModel, oldModel) => {
 });
 
 onMounted(() => {
-  selectedModel.value = modelStore.selectedModel || 'gemini-2.0-flash';
+  selectedModel.value = modelStore.selectedModel || 'gemini-3-flash-preview';
 });
 
 const handleModelSelect = (modelValue: string) => {
