@@ -321,7 +321,7 @@ watch(
     threadDetailsSubscription.value = (
       (await getThreadDetailsQuery(route.params.id as string)) as RxQuery
     ).$.subscribe(async thread => {
-      console.log(thread, 'thread info');
+      // console.log(thread, 'thread info');
       let threadInfo = route.params.id
         ? await getThreadDetails(route.params.id as string)
         : {

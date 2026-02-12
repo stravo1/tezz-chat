@@ -9,12 +9,15 @@ export interface SidebarMenuButtonProps extends /* @vue-ignore */ PrimitiveProps
   size?: SidebarMenuButtonVariants['size'];
   isActive?: boolean;
   class?: HTMLAttributes['class'];
+  as?: PrimitiveProps['as'];
+  asChild?: boolean;
 }
 
 const props = withDefaults(defineProps<SidebarMenuButtonProps>(), {
   as: 'button',
   variant: 'default',
   size: 'default',
+  asChild: false,
 });
 </script>
 
