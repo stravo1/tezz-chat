@@ -33,7 +33,7 @@ interface MessageSummary {
 }
 
 const threadSchema = {
-  version: 0,
+  version: 1,
   primaryKey: 'id',
   type: 'object',
   properties: {
@@ -50,8 +50,8 @@ const threadSchema = {
     lastModifiedBy: { type: 'string', maxLength: 36, default: 'server' },
     branchedFromTimestamp: { type: ['string', 'null'], default: null },
     sourceChatId: { type: ['string', 'null'], maxLength: 36, default: null },
-    userId: { type: 'object' },
-    streamId: { type: 'array' },
+    // userId: { type: 'object' },
+    // streamId: { type: 'array' },
     chatMessageId: { type: 'array' },
   },
   required: ['id', 'title', 'createdAt', 'updatedAt', 'visibility'],
@@ -118,7 +118,12 @@ export const useDatabase = async () => {
     });
 
     collectionsInstance = await dbInstance.addCollections({
-      threads: { schema: threadSchema },
+      threads: {
+        schema: threadSchema,
+        migrationStrategies: {
+          1: (doc: any) => ({ ...doc }),
+        },
+      },
       // messages: { schema: messageSchema },
       // messageSummaries: { schema: messageSummarySchema },
       // aSimpleCollection: { schema: aSimpleSchema },

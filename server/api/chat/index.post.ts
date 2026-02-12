@@ -8,7 +8,7 @@ import {
   UIMessage,
 } from 'ai';
 import { z } from 'zod';
-import { Databases, ID, Permission, Role } from 'node-appwrite';
+import { Databases, ID, Permission, Role, Models } from 'node-appwrite';
 import { createJWTClient } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
@@ -109,6 +109,16 @@ interface ChatMessage {
   editedFromId?: string;
 }
 
+interface ChatSessionDocument {
+  $id: string;
+  userId?: string;
+  title?: string;
+  visibility?: string;
+  lastModifiedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Helper functions
 const createTimestamp = () => new Date().toISOString();
 
@@ -125,7 +135,7 @@ const createMessageDocument = async (
   userId: string,
   deviceId: string,
   messageIdFromMessage: string | null = null
-) => {
+): Promise<Models.Document> => {
   const messageId = messageIdFromMessage ? messageIdFromMessage : ID.unique();
   const now = createTimestamp();
 
@@ -278,7 +288,7 @@ export default defineLazyEventHandler(async () => {
       });
       const lastMessage = messages[messages.length - 1] as Message;
       console.log('Last message:', lastMessage);
-      let chatSession;
+      let chatSession: ChatSessionDocument | null = null;
       const isEditOperation = isEdited && editedFrom;
 
       if (userId) {
@@ -398,7 +408,11 @@ export default defineLazyEventHandler(async () => {
                           type: 'text',
                           text: event.text,
                         },
-                        { type: 'file', mimeType: event.files[0].mimeType, data: imageData.base64 },
+                        {
+                          type: 'file',
+                          mimeType: imageData.mimeType,
+                          data: imageData.base64,
+                        },
                       ]
                     : [
                         {
@@ -425,7 +439,7 @@ export default defineLazyEventHandler(async () => {
                   messageData,
                   userId,
                   'assistant',
-                  event.response.messages[0].id || null
+                  event.response.messages?.[0]?.id || null
                 );
                 await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',
@@ -606,10 +620,22 @@ export default defineLazyEventHandler(async () => {
               console.log('Handled message editing and deletion successfully');
             }
 
+            const lastUiMessage: UIMessage = {
+              id: lastMessage.id ?? ID.unique(),
+              role: lastMessage.role,
+              content: lastMessage.content,
+              parts: lastMessage.parts ?? [{ type: 'text', text: lastMessage.content }],
+            };
+
             const [, assistantMessage] = appendResponseMessages({
-              messages: [lastMessage],
+              messages: [lastUiMessage],
               responseMessages: event.response.messages,
             });
+
+            if (!assistantMessage) {
+              console.warn('No assistant message generated from response');
+              return;
+            }
 
             try {
               const messageData: ChatMessage = {
