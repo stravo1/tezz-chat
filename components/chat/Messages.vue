@@ -1,6 +1,5 @@
 <script setup lang="tsx">
-import type { ChatRequestOptions } from 'ai';
-import type { AppUIMessage } from '~/shared/types/ui-message';
+import type { ChatRequestOptions, UIMessage } from 'ai';
 
 import { useElementHover, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
 import { ChevronsDown, FileText, LoaderCircle } from 'lucide-vue-next';
@@ -11,9 +10,9 @@ import Button from '../ui/button/Button.vue';
 
 const props = defineProps<{
   chatId?: string;
-  messages: AppUIMessage[];
+  messages: UIMessage[];
   haventGottenFirstChunk?: boolean;
-  setMessages: (messages: AppUIMessage[]) => void;
+  setMessages: (messages: UIMessage[]) => void;
   reload: (chatRequestOptions?: ChatRequestOptions) => Promise<void>;
   status: string;
   isPublic?: boolean;
@@ -245,23 +244,26 @@ console.log('Messages:', props.messages);
             </div>
           </div>
           <div v-else-if="message.role == 'user'" class="flex flex-col items-end">
-            <div v-if="message.experimental_attachments?.length">
-              <div class="mr-2 mb-2" v-for="file in message.experimental_attachments">
+            <div v-if="message.parts?.filter((p: any) => p.type === 'file').length">
+              <div
+                class="mr-2 mb-2"
+                v-for="file in message.parts.filter((p: any) => p.type === 'file')"
+              >
                 <a
                   class="cursor-pointer"
                   title="View Document"
                   target="_blank"
                   :href="file.url"
-                  v-if="!file.contentType?.includes('image')"
+                  v-if="!file.mediaType?.includes('image')"
                   ><FileText class="h-8 w-8" :stroke-width="1.5"
                 /></a>
                 <img
                   v-else
                   :src="file.url"
-                  :alt="file.name"
+                  :alt="file.filename"
                   class="max-h-40 max-w-full rounded-lg object-cover"
                 />
-                {{ file.name }}
+                {{ file.filename }}
               </div>
             </div>
             <div

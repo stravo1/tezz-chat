@@ -1,5 +1,4 @@
-import { generateText, Output } from 'ai';
-import type { AppUIMessage } from '~/shared/types/ui-message';
+import { generateText, Output, UIMessage } from 'ai';
 import { z } from 'zod';
 import Cerebras from '@cerebras/cerebras_cloud_sdk';
 
@@ -9,13 +8,9 @@ const cerebras = new Cerebras({
 });
 
 /**
- * Extracts content from a message, handling both old format (content string)
- * and new UIMessage format (parts array)
+ * Extracts text content from a UIMessage, handling the parts array format
  */
-const getMessageContent = (message: any): string => {
-  if (message.content) {
-    return message.content;
-  }
+const getMessageContent = (message: UIMessage): string => {
   if (message.parts && Array.isArray(message.parts)) {
     const textParts = message.parts
       .filter((part: any) => part.type === 'text')
@@ -26,9 +21,9 @@ const getMessageContent = (message: any): string => {
   return '';
 };
 
-async function generateChatTitleUsingCerebras(messaage: any) {
-  console.log('Generating chat title using Cerebras for message:', messaage);
-  const messageContent = getMessageContent(messaage);
+async function generateChatTitleUsingCerebras(message: UIMessage) {
+  console.log('Generating chat title using Cerebras for message:', message);
+  const messageContent = getMessageContent(message);
   const completionCreateResponse = await cerebras.chat.completions.create({
     messages: [
       {
@@ -62,7 +57,7 @@ export async function generateChatTitle({
   message,
   fallbackModel,
 }: {
-  message: AppUIMessage | any;
+  message: UIMessage;
   model?: any;
   fallbackModel?: any;
 }) {

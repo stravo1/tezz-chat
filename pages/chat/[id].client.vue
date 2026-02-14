@@ -14,14 +14,16 @@ if (!chatId.value) {
 
 const convertToUIMessages = (messages: any) => {
   return messages?.map((message: any) => {
+    const parts = message.parts ? JSON.parse(message.parts) : [];
+    // Merge file parts from attachments into the parts array
+    const attachments = message.attachments ? JSON.parse(message.attachments) : [];
+    // Add file parts from attachments to the parts array if they exist
+    const allParts = [...parts, ...attachments.filter((a: any) => a.type === 'file')];
+
     return {
       id: message.$id,
       role: message.role,
-      parts: message.parts ? JSON.parse(message.parts) : [],
-      experimental_attachments: message.attachments ? JSON.parse(message.attachments) : [],
-      content: message.content || '',
-      createdAt: message.createdAt,
-      $createdAt: message.$createdAt,
+      parts: allParts.length ? allParts : [{ type: 'text', text: message.content || '' }],
     };
   });
 };
