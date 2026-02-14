@@ -1,5 +1,6 @@
 <script setup lang="tsx">
-import type { ChatRequestOptions, UIMessage } from 'ai';
+import type { ChatRequestOptions } from 'ai';
+import type { AppUIMessage } from '~/shared/types/ui-message';
 
 import { useElementHover, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
 import { ChevronsDown, FileText, LoaderCircle } from 'lucide-vue-next';
@@ -10,10 +11,10 @@ import Button from '../ui/button/Button.vue';
 
 const props = defineProps<{
   chatId?: string;
-  messages: UIMessage[];
+  messages: AppUIMessage[];
   haventGottenFirstChunk?: boolean;
-  setMessages: (messages: UIMessage[]) => void;
-  reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>;
+  setMessages: (messages: AppUIMessage[]) => void;
+  reload: (chatRequestOptions?: ChatRequestOptions) => Promise<void>;
   status: string;
   isPublic?: boolean;
   scrollToBottom: () => void;
@@ -221,10 +222,10 @@ console.log('Messages:', props.messages);
             >
               <div
                 v-if="part.type == 'reasoning'"
-                v-memo="[message.id, part.reasoning]"
+                v-memo="[message.id, part.text]"
                 class="flex flex-col"
               >
-                <ChatMessageReasoning :id="message.id" :message="part.reasoning" />
+                <ChatMessageReasoning :id="message.id" :message="part.text" />
               </div>
               <div v-else-if="part.type == 'text'" v-memo="[message.id, part.text]">
                 <ChatMessageMarkdown
@@ -237,8 +238,8 @@ console.log('Messages:', props.messages);
               <div v-else-if="part.type == 'file'">
                 <img
                   class="max-h-[240px] max-w-[240px] lg:max-h-[480px] lg:max-w-[480px]"
-                  :src="'data:' + part.mimeType + ';base64,' + part.data"
-                  :alt="'Image'"
+                  :src="part.url"
+                  :alt="part.filename || 'Image'"
                 />
               </div>
             </div>
@@ -276,13 +277,13 @@ console.log('Messages:', props.messages);
               :role="message.role"
               :message-id="message.id"
               :is-editing="isBeingEdited"
-              :handle-copy="() => handleCopy(message.content)"
+              :handle-copy="() => handleCopy(message.content || '')"
               :handle-branch="() => handleBranch(message.id, message.createdAt)"
               :handle-print="() => handleMessagePrint(message.id)"
               :handle-edit="
                 () => {
                   isBeingEdited = true;
-                  contentBeingEdited = message.content;
+                  contentBeingEdited = message.content || '';
                   timeStampOfMessageBeingEdited = String(message.createdAt);
                 }
               "

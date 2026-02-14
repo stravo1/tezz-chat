@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { useChat, type UIMessage } from '@ai-sdk/vue';
+import { Chat } from '@ai-sdk/vue';
+import type { ChatRequestOptions } from 'ai';
 import { ID } from 'appwrite';
+import type { AppUIMessage, ChatAttachment } from '~/shared/types/ui-message';
 const userStore = useUserStore();
 const props = defineProps<{
   chatId: string;
-  initialMessages?: UIMessage[];
+  initialMessages?: AppUIMessage[];
   isPublic?: boolean;
 }>();
 
@@ -19,19 +21,24 @@ if (!chatId) {
   console.warn('No chat ID provided!');
 }
 if (!props.isPublic) await userStore.getJWT();
-const { messages, append, status, setMessages, reload, error, stop } = useChat({
+const chat = new Chat<AppUIMessage>({
   id: chatId,
-  initialMessages: props.initialMessages || [],
-  body: {
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  },
+  messages: props.initialMessages || [],
   generateId: () => ID.unique(),
-  sendExtraMessageFields: true,
-  onError: err => {
+  onError: (err: Error) => {
     console.error('Chat error:', err);
-    error.value = err;
   },
 });
+
+const messages = computed(() => chat.messages);
+const status = computed(() => chat.status);
+
+const setMessages = (newMessages: AppUIMessage[]) => {
+  chat.messages = newMessages;
+};
+
+const reload = (options?: ChatRequestOptions) => chat.regenerate(options);
+const stop = () => chat.stop();
 
 const getApiHeaders = (model?: string) => {
   const headers: Record<string, string> = {};
@@ -49,7 +56,7 @@ const getApiHeaders = (model?: string) => {
 
 const handleSubmit = async (
   message: string,
-  attachments?: UIMessage['experimental_attachments'],
+  attachments?: ChatAttachment[],
   selectedModel?: string
 ) => {
   if (!id) {
@@ -57,12 +64,15 @@ const handleSubmit = async (
     console.log('New chat created with ID:', chatId);
   }
   const messageId = ID.unique();
-  const userMessage = createUserMessage(messageId, message);
-  append(userMessage, {
-    experimental_attachments: attachments?.length ? attachments : undefined,
+  const userMessage = createUserMessage(messageId, message) as AppUIMessage;
+  if (attachments?.length) {
+    userMessage.experimental_attachments = attachments;
+  }
+  await chat.sendMessage(userMessage, {
     body: {
       intent: intentStore.selectedIntent,
       model: selectedModel || 'gemini-3-flash-preview',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
     headers: {
       Authorization: 'Bearer ' + (await userStore.getJWT()),
@@ -81,7 +91,7 @@ const scrollToBottom = () => {
 
 watch(
   messages,
-  (newMessages: UIMessage[]) => {
+  (newMessages: AppUIMessage[]) => {
     console.log('Messages updated:', newMessages);
     // @ts-ignore
     messageStore.messages = newMessages;

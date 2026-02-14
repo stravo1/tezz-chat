@@ -1,12 +1,5 @@
 import { defineLazyEventHandler } from 'h3';
-import {
-  streamText,
-  smoothStream,
-  appendResponseMessages,
-  tool,
-  experimental_generateImage as generateImage,
-  UIMessage,
-} from 'ai';
+import { streamText, smoothStream, tool, stepCountIs, convertToModelMessages, UIMessage } from 'ai';
 import { z } from 'zod';
 import { Databases, ID, Permission, Role } from 'node-appwrite';
 import { createJWTClient } from '~/server/appwrite/config';
@@ -55,7 +48,7 @@ const chatInputSchema = z.object({
         .object({
           id: z.string().optional(),
           role: z.enum(['user', 'assistant', 'system']),
-          content: z.string(),
+          content: z.string().optional(), // Content is optional since UIMessage uses parts array
           parts: z.array(z.any()).optional(),
           experimental_attachments: z.array(z.any()).optional(),
         })
@@ -92,7 +85,7 @@ interface SerperResponse {
 interface Message {
   id?: string;
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content?: string;
   parts?: any[];
   experimental_attachments?: any[];
   isEdited?: boolean;
@@ -109,8 +102,36 @@ interface ChatMessage {
   editedFromId?: string;
 }
 
+interface ChatSession {
+  $id: string;
+  [key: string]: any;
+}
+
+interface ChatMessageDocument {
+  $id: string;
+  [key: string]: any;
+}
+
 // Helper functions
 const createTimestamp = () => new Date().toISOString();
+
+/**
+ * Extracts content from a message, handling both old format (content string)
+ * and new UIMessage format (parts array)
+ */
+const getMessageContent = (message: Message): string => {
+  if (message.content) {
+    return message.content;
+  }
+  if (message.parts && Array.isArray(message.parts)) {
+    const textParts = message.parts
+      .filter((part: any) => part.type === 'text')
+      .map((part: any) => part.text)
+      .join('\n');
+    return textParts || '';
+  }
+  return '';
+};
 
 const createPermissions = (userId: string) => [
   Permission.read(Role.user(userId)),
@@ -121,15 +142,17 @@ const createPermissions = (userId: string) => [
 const createMessageDocument = async (
   databases: any,
   chatId: string,
-  message: ChatMessage,
+  message: ChatMessage | Message,
   userId: string,
   deviceId: string,
   messageIdFromMessage: string | null = null
-) => {
+): Promise<ChatMessageDocument> => {
   const messageId = messageIdFromMessage ? messageIdFromMessage : ID.unique();
   const now = createTimestamp();
+  // Extract content from message, handling both content string and parts array
+  const content = message.content || getMessageContent(message as Message);
 
-  return await withRetry(() =>
+  return (await withRetry(() =>
     databases.createDocument(
       appwriteConfig.databaseId,
       COLLECTION_NAMES.CHAT_MESSAGES,
@@ -137,7 +160,7 @@ const createMessageDocument = async (
       {
         chatId,
         role: message.role,
-        content: message.content,
+        content: content,
         parts: JSON.stringify(message.parts || null),
         attachments: JSON.stringify(message.experimental_attachments || []),
         lastModifiedBy: deviceId || 'server',
@@ -147,7 +170,7 @@ const createMessageDocument = async (
       },
       createPermissions(userId)
     )
-  );
+  )) as ChatMessageDocument;
 };
 
 const updateChatDocument = async (databases: any, chatId: string, updates: any) => {
@@ -185,7 +208,7 @@ const handleAfterEditDeletion = async (
           COLLECTION_NAMES.CHAT_MESSAGES,
           editedFromId,
           {
-            content: lastMessage.content,
+            content: getMessageContent(lastMessage),
             parts: JSON.stringify(lastMessage.parts || []),
             updatedAt: createTimestamp(),
           }
@@ -278,7 +301,7 @@ export default defineLazyEventHandler(async () => {
       });
       const lastMessage = messages[messages.length - 1] as Message;
       console.log('Last message:', lastMessage);
-      let chatSession;
+      let chatSession: ChatSession | null;
       const isEditOperation = isEdited && editedFrom;
 
       if (userId) {
@@ -370,14 +393,13 @@ export default defineLazyEventHandler(async () => {
       if (intent === 'image') {
         const result = streamText({
           // model: modelInstance,
-          messages: messages,
+          messages: await convertToModelMessages(messages as UIMessage[]),
           temperature: DEFAULT_TEMPERATURE,
-          experimental_generateMessageId: () => ID.unique(),
           experimental_transform: smoothStream({
             chunking: 'word',
             delayInMs: STREAM_DELAY_MS,
           }),
-          maxSteps: MAX_STEPS,
+          stopWhen: stepCountIs(MAX_STEPS),
           maxRetries: MAX_RETRIES,
           model: google('gemini-3-flash-preview'),
           providerOptions: {
@@ -388,7 +410,10 @@ export default defineLazyEventHandler(async () => {
             if (event.text && userId && chatSession) {
               try {
                 // Check if the response contains image data
-                const imageData = event.files?.[0];
+                const imageData = event.files?.[0] as
+                  | { base64: string; mimeType?: string; mediaType?: string }
+                  | undefined;
+                const imageMimeType = imageData?.mimeType || imageData?.mediaType || 'image/png';
                 const messageData: ChatMessage = {
                   role: 'assistant',
                   content: event.text,
@@ -398,7 +423,7 @@ export default defineLazyEventHandler(async () => {
                           type: 'text',
                           text: event.text,
                         },
-                        { type: 'file', mimeType: event.files[0].mimeType, data: imageData.base64 },
+                        { type: 'file', mimeType: imageMimeType, data: imageData.base64 },
                       ]
                     : [
                         {
@@ -425,7 +450,7 @@ export default defineLazyEventHandler(async () => {
                   messageData,
                   userId,
                   'assistant',
-                  event.response.messages[0].id || null
+                  null
                 );
                 await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',
@@ -440,12 +465,14 @@ export default defineLazyEventHandler(async () => {
           },
         });
 
-        return result.toDataStreamResponse();
+        return result.toUIMessageStreamResponse({
+          generateMessageId: () => ID.unique(),
+        });
       }
 
       const result = streamText({
         model: modelInstance,
-        messages: messages,
+        messages: await convertToModelMessages(messages as UIMessage[]),
         temperature: DEFAULT_TEMPERATURE,
         system: `
         ## About You
@@ -461,15 +488,33 @@ export default defineLazyEventHandler(async () => {
         //   chunking: 'word',
         //   delayInMs: STREAM_DELAY_MS,
         // }),
-        maxSteps: MAX_STEPS,
+        stopWhen: stepCountIs(MAX_STEPS),
         maxRetries: MAX_RETRIES,
-        experimental_generateMessageId: () => ID.unique(),
         abortSignal: controller.signal,
         tools: doesSupportToolCalls(model as ModelType)
           ? {
-              web_search: tool({
+              web_search: tool<
+                {
+                  query: string;
+                  location?: string;
+                  gl?: string;
+                  num?: number;
+                  page?: number;
+                },
+                {
+                  success: boolean;
+                  data?: {
+                    summary: string;
+                    results: string;
+                    topStories: string;
+                    relatedQuestions: string;
+                    totalResults: number;
+                  };
+                  error?: string;
+                }
+              >({
                 description: 'Search the web for information using Serper API.',
-                parameters: z.object({
+                inputSchema: z.object({
                   query: z.string().describe('The search query to look up on the web.'),
                   location: z
                     .string()
@@ -606,16 +651,17 @@ export default defineLazyEventHandler(async () => {
               console.log('Handled message editing and deletion successfully');
             }
 
-            const [, assistantMessage] = appendResponseMessages({
-              messages: [lastMessage],
-              responseMessages: event.response.messages,
-            });
+            const assistantResponseMessage = event.response.messages.find(
+              msg => msg.role === 'assistant'
+            );
 
             try {
               const messageData: ChatMessage = {
-                role: assistantMessage.role === 'data' ? 'assistant' : assistantMessage.role,
+                role: 'assistant',
                 content: event.text,
-                parts: assistantMessage.parts || [],
+                parts: Array.isArray(assistantResponseMessage?.content)
+                  ? assistantResponseMessage.content
+                  : [{ type: 'text', text: event.text }],
                 experimental_attachments: lastMessage.experimental_attachments || [],
               };
 
@@ -626,7 +672,7 @@ export default defineLazyEventHandler(async () => {
                 messageData,
                 userId,
                 'assistant',
-                assistantMessage.id || null
+                null
               ),
                 await updateChatDocument(databases, chatSession.$id, {
                   lastModifiedBy: 'assistant',
@@ -642,8 +688,9 @@ export default defineLazyEventHandler(async () => {
       });
       result.consumeStream();
 
-      return result.toDataStreamResponse({
+      return result.toUIMessageStreamResponse({
         sendReasoning: true,
+        generateMessageId: () => ID.unique(),
       });
     } catch (error) {
       console.error('Chat error:', error);

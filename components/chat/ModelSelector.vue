@@ -37,6 +37,12 @@ const models = [
     icon: gemini,
   },
   {
+    title: 'Claude Haiku 4.5',
+    value: 'claude-haiku-4-5-anannas',
+    // need to change the icon
+    icon: moonshot,
+  },
+  {
     title: 'MoonshotAI Kimi K2 Thinking',
     value: 'kimi-thinking',
     icon: moonshot,
