@@ -1,9 +1,7 @@
-import type { UIMessage } from "ai";
+import type { AppUIMessage } from '~/shared/types/ui-message';
 
-export const createUserMessage = (id: string, text: string): UIMessage => ({
+export const createUserMessage = (id: string, text: string): AppUIMessage => ({
   id,
   parts: [{ type: 'text', text }],
   role: 'user',
-  content: text,
-  createdAt: new Date(),
 });

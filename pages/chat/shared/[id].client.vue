@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { LoaderCircle } from 'lucide-vue-next';
 import { onMounted, computed, watch } from 'vue';
-import type { UIMessage } from 'ai';
+import type { AppUIMessage } from '~/shared/types/ui-message';
 definePageMeta({
   layout: 'chat',
 });
@@ -27,15 +27,19 @@ const convertToUIMessages = (messages: any, parse: boolean = true) => {
   });
 };
 
-const messages = ref<UIMessage[]>([]);
+const messages = ref<AppUIMessage[]>([]);
 
 onMounted(async () => {
   try {
-    const chatDetails = await $fetch(`/api/chat/shared/${chatId.value}`, {
+    const chatDetails = await $fetch<{
+      title: string;
+      visibility: string;
+      messages: any[];
+    }>(`/api/chat/shared/${chatId.value}`, {
       method: 'GET',
     });
     console.log('Chat details fetched successfully:', chatDetails);
-    messages.value = convertToUIMessages(chatDetails.chatMessageId || []);
+    messages.value = convertToUIMessages(chatDetails.messages || []);
     document.title = chatDetails.title || 'Chat';
     isLoading.value = false;
   } catch (error) {

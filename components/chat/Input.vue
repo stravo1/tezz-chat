@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { ArrowUp, Image, LoaderCircle, Paperclip } from 'lucide-vue-next';
 import { useMagicKeys, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
-import type { UIMessage } from 'ai';
+import type { ChatAttachment } from '~/shared/types/ui-message';
 const { textarea, input: message } = useTextareaAutosize();
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<File[]>([]);
-const selectedFilesWithUrl = ref<UIMessage['experimental_attachments']>([]);
+const selectedFilesWithUrl = ref<ChatAttachment[]>([]);
 
 const props = defineProps<{
   handleSubmit: (
     message: string,
-    attachments?: UIMessage['experimental_attachments'],
+    attachments?: ChatAttachment[],
     selectedModel?: string
   ) => Promise<void>;
   status: string;
-  stop: () => void;
+  stop: () => void | Promise<void>;
 }>();
 
 const keys = useMagicKeys();

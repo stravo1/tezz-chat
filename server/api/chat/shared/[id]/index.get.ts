@@ -27,7 +27,18 @@ export default defineEventHandler(async event => {
       throw createAppError(ErrorCode.FORBIDDEN);
     }
 
-    return chat;
+    // Fetch messages for this chat
+    const messages = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      COLLECTION_NAMES.CHAT_MESSAGES,
+      [Query.equal('chatId', chatId), Query.orderAsc('$createdAt')]
+    );
+
+    return {
+      title: chat.name,
+      visibility: chat.visibility,
+      messages: messages.documents,
+    };
   } catch (error) {
     console.error('Error fetching chat messages:', error);
 

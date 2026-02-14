@@ -1,5 +1,6 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 export type ModelType =
   | 'gemini-3-flash-preview'
@@ -13,7 +14,8 @@ export type ModelType =
   | 'kimi-thinking'
   | 'glm-4.5-air'
   | 'llama-4-maverick'
-  | 'grok-4-fast'; // not free use with byok
+  | 'grok-4-fast'
+  | 'claude-haiku-4-5-anannas';
 
 export const supportedModels = [
   'gemini-3-flash-preview',
@@ -27,7 +29,8 @@ export const supportedModels = [
   'kimi-thinking',
   'glm-4.5-air',
   'llama-4-maverick',
-  'grok-4-fast', //not free use with byok
+  'grok-4-fast',
+  'claude-haiku-4-5-anannas',
 ];
 
 export const doesSupportToolCalls = (modelType: ModelType): boolean => {
@@ -40,6 +43,7 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
     'qwen3-coder',
     'kimi-dev',
     'grok-4-fast',
+    'claude-haiku-4-5-anannas',
   ];
   return models.includes(modelType);
 };
@@ -47,6 +51,7 @@ export const doesSupportToolCalls = (modelType: ModelType): boolean => {
 interface ModelOptions {
   geminiApiKey?: string;
   openRouterApiKey?: string;
+  anannasApiKey?: string;
 }
 
 export function getModel(modelType: ModelType, options: ModelOptions = {}) {
@@ -54,9 +59,17 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
   const {
     geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     openRouterApiKey = process.env.OPENROUTER_GENERATIVE_AI_API_KEY,
+    anannasApiKey = process.env.ANANNAS_API_KEY,
   } = options;
 
   console.log(openRouterApiKey);
+  const anannas = createOpenAICompatible({
+    apiKey: anannasApiKey || '',
+    baseURL: 'https://api.anannas.ai/v1',
+    name: 'anannas',
+    includeUsage: true,
+    supportsStructuredOutputs: true,
+  });
   switch (modelType) {
     case 'gemini-3-flash-preview':
     case 'gemini-2.5-flash':
@@ -69,6 +82,9 @@ export function getModel(modelType: ModelType, options: ModelOptions = {}) {
       return createOpenRouter({
         apiKey: openRouterApiKey,
       }).chat('openai/gpt-oss-20b:free');
+
+    case 'claude-haiku-4-5-anannas':
+      return anannas('claude-haiku-4-5');
 
     case 'deepseek-chat-v3':
       return createOpenRouter({
