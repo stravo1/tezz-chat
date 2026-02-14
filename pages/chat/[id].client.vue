@@ -7,6 +7,7 @@ definePageMeta({
 const route = useRoute();
 const chatId = ref((route.params.id as string) || '');
 const tempChatId = ID.unique();
+const messageStore = useMessageStore();
 
 if (!chatId.value) {
   console.warn('No chat ID provided, creating a new chat.');
@@ -28,19 +29,23 @@ const convertToUIMessages = (messages: any) => {
   });
 };
 
-const messages = chatId.value ? await getMessagesByThreadId(chatId.value) : [];
-if (messages.length > 0) {
-  console.log('Messages found for chat ID:', chatId);
-  messages.forEach((msg: any) => {
-    // console.log('found message:', msg);
-    // const userMessage = createUserMessage(msg.id, msg.text);
-    // append(userMessage);
-  });
+// If the message store has messages (from ongoing chat), use those
+// Otherwise fetch from database
+let initialMessages: any[] = [];
+if (messageStore.messages.length > 0) {
+  console.log('Using messages from store:', messageStore.messages);
+  initialMessages = messageStore.messages;
 } else {
-  console.log('No messages found for chat ID:', chatId);
+  const dbMessages = chatId.value ? await getMessagesByThreadId(chatId.value) : [];
+  if (dbMessages.length > 0) {
+    console.log('Messages found for chat ID:', chatId);
+    initialMessages = convertToUIMessages(dbMessages);
+  } else {
+    console.log('No messages found for chat ID:', chatId);
+  }
 }
 </script>
 
 <template>
-  <Chat :key="chatId" :chatId="chatId" :initialMessages="convertToUIMessages(messages)" />
+  <Chat :key="chatId" :chatId="chatId" :initialMessages="initialMessages" />
 </template>
