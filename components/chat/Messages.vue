@@ -1,6 +1,20 @@
 <script setup lang="tsx">
 import type { ChatRequestOptions, UIMessage } from 'ai';
 
+// Extended message type with additional properties used in this app
+interface ExtendedUIMessage extends UIMessage {
+  createdAt?: string | Date;
+  content?: string;
+}
+
+// Extended file part type
+interface FilePart {
+  type: 'file';
+  url: string;
+  filename?: string;
+  mediaType?: string;
+}
+
 import { useElementHover, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
 import { ChevronsDown, FileText, LoaderCircle } from 'lucide-vue-next';
 import { useScroll } from '@vueuse/core';
@@ -10,14 +24,28 @@ import Button from '../ui/button/Button.vue';
 
 const props = defineProps<{
   chatId?: string;
-  messages: UIMessage[];
+  messages: ExtendedUIMessage[];
   haventGottenFirstChunk?: boolean;
-  setMessages: (messages: UIMessage[]) => void;
+  setMessages: (messages: ExtendedUIMessage[]) => void;
   reload: (chatRequestOptions?: ChatRequestOptions) => Promise<void>;
   status: string;
   isPublic?: boolean;
   scrollToBottom: () => void;
 }>();
+
+// Helper to get text content from message
+const getMessageContent = (message: ExtendedUIMessage): string => {
+  if (message.content) return message.content;
+  const textPart = message.parts?.find((p: any) => p.type === 'text') as
+    | { text?: string }
+    | undefined;
+  return textPart?.text || '';
+};
+
+// Helper to get file parts from message
+const getFileParts = (message: ExtendedUIMessage): FilePart[] => {
+  return (message.parts?.filter((p: any) => p.type === 'file') || []) as FilePart[];
+};
 
 const messageStore = useMessageStore();
 const userStore = useUserStore();
@@ -244,11 +272,8 @@ console.log('Messages:', props.messages);
             </div>
           </div>
           <div v-else-if="message.role == 'user'" class="flex flex-col items-end">
-            <div v-if="message.parts?.filter((p: any) => p.type === 'file').length">
-              <div
-                class="mr-2 mb-2"
-                v-for="file in message.parts.filter((p: any) => p.type === 'file')"
-              >
+            <div v-if="getFileParts(message).length">
+              <div class="mr-2 mb-2" v-for="file in getFileParts(message)" :key="file.url">
                 <a
                   class="cursor-pointer"
                   title="View Document"
@@ -269,7 +294,7 @@ console.log('Messages:', props.messages);
             <div
               class="border-border bg-secondary/50 text-foreground ml-auto max-w-md rounded-lg border px-4 py-2"
             >
-              {{ message.content }}
+              {{ getMessageContent(message) }}
             </div>
           </div>
           <div class="text-xs transition-all lg:opacity-0 lg:group-hover:opacity-100">
@@ -279,19 +304,22 @@ console.log('Messages:', props.messages);
               :role="message.role"
               :message-id="message.id"
               :is-editing="isBeingEdited"
-              :handle-copy="() => handleCopy(message.content || '')"
+              :handle-copy="() => handleCopy(getMessageContent(message))"
               :handle-branch="() => handleBranch(message.id, message.createdAt)"
               :handle-print="() => handleMessagePrint(message.id)"
               :handle-edit="
                 () => {
                   isBeingEdited = true;
-                  contentBeingEdited = message.content || '';
+                  contentBeingEdited = getMessageContent(message);
                   timeStampOfMessageBeingEdited = String(message.createdAt);
                 }
               "
               :handle-retry="
                 () => {
-                  handleEdit(message.createdAt, message.role == 'user' ? message.content : '');
+                  handleEdit(
+                    message.createdAt,
+                    message.role == 'user' ? getMessageContent(message) : ''
+                  );
                 }
               "
               :handle-save="

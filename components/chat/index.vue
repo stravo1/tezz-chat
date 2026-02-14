@@ -55,13 +55,11 @@ const getApiHeaders = (model?: string) => {
 };
 
 const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel?: string) => {
-  if (!id) {
-    navigateTo(`/chat/${chatId}`);
-    console.log('New chat created with ID:', chatId);
-  }
+  const isNewChat = !id;
 
   // Send message with files using the new AI SDK pattern
-  await chat.sendMessage(
+  // Don't await - let it start streaming while we navigate
+  const sendPromise = chat.sendMessage(
     {
       text: message,
       files: files,
@@ -78,6 +76,16 @@ const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel
       },
     }
   );
+
+  // For new chats, navigate after a small delay to ensure message is added to chat state
+  if (isNewChat) {
+    await nextTick();
+    // Use replace to avoid adding to history stack
+    navigateTo(`/chat/${chatId}`, { replace: true });
+    console.log('New chat created with ID:', chatId);
+  }
+
+  await sendPromise;
   scrollToBottom();
 };
 

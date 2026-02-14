@@ -289,7 +289,33 @@ export default defineLazyEventHandler(async () => {
         geminiApiKey: geminiApiKey,
         openRouterApiKey: openRouterApiKey,
       });
-      const lastMessage = messages[messages.length - 1] as UIMessage;
+      // Preprocess messages to ensure file attachments are properly included in parts
+      const processedMessages = messages.map((msg: any) => {
+        // If message has experimental_attachments but they're not in parts, add them
+        if (msg.experimental_attachments && Array.isArray(msg.experimental_attachments)) {
+          const existingParts = msg.parts || [];
+          const existingFileUrls = existingParts
+            .filter((p: any) => p.type === 'file')
+            .map((p: any) => p.url);
+
+          const newFileParts = msg.experimental_attachments
+            .filter((att: any) => !existingFileUrls.includes(att.url))
+            .map((att: any) => ({
+              type: 'file',
+              url: att.url,
+              filename: att.name || att.filename,
+              mediaType: att.contentType || att.mediaType || 'application/octet-stream',
+            }));
+
+          return {
+            ...msg,
+            parts: [...existingParts, ...newFileParts],
+          };
+        }
+        return msg;
+      });
+
+      const lastMessage = processedMessages[processedMessages.length - 1] as UIMessage;
       console.log('Last message:', lastMessage);
       let chatSession: ChatSession | null;
       const isEditOperation = isEdited && editedFrom;
@@ -383,7 +409,7 @@ export default defineLazyEventHandler(async () => {
       if (intent === 'image') {
         const result = streamText({
           // model: modelInstance,
-          messages: await convertToModelMessages(messages as UIMessage[]),
+          messages: await convertToModelMessages(processedMessages as UIMessage[]),
           temperature: DEFAULT_TEMPERATURE,
           experimental_transform: smoothStream({
             chunking: 'word',
@@ -461,7 +487,7 @@ export default defineLazyEventHandler(async () => {
 
       const result = streamText({
         model: modelInstance,
-        messages: await convertToModelMessages(messages as UIMessage[]),
+        messages: await convertToModelMessages(processedMessages as UIMessage[]),
         temperature: DEFAULT_TEMPERATURE,
         system: `
         ## About You
