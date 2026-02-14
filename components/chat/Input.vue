@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { ArrowUp, Image, LoaderCircle, Paperclip } from 'lucide-vue-next';
 import { useMagicKeys, useMediaQuery, useTextareaAutosize } from '@vueuse/core';
-import type { ChatAttachment } from '~/shared/types/ui-message';
+import type { FileUIPart } from 'ai';
+
 const { textarea, input: message } = useTextareaAutosize();
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFiles = ref<File[]>([]);
-const selectedFilesWithUrl = ref<ChatAttachment[]>([]);
+const selectedFilesWithUrl = ref<FileUIPart[]>([]);
 
 const props = defineProps<{
-  handleSubmit: (
-    message: string,
-    attachments?: ChatAttachment[],
-    selectedModel?: string
-  ) => Promise<void>;
+  handleSubmit: (message: string, files?: FileUIPart[], selectedModel?: string) => Promise<void>;
   status: string;
   stop: () => void | Promise<void>;
 }>();
@@ -56,29 +53,36 @@ const handleFileSelect = (event: Event) => {
   if (fileInput.value) fileInput.value.value = ''; // Clear the input field
 };
 
-const handleAddUrl = (name: string, url: string) => {
+const handleAddUrl = (name: string, url: string, contentType: string) => {
   if (!name || !url) return;
   for (const file of selectedFiles.value) {
     if (file.name === name) {
-      for (const attachment of selectedFilesWithUrl.value!) {
-        if (attachment.name === name) {
-          attachment.url = url; // Update the URL if it already exists
-          return;
-        }
+      // Check if file already exists in the list
+      const existingIndex = selectedFilesWithUrl.value.findIndex(f => f.filename === name);
+      if (existingIndex !== -1) {
+        // Update existing file
+        selectedFilesWithUrl.value[existingIndex] = {
+          type: 'file',
+          filename: name,
+          mediaType: contentType || file.type,
+          url: url,
+        };
+      } else {
+        // Add new file using FileUIPart format
+        selectedFilesWithUrl.value.push({
+          type: 'file',
+          filename: name,
+          mediaType: contentType || file.type,
+          url: url,
+        });
       }
-      selectedFilesWithUrl.value!.push({
-        url: url,
-        name: name,
-        contentType: file.type,
-      });
+      return;
     }
   }
 };
 const removeFile = (name: string) => {
   selectedFiles.value = selectedFiles.value.filter(file => file.name !== name);
-  selectedFilesWithUrl.value = selectedFilesWithUrl.value!.filter(
-    attachment => attachment.name !== name
-  );
+  selectedFilesWithUrl.value = selectedFilesWithUrl.value.filter(file => file.filename !== name);
   // if (fileInput.value) fileInput.value.value = ''; // Clear the input field
 };
 
@@ -123,8 +127,9 @@ const handleKeydown = (event: KeyboardEvent) => {
       >
         <ChatFileUpload
           v-for="selectedFile in selectedFiles"
+          :key="selectedFile.name"
           :file="selectedFile"
-          :set-url="url => handleAddUrl(selectedFile.name, url)"
+          :set-url="(url: string) => handleAddUrl(selectedFile.name, url, selectedFile.type)"
           :remove-file="() => removeFile(selectedFile.name)"
         />
       </div>

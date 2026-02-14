@@ -36,6 +36,8 @@ const createMessageDocument = async (
 ) => {
   const messageId = ID.unique();
   const now = new Date().toISOString();
+  // Extract file parts from the parts array
+  const fileParts = (message.parts || []).filter((p: any) => p.type === 'file');
 
   return await withRetry(() =>
     databases.createDocument(
@@ -47,7 +49,7 @@ const createMessageDocument = async (
         role: message.role,
         content: message.content,
         parts: JSON.stringify(message.parts || null),
-        attachments: JSON.stringify(message.experimental_attachments || []),
+        attachments: JSON.stringify(fileParts),
         lastModifiedBy: deviceId || 'server',
         deleted: false,
         createdAt: now,

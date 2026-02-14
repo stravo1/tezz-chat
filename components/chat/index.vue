@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Chat } from '@ai-sdk/vue';
-import type { ChatRequestOptions } from 'ai';
+import type { ChatRequestOptions, UIMessage, FileUIPart } from 'ai';
 import { ID } from 'appwrite';
-import type { AppUIMessage, ChatAttachment } from '~/shared/types/ui-message';
+
 const userStore = useUserStore();
 const props = defineProps<{
   chatId: string;
-  initialMessages?: AppUIMessage[];
+  initialMessages?: UIMessage[];
   isPublic?: boolean;
 }>();
 
@@ -21,7 +21,7 @@ if (!chatId) {
   console.warn('No chat ID provided!');
 }
 if (!props.isPublic) await userStore.getJWT();
-const chat = new Chat<AppUIMessage>({
+const chat = new Chat<UIMessage>({
   id: chatId,
   messages: props.initialMessages || [],
   generateId: () => ID.unique(),
@@ -33,7 +33,7 @@ const chat = new Chat<AppUIMessage>({
 const messages = computed(() => chat.messages);
 const status = computed(() => chat.status);
 
-const setMessages = (newMessages: AppUIMessage[]) => {
+const setMessages = (newMessages: UIMessage[]) => {
   chat.messages = newMessages;
 };
 
@@ -54,31 +54,30 @@ const getApiHeaders = (model?: string) => {
   return headers;
 };
 
-const handleSubmit = async (
-  message: string,
-  attachments?: ChatAttachment[],
-  selectedModel?: string
-) => {
+const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel?: string) => {
   if (!id) {
     navigateTo(`/chat/${chatId}`);
     console.log('New chat created with ID:', chatId);
   }
-  const messageId = ID.unique();
-  const userMessage = createUserMessage(messageId, message) as AppUIMessage;
-  if (attachments?.length) {
-    userMessage.experimental_attachments = attachments;
-  }
-  await chat.sendMessage(userMessage, {
-    body: {
-      intent: intentStore.selectedIntent,
-      model: selectedModel || 'gemini-3-flash-preview',
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+  // Send message with files using the new AI SDK pattern
+  await chat.sendMessage(
+    {
+      text: message,
+      files: files,
     },
-    headers: {
-      Authorization: 'Bearer ' + (await userStore.getJWT()),
-      ...getApiHeaders(selectedModel),
-    },
-  });
+    {
+      body: {
+        intent: intentStore.selectedIntent,
+        model: selectedModel || 'gemini-3-flash-preview',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      headers: {
+        Authorization: 'Bearer ' + (await userStore.getJWT()),
+        ...getApiHeaders(selectedModel),
+      },
+    }
+  );
   scrollToBottom();
 };
 
@@ -91,7 +90,7 @@ const scrollToBottom = () => {
 
 watch(
   messages,
-  (newMessages: AppUIMessage[]) => {
+  (newMessages: UIMessage[]) => {
     console.log('Messages updated:', newMessages);
     // @ts-ignore
     messageStore.messages = newMessages;

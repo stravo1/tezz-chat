@@ -40,20 +40,10 @@ const TIMEZONE_TO_COUNTRY: Record<string, string> = {
   'Pacific/Auckland': 'nz',
 };
 
-// Schema validation
+// Schema validation - Using passthrough to accept UIMessage format from AI SDK
 const chatInputSchema = z.object({
   messages: z
-    .array(
-      z
-        .object({
-          id: z.string().optional(),
-          role: z.enum(['user', 'assistant', 'system']),
-          content: z.string().optional(), // Content is optional since UIMessage uses parts array
-          parts: z.array(z.any()).optional(),
-          experimental_attachments: z.array(z.any()).optional(),
-        })
-        .passthrough()
-    )
+    .array(z.any()) // Accept any UIMessage format from @ai-sdk/vue Chat class
     .min(1, 'At least one message is required'),
   id: z.string().optional(),
   deviceId: z.string().optional(),
@@ -82,21 +72,10 @@ interface SerperResponse {
   }>;
 }
 
-interface Message {
-  id?: string;
-  role: 'user' | 'assistant' | 'system';
-  content?: string;
-  parts?: any[];
-  experimental_attachments?: any[];
-  isEdited?: boolean;
-  editedFrom?: string;
-}
-
 interface ChatMessage {
   role: string;
   content: string;
   parts?: any[];
-  experimental_attachments?: any[];
   isEdited?: boolean;
   editedFrom?: string;
   editedFromId?: string;
@@ -116,13 +95,9 @@ interface ChatMessageDocument {
 const createTimestamp = () => new Date().toISOString();
 
 /**
- * Extracts content from a message, handling both old format (content string)
- * and new UIMessage format (parts array)
+ * Extracts text content from a UIMessage, handling the parts array format
  */
-const getMessageContent = (message: Message): string => {
-  if (message.content) {
-    return message.content;
-  }
+const getMessageContent = (message: UIMessage): string => {
   if (message.parts && Array.isArray(message.parts)) {
     const textParts = message.parts
       .filter((part: any) => part.type === 'text')
@@ -131,6 +106,16 @@ const getMessageContent = (message: Message): string => {
     return textParts || '';
   }
   return '';
+};
+
+/**
+ * Extracts file parts from a UIMessage parts array
+ */
+const getFileParts = (message: UIMessage): any[] => {
+  if (message.parts && Array.isArray(message.parts)) {
+    return message.parts.filter((part: any) => part.type === 'file');
+  }
+  return [];
 };
 
 const createPermissions = (userId: string) => [
@@ -142,15 +127,20 @@ const createPermissions = (userId: string) => [
 const createMessageDocument = async (
   databases: any,
   chatId: string,
-  message: ChatMessage | Message,
+  message: ChatMessage | UIMessage,
   userId: string,
   deviceId: string,
   messageIdFromMessage: string | null = null
 ): Promise<ChatMessageDocument> => {
   const messageId = messageIdFromMessage ? messageIdFromMessage : ID.unique();
   const now = createTimestamp();
-  // Extract content from message, handling both content string and parts array
-  const content = message.content || getMessageContent(message as Message);
+  // Extract content from message - for UIMessage use parts, for ChatMessage use content
+  const content =
+    'content' in message && message.content
+      ? message.content
+      : getMessageContent(message as UIMessage);
+  // Extract file parts from the message parts array
+  const fileParts = getFileParts(message as UIMessage);
 
   return (await withRetry(() =>
     databases.createDocument(
@@ -162,7 +152,7 @@ const createMessageDocument = async (
         role: message.role,
         content: content,
         parts: JSON.stringify(message.parts || null),
-        attachments: JSON.stringify(message.experimental_attachments || []),
+        attachments: JSON.stringify(fileParts),
         lastModifiedBy: deviceId || 'server',
         deleted: false,
         createdAt: now,
@@ -186,7 +176,7 @@ const handleAfterEditDeletion = async (
   databases: Databases,
   chatId: string,
   editedFrom: string,
-  lastMessage: Message,
+  lastMessage: UIMessage,
   editedFromId: string
 ) => {
   try {
@@ -299,7 +289,7 @@ export default defineLazyEventHandler(async () => {
         geminiApiKey: geminiApiKey,
         openRouterApiKey: openRouterApiKey,
       });
-      const lastMessage = messages[messages.length - 1] as Message;
+      const lastMessage = messages[messages.length - 1] as UIMessage;
       console.log('Last message:', lastMessage);
       let chatSession: ChatSession | null;
       const isEditOperation = isEdited && editedFrom;
@@ -431,7 +421,6 @@ export default defineLazyEventHandler(async () => {
                           text: event.text,
                         },
                       ],
-                  experimental_attachments: lastMessage.experimental_attachments || [],
                 };
                 if (isEditOperation && editedFrom && chatId && editedFromId) {
                   await handleAfterEditDeletion(
@@ -662,7 +651,6 @@ export default defineLazyEventHandler(async () => {
                 parts: Array.isArray(assistantResponseMessage?.content)
                   ? assistantResponseMessage.content
                   : [{ type: 'text', text: event.text }],
-                experimental_attachments: lastMessage.experimental_attachments || [],
               };
 
               // Create assistant message and update chat document in parallel
@@ -686,8 +674,8 @@ export default defineLazyEventHandler(async () => {
           console.error('Chat error:', event.error);
         },
       });
-      result.consumeStream();
-
+      // Do NOT call consumeStream() - it consumes the stream before it can be sent to client
+      // Just return the stream response directly
       return result.toUIMessageStreamResponse({
         sendReasoning: true,
         generateMessageId: () => ID.unique(),

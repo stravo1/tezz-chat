@@ -1,9 +1,9 @@
 import { defineStore, setMapStoreSuffix } from 'pinia';
-import type { AppUIMessage } from '~/shared/types/ui-message';
+import type { UIMessage } from 'ai';
 
 export const useMessageStore = defineStore('message', {
   state: () => ({
-    messages: [] as AppUIMessage[],
+    messages: [] as UIMessage[],
     isLoading: false,
     isError: false,
     errorMessage: '',
@@ -11,7 +11,7 @@ export const useMessageStore = defineStore('message', {
     isBranched: false,
   }),
   actions: {
-    setMessages(messages: AppUIMessage[]) {
+    setMessages(messages: UIMessage[]) {
       this.messages = messages;
     },
     clearMessages() {

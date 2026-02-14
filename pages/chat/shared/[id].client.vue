@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { LoaderCircle } from 'lucide-vue-next';
 import { onMounted, computed, watch } from 'vue';
-import type { AppUIMessage } from '~/shared/types/ui-message';
+import type { UIMessage } from 'ai';
+
 definePageMeta({
   layout: 'chat',
 });
@@ -9,25 +10,27 @@ const route = useRoute();
 const chatId = ref((route.params.id as string) || '');
 const isLoading = ref(true);
 
-const convertToUIMessages = (messages: any, parse: boolean = true) => {
+const convertToUIMessages = (messages: any, parse: boolean = true): UIMessage[] => {
   return messages?.map((message: any) => {
+    const parts = message.parts ? (parse ? JSON.parse(message.parts) : message.parts) : [];
+    // Merge file parts from attachments into the parts array
+    const attachments = message.attachments
+      ? parse
+        ? JSON.parse(message.attachments)
+        : message.attachments
+      : [];
+    // Add file parts from attachments to the parts array if they exist
+    const allParts = [...parts, ...attachments.filter((a: any) => a.type === 'file')];
+
     return {
       id: message.$id,
       role: message.role,
-      parts: message.parts ? (parse ? JSON.parse(message.parts) : message.parts) : [],
-      experimental_attachments: message.attachments
-        ? parse
-          ? JSON.parse(message.attachments)
-          : message.attachments
-        : [],
-      content: message.content || '',
-      createdAt: message.createdAt,
-      $createdAt: message.$createdAt,
+      parts: allParts.length ? allParts : [{ type: 'text', text: message.content || '' }],
     };
   });
 };
 
-const messages = ref<AppUIMessage[]>([]);
+const messages = ref<UIMessage[]>([]);
 
 onMounted(async () => {
   try {
