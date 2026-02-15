@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
-import { Check, ChevronDown } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { Check, ChevronDown, Settings } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -23,10 +23,11 @@ import moonshot from '~/assets/svg/moonshot.vue';
 import zai from '~/assets/svg/zai.vue';
 import openai from '~/assets/svg/openai.vue';
 import meta from '~/assets/svg/meta.vue';
+import type { CustomModel } from '~/stores/model';
 
 import { useMediaQuery } from '@vueuse/core';
 
-const models = [
+const builtInModels = [
   {
     title: 'Gemini 3 Flash Preview',
     value: 'gemini-3-flash-preview',
@@ -90,11 +91,33 @@ const models = [
   },
 ];
 
+// Icon mapping for custom model providers
+const providerIcons: Record<string, any> = {
+  gemini: gemini,
+  openrouter: deepseek, // Using deepseek as a placeholder for openrouter
+  openai: openai,
+  anthropic: moonshot, // Using moonshot as placeholder for anthropic
+};
+
 const modelStore = useModelStore();
 const isMobile = useMediaQuery('(max-width: 768px)');
 const selectedModel = ref('gemini-3-flash-preview');
 const selectedModelTitle = ref('Gemini 3.0 Flash Preview');
 const open = ref(false);
+
+// Computed property to get all models (built-in + custom)
+const allModels = computed(() => {
+  const customModels = modelStore.customModels.map((model: CustomModel) => ({
+    title: model.name,
+    value: model.id,
+    icon: providerIcons[model.provider] || openai,
+    isCustom: true,
+  }));
+  return [...builtInModels, ...customModels];
+});
+
+// Check if there are any custom models
+const hasCustomModels = computed(() => modelStore.customModels.length > 0);
 
 watch(selectedModel, (newModel, oldModel) => {
   console.log('Selected model:', newModel);
@@ -103,17 +126,24 @@ watch(selectedModel, (newModel, oldModel) => {
     selectedModel.value = oldModel;
     return;
   }
-  selectedModelTitle.value = models.find(model => model.value === newModel)?.title || '';
+  selectedModelTitle.value = allModels.value.find(model => model.value === newModel)?.title || '';
   modelStore.selectedModel = newModel;
 });
 
 onMounted(() => {
   selectedModel.value = modelStore.selectedModel || 'gemini-3-flash-preview';
+  selectedModelTitle.value =
+    allModels.value.find(model => model.value === selectedModel.value)?.title ||
+    'Gemini 3 Flash Preview';
 });
 
 const handleModelSelect = (modelValue: string) => {
   selectedModel.value = modelValue;
   open.value = false;
+};
+
+const goToSettings = () => {
+  navigateTo('/settings');
 };
 </script>
 
@@ -143,9 +173,9 @@ const handleModelSelect = (modelValue: string) => {
         <CommandInput v-if="!isMobile" placeholder="Search models..." class="h-8" />
         <CommandList>
           <CommandEmpty>No model found.</CommandEmpty>
-          <CommandGroup>
+          <CommandGroup heading="Built-in Models">
             <CommandItem
-              v-for="model in models"
+              v-for="model in builtInModels"
               :key="model.value"
               :value="model.value"
               @select="handleModelSelect(model.value)"
@@ -154,6 +184,29 @@ const handleModelSelect = (modelValue: string) => {
               <component :is="model.icon" class="h-5 w-5" />
               <span>{{ model.title }}</span>
               <Check v-if="selectedModel === model.value" class="ml-auto h-4 w-4" />
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup v-if="hasCustomModels" heading="Custom Models">
+            <CommandItem
+              v-for="model in modelStore.customModels"
+              :key="model.id"
+              :value="model.id"
+              @select="handleModelSelect(model.id)"
+              class="flex cursor-pointer items-center gap-2"
+            >
+              <component :is="providerIcons[model.provider] || openai" class="h-5 w-5" />
+              <span>{{ model.name }}</span>
+              <Check v-if="selectedModel === model.id" class="ml-auto h-4 w-4" />
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading="Settings">
+            <CommandItem
+              value="__settings__"
+              @select="goToSettings"
+              class="flex cursor-pointer items-center gap-2"
+            >
+              <Settings class="h-5 w-5" />
+              <span>Manage Models & API Keys</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>

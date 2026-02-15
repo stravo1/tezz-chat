@@ -52,7 +52,16 @@ const chatInputSchema = z.object({
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
   editedFromId: z.string().optional(),
-  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-3-flash-preview'),
+  model: z.string().default('gemini-3-flash-preview'), // Accept any model string including custom model IDs
+  customModelConfig: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      provider: z.enum(['gemini', 'openrouter', 'openai', 'anthropic']),
+      modelId: z.string(),
+      supportsTools: z.boolean(),
+    })
+    .optional(),
 });
 
 // Types
@@ -250,10 +259,14 @@ export default defineLazyEventHandler(async () => {
       const geminiApiKey = headers['x-gemini-api-key'];
       console.log('========Gemini API Key=========' + geminiApiKey);
       const openRouterApiKey = headers['x-openrouter-api-key'];
+      const openaiApiKey = headers['x-openai-api-key'];
+      const anthropicApiKey = headers['x-anthropic-api-key'];
 
       console.log('API Keys from headers:', {
         hasGeminiKey: !!geminiApiKey,
         hasOpenRouterKey: !!openRouterApiKey,
+        hasOpenAIKey: !!openaiApiKey,
+        hasAnthropicKey: !!anthropicApiKey,
       });
 
       const validation = chatInputSchema.safeParse(body);
@@ -284,10 +297,14 @@ export default defineLazyEventHandler(async () => {
         intent,
         model,
         editedFromId,
+        customModelConfig,
       } = validation.data;
       const modelInstance = getModel(model as ModelType, {
         geminiApiKey: geminiApiKey,
         openRouterApiKey: openRouterApiKey,
+        openaiApiKey: openaiApiKey,
+        anthropicApiKey: anthropicApiKey,
+        customModelConfig: customModelConfig,
       });
       // Preprocess messages to ensure file attachments are properly included in parts
       const processedMessages = messages.map((msg: any) => {

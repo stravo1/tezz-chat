@@ -89,6 +89,18 @@
               </button>
             </div>
           </div>
+
+          <!-- Link to full settings -->
+          <div class="pt-2">
+            <NuxtLink
+              to="/settings"
+              @click="props.closeModal"
+              class="text-primary flex items-center gap-2 text-sm hover:underline"
+            >
+              <Settings2 :size="14" />
+              Manage all API keys & custom models
+            </NuxtLink>
+          </div>
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ const chatId = props.chatId || '';
 
 const messageStore = useMessageStore();
 const intentStore = useIntentStore();
+const modelStore = useModelStore();
 
 if (!chatId) {
   console.warn('No chat ID provided!');
@@ -44,8 +45,16 @@ const getApiHeaders = (model?: string) => {
   const headers: Record<string, string> = {};
   const geminiKey = localStorage.getItem('gemini-api-key');
   const openRouterKey = localStorage.getItem('openrouter-api-key');
+  const openaiKey = localStorage.getItem('openai-api-key');
+  const anthropicKey = localStorage.getItem('anthropic-api-key');
 
-  if (model?.includes('gemini') && geminiKey) {
+  // For custom models, include all available keys
+  if (model?.startsWith('custom-')) {
+    if (geminiKey) headers['x-gemini-api-key'] = geminiKey;
+    if (openRouterKey) headers['x-openrouter-api-key'] = openRouterKey;
+    if (openaiKey) headers['x-openai-api-key'] = openaiKey;
+    if (anthropicKey) headers['x-anthropic-api-key'] = anthropicKey;
+  } else if (model?.includes('gemini') && geminiKey) {
     headers['x-gemini-api-key'] = geminiKey;
   } else if (openRouterKey) {
     headers['x-openrouter-api-key'] = openRouterKey;
@@ -54,8 +63,16 @@ const getApiHeaders = (model?: string) => {
   return headers;
 };
 
+// Get custom model config if selected model is a custom model
+const getCustomModelConfig = (modelId?: string) => {
+  if (!modelId?.startsWith('custom-')) return undefined;
+  const customModel = modelStore.customModels.find((m: any) => m.id === modelId);
+  return customModel || undefined;
+};
+
 const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel?: string) => {
   const isNewChat = !id;
+  const customModelConfig = getCustomModelConfig(selectedModel);
 
   // Send message with files using the new AI SDK pattern
   // Don't await - let it start streaming while we navigate
@@ -69,6 +86,7 @@ const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel
         intent: intentStore.selectedIntent,
         model: selectedModel || 'gemini-3-flash-preview',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        customModelConfig: customModelConfig,
       },
       headers: {
         Authorization: 'Bearer ' + (await userStore.getJWT()),
