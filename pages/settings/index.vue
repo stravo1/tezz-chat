@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-background text-foreground min-h-screen">
+  <div class="bg-background text-foreground min-h-screen w-full">
     <div class="container mx-auto max-w-4xl px-4 py-8">
       <!-- Header -->
       <div class="mb-8 flex items-center justify-between">

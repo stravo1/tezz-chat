@@ -25,6 +25,7 @@ const convertToUIMessages = (messages: any) => {
       id: message.$id,
       role: message.role,
       parts: allParts.length ? allParts : [{ type: 'text', text: message.content || '' }],
+      createdAt: message.createdAt,
     };
   });
 };

@@ -33,12 +33,16 @@ const chat = new Chat<UIMessage>({
 
 const messages = computed(() => chat.messages);
 const status = computed(() => chat.status);
+const lastMessage = computed(() => {
+  const msgs = chat.messages;
+  return msgs.length > 0 ? msgs[msgs.length - 1] : null;
+});
 
 const setMessages = (newMessages: UIMessage[]) => {
   chat.messages = newMessages;
 };
 
-const reload = (options?: ChatRequestOptions) => chat.regenerate(options);
+const reload = (options?: { messageId?: string } & ChatRequestOptions) => chat.regenerate(options);
 const stop = () => chat.stop();
 
 const getApiHeaders = (model?: string) => {
@@ -155,9 +159,13 @@ onMounted(() => {
   }
 });
 
-const haventGottenFirstChunk = computed(() => {
-  return status.value == 'submitted';
-});
+const haventGottenFirstChunk = computed(
+  () =>
+    status.value === 'submitted' ||
+    (status.value === 'streaming' &&
+      lastMessage?.value?.role === 'assistant' &&
+      lastMessage?.value?.parts?.length === 0)
+);
 </script>
 
 <template>

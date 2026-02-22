@@ -27,7 +27,7 @@ const props = defineProps<{
   messages: ExtendedUIMessage[];
   haventGottenFirstChunk?: boolean;
   setMessages: (messages: ExtendedUIMessage[]) => void;
-  reload: (chatRequestOptions?: ChatRequestOptions) => Promise<void>;
+  reload: (options?: { messageId?: string } & ChatRequestOptions) => Promise<void>;
   status: string;
   isPublic?: boolean;
   scrollToBottom: () => void;
@@ -184,6 +184,7 @@ const handleEdit = async (createdAt: any, content?: string) => {
       Authorization: 'Bearer ' + (await userStore.getJWT()),
       ...getApiHeaders(modelStore.selectedModel),
     },
+    messageId: filteredMessages[filteredMessages.length - 1].id,
   });
 };
 
@@ -342,12 +343,14 @@ console.log('Messages:', props.messages);
                 () => {
                   handleEdit(message.createdAt, contentBeingEdited);
                   isBeingEdited = false;
+                  contentBeingEdited = '';
                   timeStampOfMessageBeingEdited = null;
                 }
               "
               :handle-discard="
                 () => {
                   isBeingEdited = false;
+                  contentBeingEdited = '';
                   timeStampOfMessageBeingEdited = null;
                 }
               "

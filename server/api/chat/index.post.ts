@@ -47,7 +47,7 @@ const chatInputSchema = z.object({
     .min(1, 'At least one message is required'),
   id: z.string().optional(),
   deviceId: z.string().optional(),
-  timezone: z.string(),
+  timezone: z.string().optional(),
   intent: z.enum(['text', 'image', 'search']).default('text'),
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
@@ -243,8 +243,11 @@ export default defineLazyEventHandler(async () => {
 
   return defineEventHandler(async event => {
     try {
+      console.log('Received chat request');
       const { databases } = createJWTClient(event);
+      console.log('Databases client created successfully');
       const userId = event.context.session?.userId;
+      console.log('User ID from session:', userId);
       console.log({ event });
 
       if (!userId) {
@@ -252,7 +255,7 @@ export default defineLazyEventHandler(async () => {
       }
 
       const body = await readBody(event);
-      // console.log('Received body:', body);
+      console.log('Received body:', body);
 
       // Get API keys from headers if provided
       const headers = getRequestHeaders(event);
