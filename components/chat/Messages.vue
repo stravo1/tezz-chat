@@ -77,20 +77,6 @@ const handleMessagePrint = (messageId: string) => {
   handlePrint();
 };
 
-const getApiHeaders = (model?: string) => {
-  const headers: Record<string, string> = {};
-  const geminiKey = localStorage.getItem('gemini-api-key');
-  const openRouterKey = localStorage.getItem('openrouter-api-key');
-
-  if (model?.includes('gemini') && geminiKey) {
-    headers['x-gemini-api-key'] = geminiKey;
-  } else if (openRouterKey) {
-    headers['x-openrouter-api-key'] = openRouterKey;
-  }
-
-  return headers;
-};
-
 const handleBranch = async (id: string, createdAt: any) => {
   loadingStore.setLoading(true);
   loadingStore.setLoadingMessage('Branching chat...');
@@ -156,6 +142,8 @@ const handleEdit = async (createdAt: any, content?: string) => {
   }
   props.setMessages?.(filteredMessages);
   console.log('Filtered messages for branching:', filteredMessages);
+  // Auth headers are handled by the DefaultChatTransport.prepareSendMessagesRequest
+  // Only pass the edit metadata in the body
   props.reload?.({
     body: {
       isEdited: true,
@@ -163,10 +151,6 @@ const handleEdit = async (createdAt: any, content?: string) => {
       editedFromId: filteredMessages[filteredMessages.length - 1].id,
       intent: intentStore.selectedIntent,
       model: modelStore.selectedModel,
-    },
-    headers: {
-      Authorization: 'Bearer ' + (await userStore.getJWT()),
-      ...getApiHeaders(modelStore.selectedModel),
     },
   });
 };

@@ -57,7 +57,11 @@ const handleScrollToMessage = (messageId: string) => {
           >
             <div class="flex items-center justify-between gap-2">
               <div class="text-foreground/70 line-clamp-1 text-base">
-                {{ message.content.split('.')[0] }}
+                {{
+                  (message.parts?.find((p: any) => p.type === 'text') as any)?.text?.split(
+                    '.'
+                  )[0] || ''
+                }}
               </div>
               <div class="text-foreground/30">
                 <Bot v-if="message.role != 'user'" class="inline h-5 w-5" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Chat } from '@ai-sdk/vue';
+import { DefaultChatTransport } from 'ai';
 import type { ChatRequestOptions, UIMessage, FileUIPart } from 'ai';
 import { ID } from 'appwrite';
 
@@ -16,15 +17,51 @@ const chatId = props.chatId || '';
 
 const messageStore = useMessageStore();
 const intentStore = useIntentStore();
+const modelStore = useModelStore();
 
 if (!chatId) {
   console.warn('No chat ID provided!');
 }
 if (!props.isPublic) await userStore.getJWT();
+
+const getApiHeaders = (model?: string): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  const geminiKey = localStorage.getItem('gemini-api-key');
+  const openRouterKey = localStorage.getItem('openrouter-api-key');
+
+  if (model?.includes('gemini') && geminiKey) {
+    headers['x-gemini-api-key'] = geminiKey;
+  } else if (openRouterKey) {
+    headers['x-openrouter-api-key'] = openRouterKey;
+  }
+
+  return headers;
+};
+
 const chat = new Chat<UIMessage>({
   id: chatId,
   messages: props.initialMessages || [],
   generateId: () => ID.unique(),
+  transport: new DefaultChatTransport({
+    api: '/api/chat',
+    prepareSendMessagesRequest: async ({ messages, body, headers, trigger, messageId }) => {
+      const jwt = await userStore.getJWT();
+      const currentModel = modelStore.selectedModel || 'gemini-3-flash-preview';
+      return {
+        body: {
+          ...body,
+          intent: intentStore.selectedIntent,
+          model: currentModel,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        headers: {
+          ...(headers as Record<string, string>),
+          Authorization: `Bearer ${jwt}`,
+          ...getApiHeaders(currentModel),
+        },
+      };
+    },
+  }),
   onError: (err: Error) => {
     console.error('Chat error:', err);
   },
@@ -40,42 +77,20 @@ const setMessages = (newMessages: UIMessage[]) => {
 const reload = (options?: ChatRequestOptions) => chat.regenerate(options);
 const stop = () => chat.stop();
 
-const getApiHeaders = (model?: string) => {
-  const headers: Record<string, string> = {};
-  const geminiKey = localStorage.getItem('gemini-api-key');
-  const openRouterKey = localStorage.getItem('openrouter-api-key');
-
-  if (model?.includes('gemini') && geminiKey) {
-    headers['x-gemini-api-key'] = geminiKey;
-  } else if (openRouterKey) {
-    headers['x-openrouter-api-key'] = openRouterKey;
-  }
-
-  return headers;
-};
-
 const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel?: string) => {
   const isNewChat = !id;
 
-  // Send message with files using the new AI SDK pattern
+  // Update model in store if provided so prepareSendMessagesRequest picks it up
+  if (selectedModel) {
+    modelStore.selectedModel = selectedModel;
+  }
+
+  // Send message with files using the new AI SDK v6 pattern.
   // Don't await - let it start streaming while we navigate
-  const sendPromise = chat.sendMessage(
-    {
-      text: message,
-      files: files,
-    },
-    {
-      body: {
-        intent: intentStore.selectedIntent,
-        model: selectedModel || 'gemini-3-flash-preview',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      headers: {
-        Authorization: 'Bearer ' + (await userStore.getJWT()),
-        ...getApiHeaders(selectedModel),
-      },
-    }
-  );
+  const sendPromise = chat.sendMessage({
+    text: message,
+    files: files,
+  });
 
   // For new chats, navigate after a small delay to ensure message is added to chat state
   if (isNewChat) {

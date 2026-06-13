@@ -1,5 +1,13 @@
 import { defineLazyEventHandler } from 'h3';
-import { streamText, smoothStream, tool, stepCountIs, convertToModelMessages, UIMessage } from 'ai';
+import {
+  streamText,
+  smoothStream,
+  tool,
+  stepCountIs,
+  convertToModelMessages,
+  type UIMessage,
+  type GeneratedFile,
+} from 'ai';
 import { z } from 'zod';
 import { Databases, ID, Permission, Role } from 'node-appwrite';
 import { createJWTClient } from '~/server/appwrite/config';
@@ -423,28 +431,28 @@ export default defineLazyEventHandler(async () => {
           },
           onFinish: async event => {
             console.log('Image generation finished:', event.response.messages);
-            if (event.text && userId && chatSession) {
+            if (userId && chatSession) {
               try {
                 // Check if the response contains image data
-                const imageData = event.files?.[0] as
-                  | { base64: string; mimeType?: string; mediaType?: string }
-                  | undefined;
-                const imageMimeType = imageData?.mimeType || imageData?.mediaType || 'image/png';
+                const imageData = event.files?.[0] as GeneratedFile | undefined;
+                const imageMimeType = imageData?.mediaType || 'image/png';
+                const textContent = event.text || '';
                 const messageData: ChatMessage = {
                   role: 'assistant',
-                  content: event.text,
+                  content: textContent,
                   parts: imageData
                     ? [
+                        ...(textContent ? [{ type: 'text' as const, text: textContent }] : []),
                         {
-                          type: 'text',
-                          text: event.text,
+                          type: 'file' as const,
+                          mediaType: imageMimeType,
+                          url: `data:${imageMimeType};base64,${imageData.base64}`,
                         },
-                        { type: 'file', mimeType: imageMimeType, data: imageData.base64 },
                       ]
                     : [
                         {
-                          type: 'text',
-                          text: event.text,
+                          type: 'text' as const,
+                          text: textContent,
                         },
                       ],
                 };
@@ -652,8 +660,8 @@ export default defineLazyEventHandler(async () => {
           }
         },
         onFinish: async event => {
-          if (event.text && userId && chatSession) {
-            console.log('AI response:', event, event.response);
+          if (userId && chatSession) {
+            console.log('AI response finished, text length:', event.text?.length);
             // Handle message editing after AI response
             if (isEditOperation && editedFrom && chatId && editedFromId) {
               await handleAfterEditDeletion(
@@ -666,31 +674,44 @@ export default defineLazyEventHandler(async () => {
               console.log('Handled message editing and deletion successfully');
             }
 
-            const assistantResponseMessage = event.response.messages.find(
-              msg => msg.role === 'assistant'
-            );
-
             try {
+              // Build assistant message parts from the step content
+              // event.content is ContentPart[] containing text, reasoning, tool-call parts
+              const assistantParts: Array<{ type: string; [key: string]: any }> = [];
+              for (const part of event.content) {
+                if (part.type === 'text') {
+                  assistantParts.push({ type: 'text', text: part.text });
+                } else if (part.type === 'reasoning') {
+                  assistantParts.push({ type: 'reasoning', text: part.text });
+                } else if (part.type === 'tool-call') {
+                  assistantParts.push({
+                    type: 'tool-call',
+                    toolCallId: part.toolCallId,
+                    toolName: part.toolName,
+                    input: part.input,
+                  });
+                }
+              }
+
               const messageData: ChatMessage = {
                 role: 'assistant',
                 content: event.text,
-                parts: Array.isArray(assistantResponseMessage?.content)
-                  ? assistantResponseMessage.content
-                  : [{ type: 'text', text: event.text }],
+                parts:
+                  assistantParts.length > 0 ? assistantParts : [{ type: 'text', text: event.text }],
               };
 
-              // Create assistant message and update chat document in parallel
-              (await createMessageDocument(
+              // Create assistant message and update chat document
+              await createMessageDocument(
                 databases,
                 chatSession.$id,
                 messageData,
                 userId,
                 'assistant',
                 null
-              ),
-                await updateChatDocument(databases, chatSession.$id, {
-                  lastModifiedBy: 'assistant',
-                }));
+              );
+              await updateChatDocument(databases, chatSession.$id, {
+                lastModifiedBy: 'assistant',
+              });
             } catch (error) {
               console.error('Error creating assistant message:', error);
             }

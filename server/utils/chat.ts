@@ -1,4 +1,4 @@
-import { generateText, Output, UIMessage } from 'ai';
+import { generateText, Output, type UIMessage } from 'ai';
 import { z } from 'zod';
 import Cerebras from '@cerebras/cerebras_cloud_sdk';
 
