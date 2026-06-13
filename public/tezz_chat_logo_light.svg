@@ -1,0 +1,11 @@
+<svg width="100%" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Tezz Chat logo mark</title>
+  <desc>
+    Minimal logomark for Tezz Chat: a rounded square tile with a stylised Signal Coral
+    lightning-bolt slash made of two stacked parallelogram bars.
+  </desc>
+
+  <rect x="140" y="140" width="400" height="400" rx="88" fill="#f1e6e3"/>
+  <polygon points="255,220 385,220 355,290 225,290" fill="#ff6f67"/>
+  <polygon points="295,320 425,320 395,460 265,460" fill="#ff6f67"/>
+</svg>

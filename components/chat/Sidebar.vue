@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useDark } from '@vueuse/core';
 import { useUserStore } from '~/stores/user';
 import { getThreads } from '~/utils/database/queries';
 import type { RxDocument, RxQuery } from 'rxdb';
@@ -41,6 +42,15 @@ const allChats = ref(
 const searchQuery = ref('');
 const isLoading = ref(false);
 const loadingMessage = ref('');
+const isDark = useDark({
+  selector: 'html',
+  attribute: 'class',
+  valueDark: 'dark',
+  valueLight: 'light',
+});
+const brandLogoSrc = computed(() =>
+  isDark.value ? '/tezz_chat_logo.svg' : '/tezz_chat_logo_light.svg'
+);
 
 // Rename modal state
 const isRenameModalOpen = ref(false);
@@ -286,8 +296,9 @@ watch(isAuthenticated, authenticated => {
 <template>
   <Sidebar class="!border-r-[0px]">
     <SidebarHeader class="border-border border-b">
-      <div class="flex w-full items-center justify-center py-2">
-        <h1 class="syne text-2xl font-black">tezz ⚡</h1>
+      <div class="flex w-full items-center justify-center gap-2 py-2">
+        <h1 class="syne text-2xl font-black">tezz</h1>
+        <img :src="brandLogoSrc" alt="Tezz Chat" class="h-9 w-9" />
       </div>
     </SidebarHeader>
 
