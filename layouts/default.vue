@@ -1,5 +1,5 @@
 <template>
-  <main class="h-[100dvh] w-screen">
+  <main class="min-h-[100dvh] w-screen">
     <NuxtPage />
   </main>
 </template>
