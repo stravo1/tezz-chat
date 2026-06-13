@@ -3,8 +3,9 @@ const userStore = useUserStore();
 const authError = ref('');
 const activeProvider = ref<'github' | 'google' | null>(null);
 const lastAttemptedProvider = ref<'github' | 'google' | null>(null);
+const isGuestLoading = ref(false);
 
-const isSubmitting = computed(() => activeProvider.value !== null);
+const isSubmitting = computed(() => activeProvider.value !== null || isGuestLoading.value);
 
 const providerLabels: Record<'github' | 'google', string> = {
   github: 'GitHub',
@@ -12,15 +13,22 @@ const providerLabels: Record<'github' | 'google', string> = {
 };
 
 onMounted(async () => {
-  if (userStore.isAuthChecked && userStore.isAuthenticated) {
+  // If already checked and authenticated as a real (non-guest) user, skip the page.
+  if (userStore.isAuthChecked && userStore.isAuthenticated && !userStore.isGuest) {
     navigateTo('/chat/');
     return;
   }
   if (!userStore.isAuthChecked) {
     await userStore.fetchUser();
-    if (userStore.isAuthenticated) {
+    // Only auto-redirect real users — guests should be allowed to sign in.
+    if (userStore.isAuthenticated && !userStore.isGuest) {
       navigateTo('/chat/');
     }
+  }
+  // If the user arriving here is a guest, delete their anonymous session
+  // so OAuth can create a fresh real session without conflicts.
+  if (userStore.isGuest) {
+    await userStore.logOut();
   }
 });
 
@@ -85,6 +93,21 @@ const loginWithGoogle = async () => {
 const retryLogin = async () => {
   if (!lastAttemptedProvider.value) return;
   await loginWithProvider(lastAttemptedProvider.value);
+};
+
+const loginAsGuest = async () => {
+  if (isSubmitting.value) return;
+  authError.value = '';
+  isGuestLoading.value = true;
+  try {
+    await userStore.createGuestSession();
+    await navigateTo('/chat/');
+  } catch (error) {
+    console.error('Failed to create guest session:', error);
+    authError.value = 'Could not start a guest session. Please try again.';
+  } finally {
+    isGuestLoading.value = false;
+  }
 };
 </script>
 
@@ -177,11 +200,66 @@ const retryLogin = async () => {
           </button>
         </div>
 
-        <p class="text-muted-foreground mt-4 text-center text-xs" aria-live="polite">
+        <!-- Guest login divider -->
+        <div class="flex items-center gap-3 py-1" aria-hidden="true">
+          <span class="bg-border/60 h-px flex-1"></span>
+          <span class="text-muted-foreground text-xs">or</span>
+          <span class="bg-border/60 h-px flex-1"></span>
+        </div>
+
+        <!-- Guest login button -->
+        <button
+          @click="loginAsGuest"
+          :disabled="isSubmitting"
+          type="button"
+          class="border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring/50 inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2.5 rounded-lg border px-4 text-sm font-medium transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <svg
+            v-if="!isGuestLoading"
+            class="size-4 shrink-0 opacity-60"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="1.75"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+            />
+          </svg>
+          <svg
+            v-else
+            class="size-4 shrink-0 animate-spin"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          <span>{{ isGuestLoading ? 'Starting guest session...' : 'Continue as Guest' }}</span>
+        </button>
+
+        <p class="text-muted-foreground mt-3 text-center text-xs" aria-live="polite">
           {{
-            isSubmitting
-              ? 'Redirecting to provider...'
-              : 'Secure OAuth redirect, no password stored.'
+            isGuestLoading
+              ? 'Setting up temporary session...'
+              : isSubmitting
+                ? 'Redirecting to provider...'
+                : 'Secure OAuth redirect, no password stored.'
           }}
         </p>
 

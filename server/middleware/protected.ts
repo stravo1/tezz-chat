@@ -8,6 +8,8 @@ export interface SessionContext {
   email: string;
   name: string;
   isAuthenticated: boolean;
+  isGuest: boolean;
+  isTemporaryChat: boolean;
 }
 
 // Define routes that require authentication
@@ -20,6 +22,8 @@ export default defineEventHandler(async event => {
     email: '',
     name: '',
     isAuthenticated: false,
+    isGuest: false,
+    isTemporaryChat: false,
   } as SessionContext;
 
   // Skip for auth routes
@@ -44,12 +48,19 @@ export default defineEventHandler(async event => {
       // Get current user session
       const user: Models.User<Models.Preferences> = await account.get();
 
+      // Appwrite anonymous users have an empty email
+      const isGuest = !user.email;
+      // Check for temporary chat flag in request headers
+      const isTemporaryChat = getHeader(event, 'x-temporary-chat') === 'true';
+
       // Update session context with user data
       event.context.session = {
         userId: user.$id,
         email: user.email,
         name: user.name,
         isAuthenticated: true,
+        isGuest,
+        isTemporaryChat,
       } as SessionContext;
     } catch (error) {
       console.error('Session verification error:', error);

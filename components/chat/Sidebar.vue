@@ -31,7 +31,7 @@ const emit = defineEmits<{
 const route = useRoute();
 const userStore = useUserStore();
 const loadingStore = useLoadingStore();
-const { isAuthenticated } = storeToRefs(userStore);
+const { isAuthenticated, isGuest } = storeToRefs(userStore);
 
 const arrayOfChats = ref(
   [] as { id: string; title: string; isBranched: boolean; visibility?: string; createdAt: string }[]
@@ -268,7 +268,7 @@ const startNewChat = () => {
 
 // Lifecycle
 onMounted(() => {
-  if (isAuthenticated.value) {
+  if (isAuthenticated.value && !isGuest.value) {
     loadChats();
   }
 });
@@ -287,7 +287,7 @@ watch(
 );
 
 watch(isAuthenticated, authenticated => {
-  if (authenticated) {
+  if (authenticated && !isGuest.value) {
     loadChats();
   }
 });
@@ -337,7 +337,55 @@ watch(isAuthenticated, authenticated => {
       <!-- Chat List -->
       <SidebarGroup class="h-[80vh] overflow-auto">
         <SidebarGroupContent>
-          <SidebarMenu>
+          <!-- Guest: no history, show sign-in prompt -->
+          <div v-if="isGuest" class="flex flex-col items-center gap-3 px-2 py-8 text-center">
+            <div
+              class="border-border/60 bg-muted/40 flex size-10 items-center justify-center rounded-full border"
+            >
+              <svg
+                class="text-muted-foreground size-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-foreground text-sm font-medium">Browsing as Guest</p>
+              <p class="text-muted-foreground mt-1 text-xs leading-relaxed">
+                Chats aren't saved.<br />Sign in to keep your history.
+              </p>
+            </div>
+            <NuxtLink
+              to="/auth"
+              class="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring/50 mt-1 inline-flex h-8 items-center gap-1.5 rounded-md px-4 text-xs font-medium transition-all outline-none focus-visible:ring-[3px]"
+            >
+              Sign in
+              <svg
+                class="size-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+                />
+              </svg>
+            </NuxtLink>
+          </div>
+
+          <SidebarMenu v-else>
             <ChatSection
               title="Today"
               :chats="filteredChats.today"
@@ -389,7 +437,8 @@ watch(isAuthenticated, authenticated => {
 
     <SidebarFooter>
       <div class="text-muted-foreground relative p-2 text-center text-xs">
-        {{ totalChatCount }} chat{{ totalChatCount !== 1 ? 's' : '' }}
+        <span v-if="isGuest" class="text-muted-foreground/70 italic">Guest session</span>
+        <span v-else>{{ totalChatCount }} chat{{ totalChatCount !== 1 ? 's' : '' }}</span>
         <button
           @click="emit('openSettings')"
           class="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"

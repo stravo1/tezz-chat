@@ -54,84 +54,123 @@
             class="bg-background relative box-border flex h-full w-full justify-center overflow-hidden rounded-lg px-2 pt-16 lg:px-4 lg:pt-20"
           >
             <!-- Top right controls -->
-            <div class="absolute top-4 right-4 z-30 flex gap-2">
-              <div class="hidden items-center gap-2 lg:flex">
-                <Tooltip v-if="visibilityRef != 'na'" :delayDuration="300">
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      @click="share()"
-                      class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
+            <div class="absolute top-4 right-4 z-30 flex items-center gap-2">
+              <!-- Guest badge (all viewports) -->
+              <Tooltip v-if="isGuest" :delayDuration="300">
+                <TooltipTrigger asChild>
+                  <NuxtLink
+                    to="/auth"
+                    class="border-border/70 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 bg-background inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all outline-none focus-visible:ring-[3px]"
+                  >
+                    <svg
+                      class="size-3.5 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      aria-hidden="true"
                     >
-                      <Share2 v-if="visibilityRef == 'private'" />
-                      <EyeOff v-if="visibilityRef == 'public'" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p v-if="visibilityRef == 'private'">Share Chat</p>
-                    <p v-else>Make Chat Private</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip v-if="visibilityRef == 'public'" :delayDuration="300">
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      @click="copy()"
-                      class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
-                    >
-                      <Link2 />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>Copy Link</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip :delayDuration="300" v-if="visibilityRef != 'na'">
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      class="text-foreground hover:!bg-accent border-border/70 flex cursor-pointer rounded border p-2 transition-all"
-                      @click="isChatNavigatorOpen = true"
-                    >
-                      <ListTree />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>Chat Navigator</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div class="flex items-center gap-2 lg:hidden" v-if="visibilityRef != 'na'">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  class="text-foreground hover:!bg-accent border-border/70 flex h-6 w-6 cursor-pointer rounded border p-0 transition-all"
-                  @click="isChatNavigatorOpen = true"
-                >
-                  <ListTree class="h-3 w-3" />
-                </Button>
-                <DropdownMenu v-model:open="isMobileChatOptionMenuOpen">
-                  <DropdownMenuTrigger as-child>
-                    <Button variant="outline" size="sm" class="h-6 w-6 p-0" @click.prevent>
-                      <MoreHorizontal class="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" class="border-border/50 lg:border-border w-48">
-                    <DropdownMenuItem v-if="visibilityRef == 'public'" @click="copy()">
-                      <Link2 class="mr-2 h-4 w-4" />
-                      Share Link
-                    </DropdownMenuItem>
-                    <DropdownMenuItem @click="share()">
-                      <Share2 v-if="visibilityRef == 'private'" class="mr-2 h-4 w-4" />
-                      <EyeOff v-if="visibilityRef == 'public'" class="mr-2 h-4 w-4" />
-                      {{ visibilityRef == 'private' ? 'Share Chat' : 'Make Chat Private' }}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                      />
+                    </svg>
+                    <span class="hidden sm:inline">Guest</span>
+                  </NuxtLink>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" class="text-xs">
+                  Sign in to save chats and access history
+                </TooltipContent>
+              </Tooltip>
+
+              <!-- Temporary chat toggle: only on new chats (no chat started yet), non-guests, desktop -->
+              <ChatTemporaryChatToggle
+                v-if="!isGuest && visibilityRef === 'na'"
+                class="hidden lg:inline-flex"
+              />
+
+              <!-- Chat-specific actions: only when inside an existing saved chat -->
+              <template v-if="visibilityRef !== 'na'">
+                <!-- Desktop -->
+                <div class="hidden items-center gap-2 lg:flex">
+                  <!-- Chat Navigator -->
+                  <Tooltip :delayDuration="300">
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        class="text-foreground hover:!bg-accent border-border/70 size-8 cursor-pointer transition-all"
+                        @click="isChatNavigatorOpen = true"
+                      >
+                        <ListTree class="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Chat Navigator</TooltipContent>
+                  </Tooltip>
+
+                  <!-- Share / Copy dropdown — plain DropdownMenu, no nested Tooltip on trigger -->
+                  <DropdownMenu v-model:open="isDesktopChatMenuOpen">
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        class="text-foreground hover:!bg-accent border-border/70 size-8 cursor-pointer transition-all"
+                        aria-label="Chat options"
+                      >
+                        <MoreHorizontal class="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="border-border/60 w-52">
+                      <DropdownMenuItem @click="share()">
+                        <Share2 v-if="visibilityRef === 'private'" class="mr-2 size-4" />
+                        <EyeOff v-if="visibilityRef === 'public'" class="mr-2 size-4" />
+                        {{ visibilityRef === 'private' ? 'Share chat' : 'Make private' }}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="visibilityRef === 'public'" @click="copy()">
+                        <Link2 class="mr-2 size-4" />
+                        Copy share link
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <!-- Mobile: Chat Navigator + options dropdown -->
+                <div class="flex items-center gap-1.5 lg:hidden">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    class="text-foreground hover:!bg-accent border-border/70 size-7 cursor-pointer transition-all"
+                    @click="isChatNavigatorOpen = true"
+                    aria-label="Chat Navigator"
+                  >
+                    <ListTree class="size-3.5" />
+                  </Button>
+                  <DropdownMenu v-model:open="isMobileChatOptionMenuOpen">
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        class="text-foreground hover:!bg-accent border-border/70 size-7 cursor-pointer transition-all"
+                        aria-label="Chat options"
+                      >
+                        <MoreHorizontal class="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="border-border/60 w-52">
+                      <DropdownMenuItem @click="share()">
+                        <Share2 v-if="visibilityRef === 'private'" class="mr-2 size-4" />
+                        <EyeOff v-if="visibilityRef === 'public'" class="mr-2 size-4" />
+                        {{ visibilityRef === 'private' ? 'Share chat' : 'Make private' }}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="visibilityRef === 'public'" @click="copy()">
+                        <Link2 class="mr-2 size-4" />
+                        Copy share link
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </template>
             </div>
             <!-- <div
             class="from-background to-background/0 absolute top-0 left-0 z-10 h-[20vh] w-full bg-gradient-to-b"
@@ -208,7 +247,13 @@ const route = useRoute();
 const userStore = useUserStore();
 const loadingStore = useLoadingStore();
 const isMobile = useMediaQuery('(max-width: 768px)');
-const { isAuthenticated, isAuthChecked, isLoading: isUserStateLoading } = storeToRefs(userStore);
+const {
+  isAuthenticated,
+  isAuthChecked,
+  isLoading: isUserStateLoading,
+  isGuest,
+} = storeToRefs(userStore);
+const isUserLoading = isUserStateLoading; // alias for clarity in the auth watcher
 const layoutLoading = ref(true);
 
 const pageTitle = ref('New Chat');
@@ -230,6 +275,7 @@ const isSearchModalOpen = ref(false);
 const isSettingsModalOpen = ref(false);
 const settingsInitialProvider = ref<string | null>(null);
 const isMobileChatOptionMenuOpen = ref(false);
+const isDesktopChatMenuOpen = ref(false);
 const isChatNavigatorOpen = ref(false);
 const loadingMessage = ref('');
 
@@ -263,6 +309,11 @@ onMounted(async () => {
     console.warn('User is not authenticated, redirecting to auth page');
     navigateTo('/auth');
     return;
+  }
+
+  // Guests see the chat UI but with the sidebar closed (no history)
+  if (isGuest.value) {
+    isSidebarOpen.value = false;
   }
 
   layoutLoading.value = false;
@@ -303,7 +354,10 @@ const changeTitle = async (newId: string) => {
 };
 
 watch([isAuthenticated, isAuthChecked], async ([authenticated, checked]) => {
-  if (checked && !authenticated) {
+  // Only redirect when auth check is done, user is definitely not authenticated,
+  // AND we are not currently in the middle of a loading/transition (e.g. logOut
+  // called from auth page clears the guest session briefly).
+  if (checked && !authenticated && !isUserLoading.value) {
     console.warn('User is not authenticated, redirecting to auth page');
     try {
       await navigateTo('/auth');
@@ -402,18 +456,6 @@ const share = async () => {
     isLoading.value = false;
   }
 };
-
-watch([isAuthenticated, isAuthChecked], async ([authenticated, checked]) => {
-  if (checked && !authenticated) {
-    console.warn('User is not authenticated, redirecting to auth page');
-    try {
-      await navigateTo('/auth');
-      console.log('Redirected to auth page');
-    } catch (error) {
-      console.error('Error navigating to auth page:', error);
-    }
-  }
-});
 
 watch(
   () => route.params.id,

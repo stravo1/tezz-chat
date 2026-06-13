@@ -17,6 +17,7 @@ export interface OnFinishContext {
   chatId?: string;
   editedFromId?: string;
   lastMessage: UIMessage;
+  skipPersistence?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export const createOnFinishHandler =
     } = ctx;
 
     if (!userId || !chatSession) return;
+    if (ctx.skipPersistence) return; // Guest or temporary chat — skip all DB writes
 
     try {
       if (isEditOperation && chatId && editedFromId) {

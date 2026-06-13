@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { Chat } from '@ai-sdk/vue';
+import { storeToRefs } from 'pinia';
 import { DefaultChatTransport } from 'ai';
 import type { ChatRequestOptions, UIMessage, FileUIPart } from 'ai';
 import { ID } from 'appwrite';
 import { PROVIDERS, DEFAULT_MODEL_ID, parseCatalogId } from '~/shared/models/providers';
 
 const userStore = useUserStore();
+const { isGuest, isTemporaryChat } = storeToRefs(userStore);
+const skipPersistence = computed(() => isGuest.value || isTemporaryChat.value);
+
 const props = defineProps<{
   chatId: string;
   initialMessages?: UIMessage[];
@@ -23,7 +27,8 @@ const modelStore = useModelStore();
 if (!chatId) {
   console.warn('No chat ID provided!');
 }
-if (!props.isPublic) await userStore.getJWT();
+if (!props.isPublic && !skipPersistence.value) await userStore.getJWT();
+if (!props.isPublic && skipPersistence.value) await userStore.getJWT().catch(() => {});
 
 /**
  * Forward only the BYOK key the selected model actually needs. Falls back to
@@ -82,6 +87,7 @@ const chat = new Chat<UIMessage>({
         headers: {
           ...(headers as Record<string, string>),
           Authorization: `Bearer ${jwt}`,
+          ...(skipPersistence.value ? { 'x-temporary-chat': 'true' } : {}),
           ...getApiHeaders(currentModel),
         },
       };
@@ -118,7 +124,8 @@ const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel
   });
 
   // For new chats, navigate after the initial response has been persisted.
-  if (isNewChat) {
+  // Skip navigation for guests/temporary chats — no DB record created.
+  if (isNewChat && !skipPersistence.value) {
     await navigateTo(`/chat/${chatId}`, { replace: true });
     console.log('New chat created with ID:', chatId);
   }
@@ -136,12 +143,10 @@ const scrollToBottom = () => {
 watch(
   messages,
   (newMessages: UIMessage[]) => {
-    console.log('Messages updated:', newMessages);
     // @ts-ignore
     messageStore.messages = newMessages;
-    // scrollToBottom();
   },
-  { deep: true }
+  { deep: true, immediate: true }
 );
 
 watch(status, newStatus => {
@@ -154,9 +159,11 @@ onMounted(() => {
   if (messageStore.isBranched) {
     console.log('Chat has been branched, setting messages from store');
     // @ts-ignore
-    setMessages(messageStore.messages);
-    messageStore.isBranched = false; // Reset the branched state
-    messageStore.messages = []; // Clear messages in store
+    const branchedMessages = [...messageStore.messages];
+    messageStore.isBranched = false; // Reset the branched flag first
+    messageStore.messages = []; // Clear store before setMessages so the watch repopulates it cleanly
+    // @ts-ignore
+    setMessages(branchedMessages);
   } else {
     if (status.value == 'submitted') {
       return;
@@ -185,7 +192,9 @@ const haventGottenFirstChunk = computed(() => {
       class="text-on-background h-fit pt-[25vh] text-3xl"
       v-if="!messages.length && status != 'submitted'"
     >
-      Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!
+      <span v-if="isGuest">Hello, Guest!</span>
+      <span v-else-if="isTemporaryChat">Temporary chat — nothing will be saved.</span>
+      <span v-else>Hello, {{ userStore.currentUser?.name || 'how can I help?' }}!</span>
     </div>
     <ChatMessages
       v-else

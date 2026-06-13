@@ -12,6 +12,8 @@ interface UserState {
   isAuthenticated: boolean;
   isAuthChecked: boolean;
   isLoading: boolean;
+  isGuest: boolean;
+  isTemporaryChat: boolean;
   jwtToken?: string; // Optional JWT token for authenticated requests
   lastJwtCreatedAt?: number; // Timestamp of the last JWT creation
 }
@@ -22,6 +24,8 @@ export const useUserStore = defineStore('user', {
     isAuthenticated: false,
     isAuthChecked: false,
     isLoading: true,
+    isGuest: false,
+    isTemporaryChat: false,
     jwtToken: undefined, // Initialize as undefined
     lastJwtCreatedAt: undefined, // Initialize as undefined
   }),
@@ -34,12 +38,14 @@ export const useUserStore = defineStore('user', {
         const data = await useAppwrite().account.get();
 
         if (data.$id) {
+          const isAnonymous = !data.email;
           this.currentUser = {
             id: data.$id,
             email: data.email,
-            name: data.name,
+            name: isAnonymous ? 'Guest' : data.name,
           };
           this.isAuthenticated = true;
+          this.isGuest = isAnonymous;
         } else {
           this.currentUser = null;
           this.isAuthenticated = false;
@@ -54,17 +60,35 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    async createGuestSession() {
+      this.isLoading = true;
+      try {
+        const { account } = useAppwrite();
+        const session = await account.createAnonymousSession();
+        this.currentUser = {
+          id: session.userId,
+          email: '',
+          name: 'Guest',
+        };
+        this.isAuthenticated = true;
+        this.isGuest = true;
+        this.isAuthChecked = true;
+      } catch (error) {
+        console.error('Error creating guest session:', error);
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    toggleTemporaryChat() {
+      this.isTemporaryChat = !this.isTemporaryChat;
+    },
+
     async logOut() {
       this.isLoading = true;
       const { account } = useAppwrite();
       try {
-        // try {
-        //   await $fetch('/api/auth/oauth/logout', {
-        //     method: 'POST',
-        //   });
-        // } catch (error) {
-        //   console.error('Error during OAuth logout:', error);
-        // }
         await account.deleteSession('current');
         console.log('Session deleted successfully.');
         this.clearUser();
@@ -100,6 +124,10 @@ export const useUserStore = defineStore('user', {
     clearUser() {
       this.currentUser = null;
       this.isAuthenticated = false;
+      this.isGuest = false;
+      this.isTemporaryChat = false;
+      this.jwtToken = undefined;
+      this.lastJwtCreatedAt = undefined;
     },
   },
 });

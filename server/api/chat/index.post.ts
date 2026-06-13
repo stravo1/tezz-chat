@@ -59,6 +59,9 @@ export default defineLazyEventHandler(async () => {
     try {
       const { databases } = createJWTClient(event) as { databases: Databases };
       const userId = event.context.session?.userId as string | undefined;
+      const isGuest = event.context.session?.isGuest as boolean | undefined;
+      const isTemporaryChat = event.context.session?.isTemporaryChat as boolean | undefined;
+      const skipPersistence = isGuest || isTemporaryChat;
 
       if (!userId) {
         throw createAppError(ErrorCode.UNAUTHORIZED, 'User not authenticated');
@@ -120,15 +123,54 @@ export default defineLazyEventHandler(async () => {
         throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required');
       }
 
-      try {
-        chatSession = (await databases.getDocument(
-          appwriteConfig.databaseId,
-          COLLECTION_NAMES.CHATS,
-          chatId
-        )) as ChatSession;
+      if (skipPersistence) {
+        // Guest or temporary chat: use an in-memory session stub, skip all DB writes
+        chatSession = { $id: chatId } as ChatSession;
+      } else {
+        try {
+          chatSession = (await databases.getDocument(
+            appwriteConfig.databaseId,
+            COLLECTION_NAMES.CHATS,
+            chatId
+          )) as ChatSession;
 
-        // Persist the incoming user message (skip for edits — handled in onFinish)
-        if (lastMessage.role === 'user' && !isEditOperation) {
+          // Persist the incoming user message (skip for edits — handled in onFinish)
+          if (lastMessage.role === 'user' && !isEditOperation) {
+            const userMessage = await createMessageDocument(
+              databases,
+              chatSession.$id,
+              lastMessage,
+              userId,
+              deviceId ?? 'server',
+              lastMessage.id ?? null
+            );
+            if (!userMessage?.$id) throw new Error('Failed to create user message');
+            await updateChatDocument(databases, chatSession.$id, {
+              lastModifiedBy: deviceId ?? 'server',
+            });
+          }
+        } catch (err) {
+          // Chat doesn't exist yet — create it along with the first user message
+          const chatTitle = await generateChatTitle({
+            message: lastMessage,
+            fallbackModel: modelInstance,
+          });
+          const now = createTimestamp();
+
+          chatSession = (await databases.createDocument(
+            appwriteConfig.databaseId,
+            COLLECTION_NAMES.CHATS,
+            chatId,
+            {
+              title: chatTitle,
+              visibility: 'private',
+              lastModifiedBy: deviceId ?? 'server',
+              createdAt: now,
+              updatedAt: now,
+            },
+            createPermissions(userId)
+          )) as ChatSession;
+
           const userMessage = await createMessageDocument(
             databases,
             chatSession.$id,
@@ -138,45 +180,11 @@ export default defineLazyEventHandler(async () => {
             lastMessage.id ?? null
           );
           if (!userMessage?.$id) throw new Error('Failed to create user message');
+
           await updateChatDocument(databases, chatSession.$id, {
             lastModifiedBy: deviceId ?? 'server',
           });
         }
-      } catch (err) {
-        // Chat doesn't exist yet — create it along with the first user message
-        const chatTitle = await generateChatTitle({
-          message: lastMessage,
-          fallbackModel: modelInstance,
-        });
-        const now = createTimestamp();
-
-        chatSession = (await databases.createDocument(
-          appwriteConfig.databaseId,
-          COLLECTION_NAMES.CHATS,
-          chatId,
-          {
-            title: chatTitle,
-            visibility: 'private',
-            lastModifiedBy: deviceId ?? 'server',
-            createdAt: now,
-            updatedAt: now,
-          },
-          createPermissions(userId)
-        )) as ChatSession;
-
-        const userMessage = await createMessageDocument(
-          databases,
-          chatSession.$id,
-          lastMessage,
-          userId,
-          deviceId ?? 'server',
-          lastMessage.id ?? null
-        );
-        if (!userMessage?.$id) throw new Error('Failed to create user message');
-
-        await updateChatDocument(databases, chatSession.$id, {
-          lastModifiedBy: deviceId ?? 'server',
-        });
       }
 
       // ── Shared onFinish context ────────────────────────────────────────────
@@ -189,6 +197,7 @@ export default defineLazyEventHandler(async () => {
         chatId,
         editedFromId,
         lastMessage,
+        skipPersistence: skipPersistence ?? false,
       };
 
       // ── Image generation intent ────────────────────────────────────────────
