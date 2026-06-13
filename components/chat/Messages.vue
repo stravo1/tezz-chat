@@ -47,6 +47,32 @@ const getFileParts = (message: ExtendedUIMessage): FilePart[] => {
   return (message.parts?.filter((p: any) => p.type === 'file') || []) as FilePart[];
 };
 
+// Helper to detect AI SDK v6 tool parts (type starts with "tool-")
+const isToolPart = (part: any): boolean =>
+  typeof part?.type === 'string' && part.type.startsWith('tool-');
+
+// All tool-call parts for a message, in order, for the grouped collapsible.
+const getToolParts = (message: ExtendedUIMessage): any[] =>
+  ((message.parts as any[]) || []).filter(isToolPart);
+
+// Collect search/news result sources from a message's tool parts, flattened in
+// call order, for inline [n] citation linking. Only web_search / news_search
+// contribute to citation numbering (fetch_url is excluded to keep indices aligned).
+const CITATION_TOOL_TYPES = ['tool-web_search', 'tool-news_search'];
+const getCitationSources = (message: ExtendedUIMessage) => {
+  const sources: { title: string; url: string; domain: string; favicon: string }[] = [];
+  for (const part of (message.parts as any[]) || []) {
+    if (!CITATION_TOOL_TYPES.includes(part?.type)) continue;
+    const results = part?.output?.data?.results;
+    if (Array.isArray(results)) {
+      for (const r of results) {
+        sources.push({ title: r.title, url: r.url, domain: r.domain, favicon: r.favicon });
+      }
+    }
+  }
+  return sources;
+};
+
 const messageStore = useMessageStore();
 const userStore = useUserStore();
 const modelStore = useModelStore();
@@ -225,35 +251,46 @@ console.log('Messages:', props.messages);
             rows="2"
           ></textarea>
           <div v-else-if="message.role != 'user'">
-            <div
-              v-for="(part, index) in message.parts"
-              class="mb-2"
-              v-memo="[part, message.id, index]"
-              :ref="el => (messageRefs[message.id] = el)"
-            >
+            <!-- All tool calls for this response grouped under one collapsible -->
+            <ChatToolsToolCalls
+              v-if="getToolParts(message).length"
+              :parts="getToolParts(message) as any"
+            />
+            <template v-for="(part, index) in message.parts" :key="`${message.id}-${index}`">
               <div
-                v-if="part.type == 'reasoning'"
-                v-memo="[message.id, part.text]"
-                class="flex flex-col"
+                v-if="!isToolPart(part)"
+                class="mb-2"
+                v-memo="[part, message.id, index]"
+                :ref="el => (messageRefs[message.id] = el)"
               >
-                <ChatMessageReasoning :id="message.id" :message="part.text" />
+                <div
+                  v-if="part.type == 'reasoning'"
+                  v-memo="[message.id, part.text]"
+                  class="flex flex-col"
+                >
+                  <ChatMessageReasoning :id="message.id" :message="part.text" />
+                </div>
+                <div
+                  v-else-if="part.type == 'text'"
+                  v-memo="[message.id, part.text, getCitationSources(message).length]"
+                >
+                  <ChatMessageMarkdown
+                    v-if="part.text"
+                    :content="part.text"
+                    :id="message.id"
+                    :sources="getCitationSources(message)"
+                    class="markdown-content"
+                  />
+                </div>
+                <div v-else-if="part.type == 'file'">
+                  <img
+                    class="max-h-[240px] max-w-[240px] lg:max-h-[480px] lg:max-w-[480px]"
+                    :src="part.url"
+                    :alt="part.filename || 'Image'"
+                  />
+                </div>
               </div>
-              <div v-else-if="part.type == 'text'" v-memo="[message.id, part.text]">
-                <ChatMessageMarkdown
-                  v-if="part.text"
-                  :content="part.text"
-                  :id="message.id"
-                  class="markdown-content"
-                />
-              </div>
-              <div v-else-if="part.type == 'file'">
-                <img
-                  class="max-h-[240px] max-w-[240px] lg:max-h-[480px] lg:max-w-[480px]"
-                  :src="part.url"
-                  :alt="part.filename || 'Image'"
-                />
-              </div>
-            </div>
+            </template>
           </div>
           <div v-else-if="message.role == 'user'" class="flex flex-col items-end">
             <div v-if="getFileParts(message).length">

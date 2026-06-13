@@ -2,17 +2,9 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { tavily } from '@tavily/core';
 import { TIMEZONE_TO_COUNTRY, getDomain, getFaviconUrl } from './shared';
+import type { SearchResultItem } from './web-search';
 
-export interface SearchResultItem {
-  title: string;
-  url: string;
-  content: string;
-  domain: string;
-  favicon: string;
-  publishedDate?: string;
-}
-
-export interface WebSearchToolOutput {
+export interface NewsSearchToolOutput {
   success: boolean;
   data?: {
     query: string;
@@ -23,7 +15,9 @@ export interface WebSearchToolOutput {
   error?: string;
 }
 
-export const createWebSearchTool = (userTimezone: string) => {
+const TIME_RANGE = ['day', 'week', 'month', 'year'] as const;
+
+export const createNewsSearchTool = (userTimezone: string) => {
   const country = TIMEZONE_TO_COUNTRY[userTimezone] ?? 'united states';
 
   const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY as string });
@@ -32,27 +26,34 @@ export const createWebSearchTool = (userTimezone: string) => {
     {
       query: string;
       num?: number;
-      includeAnswer?: boolean;
+      timeRange?: (typeof TIME_RANGE)[number];
+      days?: number;
     },
-    WebSearchToolOutput
+    NewsSearchToolOutput
   >({
     description:
-      'Search the web for up-to-date information using Tavily. Use this when you need current events, facts, or anything that may have changed recently. The returned results are numbered — cite them inline in your answer as [1], [2], etc., matching the result order.',
+      'Search recent NEWS articles using Tavily. Use this for breaking news, current events, or anything time-sensitive where recency matters. Results are numbered — cite them inline as [1], [2], etc., matching the result order.',
     inputSchema: z.object({
-      query: z.string().describe('The search query to look up on the web.'),
-      num: z.number().optional().describe('Max number of results to return (default: 5, max: 10).'),
-      includeAnswer: z
-        .boolean()
+      query: z.string().describe('The news topic or query to look up.'),
+      num: z.number().optional().describe('Max number of results to return (default: 6, max: 10).'),
+      timeRange: z
+        .enum(TIME_RANGE)
         .optional()
-        .describe('Whether to include a short AI-generated answer summary (default: true).'),
+        .describe('How far back to search for news (default: week).'),
+      days: z
+        .number()
+        .optional()
+        .describe('Alternatively, restrict to news from the last N days (overrides timeRange).'),
     }),
-    execute: async ({ query, num = 5, includeAnswer = true }) => {
+    execute: async ({ query, num = 6, timeRange = 'week', days }) => {
       try {
         const response = await tvly.search(query, {
+          topic: 'news',
           maxResults: Math.min(num, 10),
-          includeAnswer,
+          includeAnswer: true,
           includeFavicon: true,
           country,
+          ...(days ? { days } : { timeRange }),
         });
 
         const results: SearchResultItem[] = response.results.map(r => ({
@@ -74,10 +75,10 @@ export const createWebSearchTool = (userTimezone: string) => {
           },
         };
       } catch (error) {
-        console.error('Tavily search error:', error);
+        console.error('Tavily news search error:', error);
         return {
           success: false,
-          error: 'Failed to perform web search',
+          error: 'Failed to perform news search',
         };
       }
     },

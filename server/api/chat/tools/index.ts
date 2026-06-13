@@ -1,5 +1,7 @@
 import { type ModelType, doesSupportToolCalls } from '~/server/utils/model';
 import { createWebSearchTool } from './web-search';
+import { createNewsSearchTool } from './news-search';
+import { createFetchUrlTool } from './fetch-url';
 
 export interface ToolContext {
   userTimezone: string;
@@ -14,7 +16,9 @@ export const buildTools = (model: ModelType, ctx: ToolContext) => {
 
   return {
     web_search: createWebSearchTool(ctx.userTimezone),
+    news_search: createNewsSearchTool(ctx.userTimezone),
+    fetch_url: createFetchUrlTool(),
   };
 };
 
-export { createWebSearchTool };
+export { createWebSearchTool, createNewsSearchTool, createFetchUrlTool };
