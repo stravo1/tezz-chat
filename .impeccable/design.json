@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-13T00:00:00.000Z",
+  "title": "Design System: Tezz Chat",
+  "extensions": {
+    "colorMeta": {
+      "signal-coral": {
+        "role": "primary",
+        "displayName": "Signal Coral",
+        "canonical": "#ff7770",
+        "tonalRamp": [
+          "#3a0b08",
+          "#6e1913",
+          "#9f291f",
+          "#d64c42",
+          "#ff7770",
+          "#ffa29c",
+          "#ffd0cc",
+          "#fff1ef"
+        ]
+      },
+      "background-light": {
+        "role": "neutral",
+        "displayName": "Warm Shell Light",
+        "canonical": "#fcf8f8",
+        "tonalRamp": [
+          "#241817",
+          "#3c2b29",
+          "#5c4441",
+          "#836663",
+          "#ad918e",
+          "#d5c4c2",
+          "#f8f2f2",
+          "#fcf8f8"
+        ]
+      },
+      "foreground-light": {
+        "role": "neutral",
+        "displayName": "Warm Ink Light",
+        "canonical": "#2e201f",
+        "tonalRamp": [
+          "#120b0b",
+          "#2e201f",
+          "#46312f",
+          "#684c49",
+          "#92716d",
+          "#bea3a0",
+          "#eadad8",
+          "#fff7f6"
+        ]
+      },
+      "surface-light": {
+        "role": "neutral",
+        "displayName": "Panel Rose Light",
+        "canonical": "#f8f2f2",
+        "tonalRamp": [
+          "#1d1413",
+          "#332423",
+          "#543d3a",
+          "#7a5f5b",
+          "#a78a86",
+          "#d0bebc",
+          "#f8f2f2",
+          "#fffafa"
+        ]
+      },
+      "background-dark": {
+        "role": "neutral",
+        "displayName": "Deep Shell Dark",
+        "canonical": "#171211",
+        "tonalRamp": [
+          "#090605",
+          "#171211",
+          "#241b1a",
+          "#352827",
+          "#5a4745",
+          "#8c7470",
+          "#c7b7b4",
+          "#f1eeee"
+        ]
+      },
+      "syntax-iris": {
+        "role": "tertiary",
+        "displayName": "Rose Pine Iris",
+        "canonical": "#c4a7e7",
+        "tonalRamp": [
+          "#1c102e",
+          "#352058",
+          "#563784",
+          "#7854ad",
+          "#9c7ed0",
+          "#c4a7e7",
+          "#e0d0f5",
+          "#f5efff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Syne Wordmark",
+        "purpose": "Brand mark and rare identity moments only."
+      },
+      "body": {
+        "displayName": "Inter/Geist UI Body",
+        "purpose": "Dense chat, settings, model picker, and navigation text."
+      },
+      "label": {
+        "displayName": "Compact UI Label",
+        "purpose": "Counts, status, keyboard hints, provider metadata, and small controls."
+      }
+    },
+    "shadows": [
+      {
+        "name": "low-ambient",
+        "value": "0px 4px 10px 0px hsl(0, 0%, 0% / 0.05), 0px 1px 2px -1px hsl(0, 0%, 0% / 0.05)",
+        "purpose": "Light-mode raised controls and composer edge."
+      },
+      {
+        "name": "dark-ambient",
+        "value": "0px 8px 15px 0px hsl(0, 0%, 0% / 0.4), 0px 1px 2px -1px hsl(0, 0%, 0% / 0.4)",
+        "purpose": "Dark-mode overlays, popovers, and floating controls."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-transition",
+        "value": "150ms-250ms ease-out",
+        "purpose": "Default duration range for hover, focus, open, close, and active-state transitions."
+      },
+      {
+        "name": "overlay-enter",
+        "value": "fade + zoom, 200ms",
+        "purpose": "Dialogs and dropdowns use short state motion from existing animate-in/animate-out utilities."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Signal Coral action button for new chat, send, save, and other primary commitments.",
+      "html": "<button class=\"ds-btn-primary\">New Chat</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0.5rem 1rem; border: 1px solid transparent; border-radius: calc(0.6rem - 2px); background: var(--primary, #ff7770); color: var(--primary-foreground, #fff); font: 500 0.875rem/1.25 Inter, Geist, ui-sans-serif, system-ui; box-shadow: var(--shadow-xs, 0 4px 10px hsl(0 0% 0% / 0.03)); transition: background-color 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out; } .ds-btn-primary:hover { background: color-mix(in srgb, var(--primary, #ff7770) 90%, #000); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #ff7770) 50%, transparent); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Quiet secondary control for toolbar, sidebar, sharing, and navigation actions.",
+      "html": "<button class=\"ds-btn-outline\">Share Chat</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0.5rem 1rem; border: 1px solid var(--border, #e7dbda); border-radius: calc(0.6rem - 2px); background: var(--background, #fcf8f8); color: var(--foreground, #2e201f); font: 500 0.875rem/1.25 Inter, Geist, ui-sans-serif, system-ui; box-shadow: var(--shadow-xs, 0 4px 10px hsl(0 0% 0% / 0.03)); transition: background-color 180ms ease-out, color 180ms ease-out, box-shadow 180ms ease-out; } .ds-btn-outline:hover { background: var(--accent, #fbdcda); color: var(--accent-foreground, #b81d14); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #ff7770) 50%, transparent); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Compact text input for search, settings, provider keys, and dense forms.",
+      "html": "<input class=\"ds-input-field\" placeholder=\"Search all models...\" />",
+      "css": ".ds-input-field { width: 100%; height: 2.25rem; padding: 0.25rem 0.75rem; border: 1px solid var(--input, #e7dbda); border-radius: calc(0.6rem - 2px); background: transparent; color: var(--foreground, #2e201f); font: 400 0.875rem/1.4 Inter, Geist, ui-sans-serif, system-ui; box-shadow: var(--shadow-xs, 0 4px 10px hsl(0 0% 0% / 0.03)); transition: border-color 180ms ease-out, box-shadow 180ms ease-out; } .ds-input-field::placeholder { color: var(--muted-foreground, #705e5c); opacity: 1; } .ds-input-field:focus-visible { outline: none; border-color: var(--ring, #ff7770); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #ff7770) 50%, transparent); }"
+    },
+    {
+      "name": "Chat Composer",
+      "kind": "custom",
+      "refersTo": "chat-composer",
+      "description": "Floating command strip for model selection, attachments, image mode, prompt input, and send/stop.",
+      "html": "<div class=\"ds-chat-composer\"><span class=\"ds-composer-chip\">Gemini</span><span class=\"ds-composer-input\">Ask me anything...</span><button class=\"ds-composer-send\">↑</button></div>",
+      "css": ".ds-chat-composer { display: flex; align-items: center; gap: 0.5rem; max-width: 42rem; padding: 0.5rem; border: 2px solid var(--input, #e7dbda); border-radius: 0.6rem; background: color-mix(in srgb, var(--background, #fcf8f8) 80%, transparent); color: var(--foreground, #2e201f); box-shadow: var(--shadow-xs, 0 4px 10px hsl(0 0% 0% / 0.03)); backdrop-filter: blur(16px); } .ds-composer-chip { border-radius: calc(0.6rem - 2px); background: color-mix(in srgb, var(--secondary, #ebe1e0) 70%, transparent); padding: 0.375rem 0.625rem; font: 400 0.75rem/1.2 Inter, Geist, ui-sans-serif, system-ui; } .ds-composer-input { flex: 1; color: var(--muted-foreground, #705e5c); font: 400 0.875rem/1.4 Inter, Geist, ui-sans-serif, system-ui; } .ds-composer-send { width: 2rem; height: 2rem; border: 1px solid var(--primary, #ff7770); border-radius: calc(0.6rem - 2px); background: var(--primary, #ff7770); color: var(--primary-foreground, #fff); } .ds-composer-send:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #ff7770) 50%, transparent); }"
+    },
+    {
+      "name": "Sidebar Chat Item",
+      "kind": "nav",
+      "refersTo": "sidebar-item",
+      "description": "Dense chat-history row with truncation, active state, and contextual actions.",
+      "html": "<a class=\"ds-sidebar-item ds-sidebar-item-active\"><span>Draft launch plan</span><button>...</button></a>",
+      "css": ".ds-sidebar-item { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-height: 2rem; padding: 0.375rem 0.5rem; border-radius: calc(0.6rem - 2px); color: var(--sidebar-foreground, #5c403d); text-decoration: none; font: 400 0.875rem/1.3 Inter, Geist, ui-sans-serif, system-ui; transition: background-color 180ms ease-out, color 180ms ease-out; } .ds-sidebar-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-sidebar-item button { width: 1.5rem; height: 1.5rem; border: 0; border-radius: calc(0.6rem - 2px); background: transparent; color: inherit; opacity: 0.7; } .ds-sidebar-item:hover, .ds-sidebar-item-active { background: var(--sidebar-accent, #efe7e7); color: var(--foreground, #2e201f); } .ds-sidebar-item:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #ff7770) 45%, transparent); }"
+    },
+    {
+      "name": "Dialog Surface",
+      "kind": "card",
+      "refersTo": "dialog-surface",
+      "description": "Overlay panel for settings, auth-adjacent choices, and destructive confirmation flows.",
+      "html": "<section class=\"ds-dialog-surface\"><h2>Settings</h2><p>Provider API keys are stored only in your browser.</p></section>",
+      "css": ".ds-dialog-surface { width: min(100%, 34rem); padding: 1.5rem; border: 1px solid var(--border, #e7dbda); border-radius: 0.6rem; background: var(--background, #fcf8f8); color: var(--foreground, #2e201f); box-shadow: var(--shadow-lg, 0 4px 10px hsl(0 0% 0% / 0.05)); font-family: Inter, Geist, ui-sans-serif, system-ui; } .ds-dialog-surface h2 { margin: 0 0 0.5rem; font-size: 1rem; line-height: 1.35; font-weight: 600; } .ds-dialog-surface p { margin: 0; color: var(--muted-foreground, #705e5c); font-size: 0.875rem; line-height: 1.5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Signal Deck",
+    "overview": "Tezz Chat should feel like a compact command surface for high-context AI work: model choice, chat state, files, branching, search, and sharing are close to the user's hands. The system carries open-source confidence: polished enough to trust, inspectable enough to feel practical, and never dressed up in generic AI theater.\n\nThe current interface is a dense Nuxt/Vue chat app built from shadcn-vue primitives, Tailwind 4 theme variables, Pinia state, Reka UI overlays, and a warm Signal Coral accent. Its brand work is not decorative; it is the disciplined presentation of control. The product should be compact, precise, and legible under sustained use.\n\nIt explicitly rejects generic SaaS landing-page polish, toy chatbot behavior, enterprise dashboard sameness, and overbuilt devtool cosplay. The interface can be visually distinctive, but every visual decision must support speed, confidence, and state clarity.",
+    "keyCharacteristics": [
+      "Dense AI-native workflow surface with minimal ceremony.",
+      "Warm rose-tinted neutral shell with Signal Coral reserved for primary action and active state.",
+      "Soft ambient lift for overlays, composer, popovers, and floating controls.",
+      "Inter/Geist UI typography with Syne reserved for the tezz wordmark.",
+      "Rose Pine syntax color only inside code and markdown output."
+    ],
+    "rules": [
+      {
+        "name": "The Signal Rarity Rule",
+        "body": "Signal Coral is for action, current selection, focus, and state. If more than one in ten visible elements is coral, the surface is shouting.",
+        "section": "colors"
+      },
+      {
+        "name": "The Syntax Containment Rule",
+        "body": "Rose Pine colors are for code intelligence and markdown output only. Do not leak syntax colors into general product chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wordmark-Only Display Rule",
+        "body": "Syne is a brand mark, not a UI font. Product surfaces should not become expressive at the cost of scan speed.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono Is Evidence Rule",
+        "body": "Monospace appears where the content is technical evidence: code, keyboard shortcuts, environment variables, and provider keys. Never use mono as a costume for \"technical\" brand flavor.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ambient-Only Rule",
+        "body": "Shadows may clarify stacking and focus, but they must stay soft. If the shadow becomes a visible design object, it is too heavy.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Blur Must Earn It Rule",
+        "body": "Backdrop blur is allowed on the composer and modal overlay because it preserves context while prioritizing the active layer. Do not add glassmorphism panels for decoration.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep Signal Coral reserved for primary action, active state, focus, and provider/model selection.",
+      "Do preserve strong contrast for muted text; `--muted-foreground` is informational text, not decorative gray.",
+      "Do use Inter/Geist for dense UI and reserve Syne for the tezz wordmark or rare brand moments.",
+      "Do keep chat, model selection, BYOK setup, branching, sharing, and attachments visibly first-class.",
+      "Do use ambient lift for overlays, composer, dropdowns, and modals where depth clarifies interaction order.",
+      "Do keep keyboard access, focus rings, reduced-motion alternatives, and readable density as production requirements."
+    ],
+    "donts": [
+      "Don't make tezz.chat feel like a generic SaaS landing page with vague gradients, interchangeable feature cards, hero metrics, or buzzword polish.",
+      "Don't make it feel like a toy chatbot with childish mascot energy, gimmicky bubbles, or unserious AI decoration.",
+      "Don't make it feel like an enterprise dashboard with sterile blue-gray sameness, heavy admin scaffolding, or corporate compliance aesthetics.",
+      "Don't make it feel like an overbuilt devtool through terminal cosplay, excessive monospace, or complexity that exists only to signal technical taste.",
+      "Don't add gradient text, decorative glassmorphism, repeated tiny uppercase eyebrows, or hero-metric blocks.",
+      "Don't add colored `border-left` or `border-right` stripes greater than 1px as card, list, callout, or active-row decoration; use full-row tint, full border, icon, or background state instead.",
+      "Don't use Rose Pine syntax colors outside code/markdown contexts."
+    ]
+  }
+}

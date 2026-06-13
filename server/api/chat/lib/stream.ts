@@ -40,8 +40,14 @@ export const createOnFinishHandler =
     if (!userId || !chatSession) return;
 
     try {
-      if (isEditOperation && editedFrom && chatId && editedFromId) {
-        await handleAfterEditDeletion(databases, chatId, editedFrom, lastMessage, editedFromId);
+      if (isEditOperation && chatId && editedFromId) {
+        await handleAfterEditDeletion(
+          databases,
+          chatId,
+          editedFrom ?? '',
+          lastMessage,
+          editedFromId
+        );
         console.log('Edit operation cleanup done');
       }
 

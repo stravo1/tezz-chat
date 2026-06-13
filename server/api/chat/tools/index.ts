@@ -9,10 +9,11 @@ export interface ToolContext {
 
 /**
  * Returns the tool set for a given model and context.
- * Automatically excludes tools for models that don't support tool calls.
+ * Automatically excludes tools for models that don't support tool calls
+ * according to the models.dev catalog.
  */
-export const buildTools = (model: ModelType, ctx: ToolContext) => {
-  if (!doesSupportToolCalls(model)) return undefined;
+export const buildTools = async (model: ModelType, ctx: ToolContext) => {
+  if (!(await doesSupportToolCalls(model))) return undefined;
 
   return {
     web_search: createWebSearchTool(ctx.userTimezone),

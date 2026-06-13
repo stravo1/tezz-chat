@@ -150,6 +150,7 @@
         v-if="isSettingsModalOpen"
         :close-modal="() => (isSettingsModalOpen = false)"
         :set-is-loading="() => (isLoading = true)"
+        :initial-provider="settingsInitialProvider"
       />
       <ChatNavigator
         :open="isChatNavigatorOpen"
@@ -162,7 +163,7 @@
 <script setup lang="ts">
 import { useUserStore } from '~/stores/user';
 import { storeToRefs } from 'pinia';
-import { onMounted, computed, watch, ref } from 'vue';
+import { onMounted, onUnmounted, computed, watch, ref } from 'vue';
 import { useHead } from '#imports'; // Import useHead from #imports
 import {
   EyeOff,
@@ -227,9 +228,26 @@ const visibilityRef = ref<'na' | 'public' | 'private'>('na');
 const threadDetailsSubscription = ref<Subscription>();
 const isSearchModalOpen = ref(false);
 const isSettingsModalOpen = ref(false);
+const settingsInitialProvider = ref<string | null>(null);
 const isMobileChatOptionMenuOpen = ref(false);
 const isChatNavigatorOpen = ref(false);
 const loadingMessage = ref('');
+
+// Open the SettingsModal from anywhere via:
+//   window.dispatchEvent(new CustomEvent('open-settings', { detail: { providerId } }))
+// Used by ModelSelector's "Configure" CTA for disabled providers.
+const handleOpenSettings = (e: Event) => {
+  const detail = (e as CustomEvent<{ providerId?: string } | undefined>).detail;
+  settingsInitialProvider.value = detail?.providerId ?? null;
+  isSettingsModalOpen.value = true;
+};
+
+onMounted(() => {
+  window.addEventListener('open-settings', handleOpenSettings);
+});
+onUnmounted(() => {
+  window.removeEventListener('open-settings', handleOpenSettings);
+});
 
 onMounted(async () => {
   if (!isAuthChecked.value) {

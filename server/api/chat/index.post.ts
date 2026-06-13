@@ -9,9 +9,11 @@ import { ErrorCode, createAppError } from '~/server/utils/errors';
 import {
   doesSupportToolCalls,
   getModel,
-  supportedModels,
+  readByokHeaders,
   type ModelType,
 } from '~/server/utils/model';
+import { getCatalog } from '~/server/utils/modelsRegistry';
+import { DEFAULT_MODEL_ID } from '~/shared/models/providers';
 import { google } from '@ai-sdk/google';
 import { generateChatTitle } from '~/server/utils/chat';
 
@@ -44,7 +46,10 @@ const chatInputSchema = z.object({
   isEdited: z.boolean().optional(),
   editedFrom: z.string().optional(),
   editedFromId: z.string().optional(),
-  model: z.enum(supportedModels as [string, ...string[]]).default('gemini-3-flash-preview'),
+  // Model IDs are `<provider>/<modelId>` (e.g. "google/gemini-3-flash-preview").
+  // We validate the value exists in the models.dev catalog *after* parsing,
+  // since the catalog is loaded asynchronously from a remote source.
+  model: z.string().min(1).default(DEFAULT_MODEL_ID),
 });
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
@@ -61,15 +66,8 @@ export default defineLazyEventHandler(async () => {
 
       const body = await readBody(event);
 
-      // Optional BYOK API keys from request headers
-      const headers = getRequestHeaders(event);
-      const geminiApiKey = headers['x-gemini-api-key'];
-      const openRouterApiKey = headers['x-openrouter-api-key'];
-
-      console.log('API Keys from headers:', {
-        hasGeminiKey: !!geminiApiKey,
-        hasOpenRouterKey: !!openRouterApiKey,
-      });
+      // BYOK API keys forwarded as `x-byok-<provider>` headers.
+      const byok = readByokHeaders(event);
 
       const validation = chatInputSchema.safeParse(body);
       if (!validation.success) {
@@ -102,13 +100,18 @@ export default defineLazyEventHandler(async () => {
         timezone,
       } = validation.data;
 
-      const modelInstance = getModel(model as ModelType, { geminiApiKey, openRouterApiKey });
+      // Warm the catalog cache (no-op if already loaded) so that synchronous
+      // tool-call lookups below find the model. Throws if models.dev is
+      // unreachable AND there's no cached copy — desired fail-closed behavior.
+      await getCatalog();
+
+      const modelInstance = await getModel(model as ModelType, { byok });
       const processedMessages = messages as UIMessage[];
       const lastMessage = processedMessages[processedMessages.length - 1] as UIMessage;
       if (!lastMessage) {
         throw createAppError(ErrorCode.INVALID_REQUEST, 'No messages provided');
       }
-      const isEditOperation = !!(isEdited && editedFrom);
+      const isEditOperation = !!(isEdited && editedFromId);
 
       // ── Resolve / create chat session ──────────────────────────────────────
       let chatSession: ChatSession | null = null;
@@ -212,7 +215,14 @@ export default defineLazyEventHandler(async () => {
       }
 
       // ── Text / search intent ───────────────────────────────────────────────
-      const tools = buildTools(model as ModelType, { userTimezone: timezone });
+      const tools = await buildTools(model as ModelType, { userTimezone: timezone });
+
+      const now = new Date();
+      const currentDateTime = now.toLocaleString('en-US', {
+        timeZone: timezone,
+        dateStyle: 'full',
+        timeStyle: 'long',
+      });
 
       const result = streamText({
         model: modelInstance,
@@ -222,6 +232,9 @@ export default defineLazyEventHandler(async () => {
 ## About You
 Your name is 'tezz.chat' powered by ${model}. Tezz is an Indian word meaning fast. You are not affiliated with any brand or company.
 You are an expert in various scientific disciplines including physics, chemistry, biology, computer science, and coding.
+
+## Current Date & Time
+The current date and time is: ${currentDateTime} (user timezone: ${timezone}). Always use this as the ground truth for any time-sensitive reasoning.
 
 ## Tools
 You have access to: 'web_search' (general up-to-date info), 'news_search' (recent/time-sensitive news), and 'fetch_url' (read the full content of a specific page). Use them ONLY when needed — reply from your own knowledge otherwise.
@@ -239,7 +252,7 @@ When you use information from search/news results, cite the source inline using 
         maxRetries: MAX_RETRIES,
         abortSignal: controller.signal,
         tools,
-        toolChoice: doesSupportToolCalls(model as ModelType) ? 'auto' : undefined,
+        toolChoice: tools ? 'auto' : undefined,
         providerOptions: {
           openrouter: {
             plugins: [

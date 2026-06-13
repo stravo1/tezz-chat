@@ -87,7 +87,7 @@ const isHovered = useElementHover(myHoverableElement);
 const isMobile = useMediaQuery('(max-width: 640px)');
 
 const isBeingEdited = ref(false);
-const timeStampOfMessageBeingEdited = ref<string | null>(null);
+const messageIdBeingEdited = ref<string | null>(null);
 const isScrollToBottomVisible = ref(false);
 const scrollToBottomTimeout = ref<NodeJS.Timeout | null>(null);
 
@@ -139,42 +139,70 @@ const handleBranch = async (id: string, createdAt: any) => {
   navigateTo(`/chat/${res.data.chatId}`);
 };
 
-const handleEdit = async (createdAt: any, content?: string) => {
-  console.log('Editing message with createdAt:', createdAt, 'and content:', content);
-  // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
-  const filteredMessages = props.messages.filter(message => {
-    try {
-      return new Date(message.createdAt as any) <= new Date(createdAt);
-    } catch (error) {
-      console.error('Error comparing dates:', error);
-      return (message.createdAt as any) >= createdAt; // If there's an error, exclude the message
-    }
+const getMessagesThrough = (targetMessage: ExtendedUIMessage) => {
+  const targetIndex = props.messages.findIndex(message => message.id === targetMessage.id);
+  if (targetIndex !== -1) return props.messages.slice(0, targetIndex + 1);
+
+  if (!targetMessage.createdAt) return [];
+
+  const targetTime = new Date(targetMessage.createdAt as any).getTime();
+  if (Number.isNaN(targetTime)) return [];
+
+  return props.messages.filter(message => {
+    const messageTime = new Date(message.createdAt as any).getTime();
+    return !Number.isNaN(messageTime) && messageTime <= targetTime;
   });
+};
+
+const handleEdit = async (targetMessage: ExtendedUIMessage, content?: string) => {
+  console.log('Editing message with id:', targetMessage.id, 'and content:', content);
+  const filteredMessages = getMessagesThrough(targetMessage);
   console.log('Filtered messages for editing:', filteredMessages);
+
+  if (!filteredMessages.length) {
+    console.error('Could not find the message to edit or retry.');
+    return;
+  }
+
   if (filteredMessages[filteredMessages.length - 1].role == 'assistant') {
     filteredMessages.pop(); // Remove the last assistant message if it exists
-  } else if (!content) {
+  }
+
+  const editedMessageIndex = filteredMessages.length - 1;
+  const editedMessage = filteredMessages[editedMessageIndex];
+
+  if (!editedMessage || editedMessage.role !== 'user') {
+    console.error('Could not find a user message to edit or retry.');
+    return;
+  }
+
+  if (targetMessage.role === 'user' && !content) {
     console.error('Content is required for editing the last user message.');
     return;
   }
+
   if (content) {
-    filteredMessages[filteredMessages.length - 1].content = content;
-    filteredMessages[filteredMessages.length - 1].parts = [
-      {
-        type: 'text' as const,
-        text: content,
-      },
-    ];
+    filteredMessages[editedMessageIndex] = {
+      ...editedMessage,
+      content,
+      parts: [
+        {
+          type: 'text' as const,
+          text: content,
+        },
+      ],
+    };
   }
   props.setMessages?.(filteredMessages);
   console.log('Filtered messages for branching:', filteredMessages);
+  const messageBeingEdited = filteredMessages[filteredMessages.length - 1];
   // Auth headers are handled by the DefaultChatTransport.prepareSendMessagesRequest
   // Only pass the edit metadata in the body
   props.reload?.({
     body: {
       isEdited: true,
-      editedFrom: filteredMessages[filteredMessages.length - 1].createdAt,
-      editedFromId: filteredMessages[filteredMessages.length - 1].id,
+      editedFrom: messageBeingEdited.createdAt ? String(messageBeingEdited.createdAt) : undefined,
+      editedFromId: messageBeingEdited.id,
       intent: intentStore.selectedIntent,
       model: modelStore.selectedModel,
     },
@@ -243,7 +271,7 @@ console.log('Messages:', props.messages);
           <textarea
             ref="textarea"
             class="max-h-[240px] w-full resize-none rounded-lg border p-4 outline-none"
-            v-if="isBeingEdited && timeStampOfMessageBeingEdited == String(message.createdAt)"
+            v-if="isBeingEdited && messageIdBeingEdited == message.id"
             v-model="contentBeingEdited"
             name="input"
             id="chat-input"
@@ -332,28 +360,28 @@ console.log('Messages:', props.messages);
                 () => {
                   isBeingEdited = true;
                   contentBeingEdited = getMessageContent(message);
-                  timeStampOfMessageBeingEdited = String(message.createdAt);
+                  messageIdBeingEdited = message.id;
                 }
               "
               :handle-retry="
                 () => {
                   handleEdit(
-                    message.createdAt,
-                    message.role == 'user' ? getMessageContent(message) : ''
+                    message,
+                    message.role == 'user' ? getMessageContent(message) : undefined
                   );
                 }
               "
               :handle-save="
                 () => {
-                  handleEdit(message.createdAt, contentBeingEdited);
+                  handleEdit(message, contentBeingEdited);
                   isBeingEdited = false;
-                  timeStampOfMessageBeingEdited = null;
+                  messageIdBeingEdited = null;
                 }
               "
               :handle-discard="
                 () => {
                   isBeingEdited = false;
-                  timeStampOfMessageBeingEdited = null;
+                  messageIdBeingEdited = null;
                 }
               "
             />

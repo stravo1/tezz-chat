@@ -3,7 +3,7 @@
     @click="props.closeModal"
     class="fixed inset-0 z-[75] flex h-[100dvh] w-screen items-center justify-center bg-[rgba(0,0,0,0.5)] backdrop-blur-lg dark:backdrop-blur-sm"
   >
-    <div @click.stop class="h-fit max-h-[60vh] w-[90vw] max-w-[540px] overflow-auto lg:w-[55vw]">
+    <div @click.stop class="h-fit max-h-[80vh] w-[90vw] max-w-[540px] overflow-auto lg:w-[55vw]">
       <div
         class="bg-background text-foreground flex w-full items-center justify-between rounded-t-lg p-4 px-6"
       >
@@ -49,44 +49,80 @@
           <ThemeSettings />
         </div>
 
-        <!-- API Keys Section -->
-        <h3 class="text-muted-foreground my-2 mt-4 text-sm font-medium">API keys</h3>
-        <div class="space-y-4">
-          <!-- Gemini API Key -->
-          <div class="space-y-2">
-            <div class="flex gap-2">
-              <input
-                type="password"
-                v-model="geminiKey"
-                placeholder="Enter your Gemini API key"
-                style="font-family: monospace"
-                class="border-border bg-background focus:border-ring focus:ring-ring flex-1 rounded border p-3 text-sm outline-none focus:ring-1"
-              />
-              <button
-                @click="saveGeminiKey"
-                class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
-              >
-                <Save :size="16" />
-              </button>
-            </div>
-          </div>
+        <!-- BYOK / Provider API Keys Section -->
+        <div class="mb-2 flex items-center justify-between">
+          <h3 class="text-muted-foreground my-2 text-sm font-medium">Provider API keys</h3>
+          <span class="text-muted-foreground text-xs">
+            {{ configuredCount }}/{{ PROVIDERS.length }} configured
+          </span>
+        </div>
+        <p class="text-muted-foreground mb-4 text-xs">
+          Stored only in your browser. Models from providers without a key will appear disabled in
+          the model picker.
+        </p>
 
-          <!-- OpenRouter API Key -->
-          <div class="space-y-2">
-            <div class="flex gap-2">
-              <input
-                type="password"
-                v-model="openRouterKey"
-                placeholder="Enter your OpenRouter API key"
-                style="font-family: monospace"
-                class="w-full rounded border border-black/10 bg-white/10 p-3 outline-none focus:border-black/30 dark:border-white/10 dark:focus:border-white/30"
+        <div class="space-y-3">
+          <div
+            v-for="provider in PROVIDERS"
+            :key="provider.id"
+            :id="`byok-section-${provider.id}`"
+            class="border-border bg-background/40 scroll-mt-4 rounded-lg border p-3"
+          >
+            <button
+              type="button"
+              class="flex w-full items-center justify-between gap-2 text-left"
+              @click="toggle(provider.id)"
+            >
+              <div class="flex items-center gap-2">
+                <img
+                  :src="`/api/model-logo/${provider.id}`"
+                  :alt="provider.fallbackName"
+                  class="h-5 w-5 shrink-0 dark:invert"
+                  loading="lazy"
+                />
+                <span class="text-sm font-medium">{{ provider.fallbackName }}</span>
+                <span
+                  v-if="keys[provider.id]"
+                  class="ml-1 inline-flex h-2 w-2 rounded-full bg-emerald-500"
+                  :title="'Key saved'"
+                />
+              </div>
+              <ChevronDown
+                class="h-4 w-4 transition-transform"
+                :class="{ 'rotate-180': isOpen(provider.id) }"
               />
-              <button
-                @click="saveOpenRouterKey"
-                class="text-primary/70 hover:text-primary cursor-pointer rounded px-4 py-2"
-              >
-                <Save :size="16" />
-              </button>
+            </button>
+
+            <div v-if="isOpen(provider.id)" class="mt-3 space-y-2">
+              <div class="flex gap-2">
+                <input
+                  type="password"
+                  v-model="keys[provider.id]"
+                  :placeholder="`Enter your ${provider.fallbackName} API key`"
+                  style="font-family: monospace"
+                  class="border-border bg-background focus:border-ring focus:ring-ring flex-1 rounded border p-2 text-sm outline-none focus:ring-1"
+                  @keydown.enter="save(provider.id)"
+                />
+                <button
+                  @click="save(provider.id)"
+                  class="text-primary/70 hover:text-primary cursor-pointer rounded px-3"
+                  title="Save"
+                >
+                  <Save :size="16" />
+                </button>
+                <button
+                  v-if="keys[provider.id]"
+                  @click="clearKey(provider.id)"
+                  class="cursor-pointer rounded px-3 text-red-500/70 hover:text-red-500"
+                  title="Remove"
+                >
+                  <X :size="16" />
+                </button>
+              </div>
+              <p class="text-muted-foreground text-xs">
+                Env var on server:
+                <code class="bg-muted rounded px-1 py-0.5">{{ provider.serverEnvKey }}</code>
+              </p>
             </div>
           </div>
         </div>
@@ -96,11 +132,12 @@
 </template>
 
 <script setup lang="ts">
-import { LogOut, Moon, Save, Settings, Settings2, Sun, User, X } from 'lucide-vue-next';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ChevronDown, LogOut, Moon, Save, Settings2, Sun, User, X } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted, reactive, computed, nextTick } from 'vue';
 // @ts-ignore
 import { toast } from 'vue-sonner';
 import { useDark, useToggle } from '@vueuse/core';
+import { PROVIDERS, type SupportedProviderId } from '~/shared/models/providers';
 
 interface UserProfile {
   name: string;
@@ -110,18 +147,74 @@ interface UserProfile {
 const props = defineProps<{
   closeModal: () => void;
   setIsLoading: (isLoading: boolean) => void;
+  /** When set, the matching provider's BYOK section is expanded & scrolled into view on mount. */
+  initialProvider?: string | null;
 }>();
 
-// User data mock - replace with actual user store/data
-const userProfile = ref<UserProfile>({
-  name: '',
-  email: '',
-});
-
+const userProfile = ref<UserProfile>({ name: '', email: '' });
 const userStore = useUserStore();
-// API key management
-const geminiKey = ref('');
-const openRouterKey = ref('');
+
+// ── BYOK key state, one entry per provider ──────────────────────────────────
+const keys = reactive<Record<SupportedProviderId, string>>(
+  PROVIDERS.reduce(
+    (acc, p) => {
+      acc[p.id] = '';
+      return acc;
+    },
+    {} as Record<SupportedProviderId, string>
+  )
+);
+
+const openProvider = ref<SupportedProviderId | null>(null);
+const isOpen = (id: SupportedProviderId) => openProvider.value === id;
+const toggle = (id: SupportedProviderId) => {
+  openProvider.value = openProvider.value === id ? null : id;
+};
+
+const configuredCount = computed(() => PROVIDERS.filter(p => !!keys[p.id]?.trim()).length);
+
+const save = (id: SupportedProviderId) => {
+  const provider = PROVIDERS.find(p => p.id === id)!;
+  const value = (keys[id] || '').trim();
+  if (!value) {
+    toast.error(`Enter a key for ${provider.fallbackName} first`);
+    return;
+  }
+  localStorage.setItem(provider.byokStorageKey, value);
+  // Notify other components (ModelSelector) to refresh availability.
+  window.dispatchEvent(new Event('byok-updated'));
+  toast.success(`${provider.fallbackName} API key saved`);
+};
+
+const clearKey = (id: SupportedProviderId) => {
+  const provider = PROVIDERS.find(p => p.id === id)!;
+  keys[id] = '';
+  localStorage.removeItem(provider.byokStorageKey);
+  window.dispatchEvent(new Event('byok-updated'));
+  toast.success(`${provider.fallbackName} API key removed`);
+};
+
+const loadKeys = () => {
+  for (const p of PROVIDERS) {
+    keys[p.id] = localStorage.getItem(p.byokStorageKey) || '';
+  }
+  // Migrate legacy storage keys, one-time.
+  const legacyMap: Array<{ legacy: string; target: SupportedProviderId }> = [
+    { legacy: 'gemini-api-key', target: 'google' },
+    { legacy: 'openrouter-api-key', target: 'openrouter' },
+  ];
+  for (const { legacy, target } of legacyMap) {
+    const v = localStorage.getItem(legacy);
+    if (v && !keys[target]) {
+      keys[target] = v;
+      const cfg = PROVIDERS.find(p => p.id === target)!;
+      localStorage.setItem(cfg.byokStorageKey, v);
+      localStorage.removeItem(legacy);
+    }
+  }
+};
+
+// ── Theme ────────────────────────────────────────────────────────────────────
 const isDark = useDark({
   selector: 'html',
   attribute: 'class',
@@ -129,41 +222,30 @@ const isDark = useDark({
   valueLight: 'light',
 });
 const toggleDarkMode = useToggle(isDark);
-const saveGeminiKey = () => {
-  if (geminiKey.value) {
-    localStorage.setItem('gemini-api-key', geminiKey.value);
-    toast.success('Gemini API key saved successfully');
-  }
+
+// ── Lifecycle / keyboard ─────────────────────────────────────────────────────
+const handleKeyPress = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') props.closeModal();
 };
 
-const saveOpenRouterKey = () => {
-  if (openRouterKey.value) {
-    localStorage.setItem('openrouter-api-key', openRouterKey.value);
-    toast.success('OpenRouter API key saved successfully');
-  }
-};
-
-// Load saved keys on mount
-onMounted(async () => {
-  // await userStore.fetchUser();
+onMounted(() => {
   userProfile.value = {
     name: userStore.currentUser?.name || 'Anonymous User',
     email: userStore.currentUser?.email || 'No email provided',
   };
-  geminiKey.value = localStorage.getItem('gemini-api-key') || '';
-  openRouterKey.value = localStorage.getItem('openrouter-api-key') || '';
-});
-
-// Handle escape key to close modal
-const handleKeyPress = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    props.closeModal();
-  }
-};
-
-// Add event listener for escape key
-onMounted(() => {
+  loadKeys();
   window.addEventListener('keydown', handleKeyPress);
+
+  // If the caller passed a target provider (e.g. opened from ModelSelector's
+  // "Configure" CTA), expand its section and scroll it into view.
+  if (props.initialProvider && PROVIDERS.some(p => p.id === props.initialProvider)) {
+    openProvider.value = props.initialProvider as SupportedProviderId;
+    nextTick(() => {
+      document
+        .getElementById(`byok-section-${props.initialProvider}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
 });
 
 onUnmounted(() => {
@@ -174,15 +256,7 @@ const deleteAllIndexDB = async () => {
   try {
     const dbs = await indexedDB.databases();
     for (const db of dbs) {
-      if (db.name) {
-        const request = indexedDB.deleteDatabase(db.name);
-        request.onsuccess = () => {
-          console.log(`Deleted database: ${db.name}`);
-        };
-        request.onerror = event => {
-          console.error(`Error deleting database ${db.name}:`, event);
-        };
-      }
+      if (db.name) indexedDB.deleteDatabase(db.name);
     }
   } catch (error) {
     console.error('Error deleting IndexedDB databases:', error);
@@ -190,12 +264,10 @@ const deleteAllIndexDB = async () => {
 };
 
 const logout = async () => {
-  console.log('Logging out...');
   props.setIsLoading(true);
   localStorage.clear();
   await deleteAllIndexDB();
   props.setIsLoading(false);
-  console.log('Logging out...');
   await userStore.logOut();
   navigateTo('/auth');
 };

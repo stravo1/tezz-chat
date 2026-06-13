@@ -3,6 +3,7 @@ import { Chat } from '@ai-sdk/vue';
 import { DefaultChatTransport } from 'ai';
 import type { ChatRequestOptions, UIMessage, FileUIPart } from 'ai';
 import { ID } from 'appwrite';
+import { PROVIDERS, DEFAULT_MODEL_ID, parseCatalogId } from '~/shared/models/providers';
 
 const userStore = useUserStore();
 const props = defineProps<{
@@ -24,17 +25,20 @@ if (!chatId) {
 }
 if (!props.isPublic) await userStore.getJWT();
 
+/**
+ * Forward only the BYOK key the selected model actually needs. Falls back to
+ * sending every configured BYOK key when we can't parse the model ID (e.g.
+ * legacy IDs from older chats), which is harmless server-side.
+ */
 const getApiHeaders = (model?: string): Record<string, string> => {
   const headers: Record<string, string> = {};
-  const geminiKey = localStorage.getItem('gemini-api-key');
-  const openRouterKey = localStorage.getItem('openrouter-api-key');
+  const parsed = model ? parseCatalogId(model) : null;
 
-  if (model?.includes('gemini') && geminiKey) {
-    headers['x-gemini-api-key'] = geminiKey;
-  } else if (openRouterKey) {
-    headers['x-openrouter-api-key'] = openRouterKey;
+  for (const p of PROVIDERS) {
+    if (parsed && parsed.provider !== p.id) continue;
+    const v = localStorage.getItem(p.byokStorageKey);
+    if (v && v.trim()) headers[p.byokHeader] = v.trim();
   }
-
   return headers;
 };
 
@@ -60,7 +64,7 @@ const chat = new Chat<UIMessage>({
       messageId,
     }) => {
       const jwt = await userStore.getJWT();
-      const currentModel = modelStore.selectedModel || 'gemini-3-flash-preview';
+      const currentModel = modelStore.selectedModel || DEFAULT_MODEL_ID;
       return {
         body: {
           // Re-include SDK-managed fields (required when overriding body)
@@ -106,22 +110,19 @@ const handleSubmit = async (message: string, files?: FileUIPart[], selectedModel
     modelStore.selectedModel = selectedModel;
   }
 
-  // Send message with files using the new AI SDK v6 pattern.
-  // Don't await - let it start streaming while we navigate
-  const sendPromise = chat.sendMessage({
+  // Keep the first stream on the current component; navigating mid-stream
+  // unmounts it and closes the request before the assistant reply finishes.
+  await chat.sendMessage({
     text: message,
     files: files,
   });
 
-  // For new chats, navigate after a small delay to ensure message is added to chat state
+  // For new chats, navigate after the initial response has been persisted.
   if (isNewChat) {
-    await nextTick();
-    // Use replace to avoid adding to history stack
-    navigateTo(`/chat/${chatId}`, { replace: true });
+    await navigateTo(`/chat/${chatId}`, { replace: true });
     console.log('New chat created with ID:', chatId);
   }
 
-  await sendPromise;
   scrollToBottom();
 };
 

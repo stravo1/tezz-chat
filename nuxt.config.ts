@@ -9,6 +9,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
   modules: ['@nuxt/icon', '@pinia/nuxt', 'nuxt-og-image', 'nuxt-seo-utils'],
+  // Workaround for Nuxt #30461 / #33606: Vite pre-bundles `useFetch` which
+  // pulls in `#app-manifest`, and the virtual module fails to resolve in dev
+  // when no client-side payload manifest exists. We don't use route rules /
+  // payload revalidation, so disabling is safe.
+  experimental: {
+    appManifest: false,
+  },
   site: {
     url: 'https://www.tezz.chat',
     name: 'Tezz Chat',
