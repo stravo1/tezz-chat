@@ -28,6 +28,7 @@
     "@pinia/nuxt": "0.11.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/vue-query": "^5.92.9",
+    "@tavily/core": "^0.7.6",
     "@unhead/vue": "^2.1.4",
     "@vercel/analytics": "^1.6.1",
     "@vite-pwa/nuxt": "1.0.4",
