@@ -44,8 +44,15 @@ const chat = new Chat<UIMessage>({
   generateId: () => ID.unique(),
   transport: new DefaultChatTransport({
     api: '/api/chat',
+    // Static defaults included in every request automatically
+    body: {
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
+    // Use prepareSendMessagesRequest for auth headers + dynamic fields.
+    // When this returns a body it fully replaces the default, so we must
+    // re-include the SDK-managed fields (id, messages, trigger, messageId).
     prepareSendMessagesRequest: async ({
-      id: chatId,
+      id: reqChatId,
       messages,
       body,
       headers,
@@ -55,17 +62,18 @@ const chat = new Chat<UIMessage>({
       const jwt = await userStore.getJWT();
       const currentModel = modelStore.selectedModel || 'gemini-3-flash-preview';
       return {
-        // Must explicitly include SDK-managed fields since returning a body
-        // overrides the default body construction entirely
         body: {
-          ...body,
-          id: chatId,
+          // Re-include SDK-managed fields (required when overriding body)
+          id: reqChatId,
           messages,
           trigger,
           messageId,
+          // Merge any extra fields passed via ChatRequestOptions.body
+          // (e.g. isEdited, editedFrom, editedFromId from regenerate calls)
+          ...body,
+          // Dynamic per-request fields
           intent: intentStore.selectedIntent,
           model: currentModel,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         },
         headers: {
           ...(headers as Record<string, string>),

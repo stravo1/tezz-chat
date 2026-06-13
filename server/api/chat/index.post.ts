@@ -297,33 +297,9 @@ export default defineLazyEventHandler(async () => {
         geminiApiKey: geminiApiKey,
         openRouterApiKey: openRouterApiKey,
       });
-      // Preprocess messages to ensure file attachments are properly included in parts
-      const processedMessages = messages.map((msg: any) => {
-        // If message has experimental_attachments but they're not in parts, add them
-        if (msg.experimental_attachments && Array.isArray(msg.experimental_attachments)) {
-          const existingParts = msg.parts || [];
-          const existingFileUrls = existingParts
-            .filter((p: any) => p.type === 'file')
-            .map((p: any) => p.url);
-
-          const newFileParts = msg.experimental_attachments
-            .filter((att: any) => !existingFileUrls.includes(att.url))
-            .map((att: any) => ({
-              type: 'file',
-              url: att.url,
-              filename: att.name || att.filename,
-              mediaType: att.contentType || att.mediaType || 'application/octet-stream',
-            }));
-
-          return {
-            ...msg,
-            parts: [...existingParts, ...newFileParts],
-          };
-        }
-        return msg;
-      });
-
-      const lastMessage = processedMessages[processedMessages.length - 1] as UIMessage;
+      // v6 UIMessage: files are already in parts[] as FileUIPart — no preprocessing needed
+      const processedMessages = messages as UIMessage[];
+      const lastMessage = processedMessages[processedMessages.length - 1];
       console.log('Last message:', lastMessage);
       let chatSession: ChatSession | null;
       const isEditOperation = isEdited && editedFrom;
@@ -429,67 +405,45 @@ export default defineLazyEventHandler(async () => {
           providerOptions: {
             google: { responseModalities: ['TEXT', 'IMAGE'] },
           },
-          onFinish: async event => {
-            console.log('Image generation finished:', event.response.messages);
-            if (userId && chatSession) {
-              try {
-                // Check if the response contains image data
-                const imageData = event.files?.[0] as GeneratedFile | undefined;
-                const imageMimeType = imageData?.mediaType || 'image/png';
-                const textContent = event.text || '';
-                const messageData: ChatMessage = {
-                  role: 'assistant',
-                  content: textContent,
-                  parts: imageData
-                    ? [
-                        ...(textContent ? [{ type: 'text' as const, text: textContent }] : []),
-                        {
-                          type: 'file' as const,
-                          mediaType: imageMimeType,
-                          url: `data:${imageMimeType};base64,${imageData.base64}`,
-                        },
-                      ]
-                    : [
-                        {
-                          type: 'text' as const,
-                          text: textContent,
-                        },
-                      ],
-                };
-                if (isEditOperation && editedFrom && chatId && editedFromId) {
-                  await handleAfterEditDeletion(
-                    databases,
-                    chatId,
-                    editedFrom,
-                    lastMessage,
-                    editedFromId
-                  );
-                  console.log('Handled message editing and deletion successfully');
-                }
-
-                await createMessageDocument(
-                  databases,
-                  chatSession.$id,
-                  messageData,
-                  userId,
-                  'assistant',
-                  null
-                );
-                await updateChatDocument(databases, chatSession.$id, {
-                  lastModifiedBy: 'assistant',
-                });
-              } catch (error) {
-                console.error('Error creating image message:', error);
-              }
-            }
-          },
           onError(event) {
             console.error('Image generation error:', event.error);
           },
         });
 
         return result.toUIMessageStreamResponse({
+          originalMessages: processedMessages,
           generateMessageId: () => ID.unique(),
+          sendReasoning: true,
+          onFinish: async ({ messages: allMessages }) => {
+            if (!userId || !chatSession) return;
+            try {
+              if (isEditOperation && editedFrom && chatId && editedFromId) {
+                await handleAfterEditDeletion(
+                  databases,
+                  chatId,
+                  editedFrom,
+                  lastMessage,
+                  editedFromId
+                );
+              }
+              // allMessages = originalMessages + new assistant UIMessage
+              // Save only the last assistant message (the new one)
+              const assistantMessage = allMessages[allMessages.length - 1];
+              await createMessageDocument(
+                databases,
+                chatSession.$id,
+                assistantMessage,
+                userId,
+                'assistant',
+                assistantMessage.id || null
+              );
+              await updateChatDocument(databases, chatSession.$id, {
+                lastModifiedBy: 'assistant',
+              });
+            } catch (error) {
+              console.error('Error saving image message:', error);
+            }
+          },
         });
       }
 
@@ -659,10 +613,18 @@ export default defineLazyEventHandler(async () => {
             console.log('Warnings: ', event.warnings);
           }
         },
-        onFinish: async event => {
-          if (userId && chatSession) {
-            console.log('AI response finished, text length:', event.text?.length);
-            // Handle message editing after AI response
+        onError(event) {
+          console.error('Chat error:', event.error);
+        },
+      });
+
+      return result.toUIMessageStreamResponse({
+        originalMessages: processedMessages,
+        generateMessageId: () => ID.unique(),
+        sendReasoning: true,
+        onFinish: async ({ messages: allMessages }) => {
+          if (!userId || !chatSession) return;
+          try {
             if (isEditOperation && editedFrom && chatId && editedFromId) {
               await handleAfterEditDeletion(
                 databases,
@@ -671,61 +633,26 @@ export default defineLazyEventHandler(async () => {
                 lastMessage,
                 editedFromId
               );
-              console.log('Handled message editing and deletion successfully');
+              console.log('Edit operation cleanup done');
             }
-
-            try {
-              // Build assistant message parts from the step content
-              // event.content is ContentPart[] containing text, reasoning, tool-call parts
-              const assistantParts: Array<{ type: string; [key: string]: any }> = [];
-              for (const part of event.content) {
-                if (part.type === 'text') {
-                  assistantParts.push({ type: 'text', text: part.text });
-                } else if (part.type === 'reasoning') {
-                  assistantParts.push({ type: 'reasoning', text: part.text });
-                } else if (part.type === 'tool-call') {
-                  assistantParts.push({
-                    type: 'tool-call',
-                    toolCallId: part.toolCallId,
-                    toolName: part.toolName,
-                    input: part.input,
-                  });
-                }
-              }
-
-              const messageData: ChatMessage = {
-                role: 'assistant',
-                content: event.text,
-                parts:
-                  assistantParts.length > 0 ? assistantParts : [{ type: 'text', text: event.text }],
-              };
-
-              // Create assistant message and update chat document
-              await createMessageDocument(
-                databases,
-                chatSession.$id,
-                messageData,
-                userId,
-                'assistant',
-                null
-              );
-              await updateChatDocument(databases, chatSession.$id, {
-                lastModifiedBy: 'assistant',
-              });
-            } catch (error) {
-              console.error('Error creating assistant message:', error);
-            }
+            // allMessages = originalMessages + new assistant UIMessage
+            // The SDK has already formatted the response as a proper UIMessage with parts[]
+            const assistantMessage = allMessages[allMessages.length - 1];
+            await createMessageDocument(
+              databases,
+              chatSession.$id,
+              assistantMessage,
+              userId,
+              'assistant',
+              assistantMessage.id || null
+            );
+            await updateChatDocument(databases, chatSession.$id, {
+              lastModifiedBy: 'assistant',
+            });
+          } catch (error) {
+            console.error('Error saving assistant message:', error);
           }
         },
-        onError(event) {
-          console.error('Chat error:', event.error);
-        },
-      });
-      // Do NOT call consumeStream() - it consumes the stream before it can be sent to client
-      // Just return the stream response directly
-      return result.toUIMessageStreamResponse({
-        sendReasoning: true,
-        generateMessageId: () => ID.unique(),
       });
     } catch (error) {
       console.error('Chat error:', error);
