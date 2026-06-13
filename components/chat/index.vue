@@ -44,12 +44,25 @@ const chat = new Chat<UIMessage>({
   generateId: () => ID.unique(),
   transport: new DefaultChatTransport({
     api: '/api/chat',
-    prepareSendMessagesRequest: async ({ messages, body, headers, trigger, messageId }) => {
+    prepareSendMessagesRequest: async ({
+      id: chatId,
+      messages,
+      body,
+      headers,
+      trigger,
+      messageId,
+    }) => {
       const jwt = await userStore.getJWT();
       const currentModel = modelStore.selectedModel || 'gemini-3-flash-preview';
       return {
+        // Must explicitly include SDK-managed fields since returning a body
+        // overrides the default body construction entirely
         body: {
           ...body,
+          id: chatId,
+          messages,
+          trigger,
+          messageId,
           intent: intentStore.selectedIntent,
           model: currentModel,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
