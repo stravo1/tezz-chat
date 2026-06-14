@@ -42,15 +42,57 @@ const handleSubmit = () => {
   }, 100); // Clear file input after a short delay
 };
 
+const isAcceptedFileType = (file: File) => {
+  if (file.type === 'application/pdf' || file.type.startsWith('image/')) return true;
+  return false;
+};
+
+const normalizePastedFile = (file: File): File => {
+  const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+  const hasGenericName =
+    !file.name || file.name === 'image.png' || file.name === 'blob' || file.name === 'image';
+  const baseName = hasGenericName ? `pasted-${Date.now()}.${ext}` : file.name;
+  const uniqueName = selectedFiles.value.some(f => f.name === baseName)
+    ? `${baseName.replace(/\.[^.]+$/, '')}-${Date.now()}.${ext}`
+    : baseName;
+  if (uniqueName === file.name) return file;
+  return new File([file], uniqueName, { type: file.type });
+};
+
+const addFiles = (files: File[], fromPaste = false) => {
+  const accepted = files.filter(isAcceptedFileType);
+  if (accepted.length === 0) return false;
+
+  const normalized = fromPaste ? accepted.map(normalizePastedFile) : accepted;
+  selectedFiles.value = [...selectedFiles.value, ...normalized];
+  return true;
+};
+
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement;
-  // add all files
   if (input.files && input.files.length > 0) {
-    selectedFiles.value = Array.from(input.files);
-  } else {
-    selectedFiles.value = [];
+    addFiles(Array.from(input.files));
   }
-  if (fileInput.value) fileInput.value.value = ''; // Clear the input field
+  if (fileInput.value) fileInput.value.value = '';
+};
+
+const handlePaste = (event: ClipboardEvent) => {
+  const clipboardData = event.clipboardData;
+  if (!clipboardData) return;
+
+  const files: File[] = [];
+  for (const item of clipboardData.items) {
+    if (item.kind === 'file') {
+      const file = item.getAsFile();
+      if (file) files.push(file);
+    }
+  }
+
+  if (files.length === 0) return;
+
+  if (addFiles(files, true)) {
+    event.preventDefault();
+  }
 };
 
 const handleAddUrl = (name: string, url: string, contentType: string) => {
@@ -126,8 +168,8 @@ const handleKeydown = (event: KeyboardEvent) => {
         class="bg-surface-container-low flex items-center gap-2 rounded-lg p-2 pb-3"
       >
         <ChatFileUpload
-          v-for="selectedFile in selectedFiles"
-          :key="selectedFile.name"
+          v-for="(selectedFile, index) in selectedFiles"
+          :key="`${selectedFile.name}-${index}`"
           :file="selectedFile"
           :set-url="(url: string) => handleAddUrl(selectedFile.name, url, selectedFile.type)"
           :remove-file="() => removeFile(selectedFile.name)"
@@ -160,6 +202,7 @@ const handleKeydown = (event: KeyboardEvent) => {
                 aria-describedby="chat-input-description"
                 autocomplete="off"
                 @keydown="handleKeydown"
+                @paste="handlePaste"
               ></textarea>
               <div id="chat-input-description" class="sr-only">
                 Press Enter to send, Shift + Enter for new line
