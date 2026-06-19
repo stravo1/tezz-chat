@@ -175,7 +175,7 @@
             <!-- <div
             class="from-background to-background/0 absolute top-0 left-0 z-10 h-[20vh] w-full bg-gradient-to-b"
           ></div> -->
-            <NuxtPage />
+            <NuxtPage :key="route.params.id || 'new'" />
             <SidebarTrigger
               class="text-foreground hover:!bg-accent absolute top-4 left-4 z-20 cursor-pointer rounded p-2 transition-all"
             />
@@ -379,6 +379,13 @@ watch([isAuthenticated, isAuthChecked], async ([authenticated, checked]) => {
 watch(
   () => route.params.id,
   async (newId, oldId) => {
+    // Clear the message store when navigating to a different chat so the
+    // new page instance doesn't pick up stale messages from the previous chat.
+    if (oldId && newId !== oldId) {
+      const messageStore = useMessageStore();
+      messageStore.clearMessages();
+    }
+
     // react to route changes...
     if (!newId) {
       console.warn('No chat ID provided in route params.');
@@ -456,41 +463,6 @@ const share = async () => {
     isLoading.value = false;
   }
 };
-
-watch(
-  () => route.params.id,
-  async (newId, oldId) => {
-    // react to route changes...
-    if (!newId) {
-      console.warn('No chat ID provided in route params.');
-      pageTitle.value = 'New Chat';
-      visibilityRef.value = 'na';
-      return;
-    }
-    if (threadDetailsSubscription.value) {
-      threadDetailsSubscription.value.unsubscribe();
-    }
-    threadDetailsSubscription.value = (
-      (await getThreadDetailsQuery(route.params.id as string)) as RxQuery
-    ).$.subscribe(async thread => {
-      console.log(thread, 'thread info');
-      let threadInfo = route.params.id
-        ? await getThreadDetails(route.params.id as string)
-        : {
-            title: 'New Chat',
-            visibility: 'na',
-          };
-      const { title, visibility } = threadInfo;
-      document.title = title;
-      pageTitle.value = title;
-      visibilityRef.value = visibility;
-      console.log(threadInfo);
-    });
-
-    console.log('Route changed from', oldId, 'to', newId);
-    changeTitle(newId as string);
-  }
-);
 
 watch([isSearchModalOpen, isSettingsModalOpen], ([searchOpen, settingsOpen]) => {
   console.log(
