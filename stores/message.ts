@@ -1,4 +1,4 @@
-import { defineStore, setMapStoreSuffix } from 'pinia';
+import { defineStore } from 'pinia';
 import type { UIMessage } from 'ai';
 
 export const useMessageStore = defineStore('message', {
@@ -8,7 +8,6 @@ export const useMessageStore = defineStore('message', {
     isError: false,
     errorMessage: '',
     isStreaming: false,
-    isBranched: false,
   }),
   actions: {
     setMessages(messages: UIMessage[]) {
@@ -26,9 +25,6 @@ export const useMessageStore = defineStore('message', {
     },
     setStreaming(streaming: boolean) {
       this.isStreaming = streaming;
-    },
-    setBranched(branched: boolean) {
-      this.isBranched = branched;
     },
   },
 });

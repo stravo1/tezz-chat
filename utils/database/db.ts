@@ -35,10 +35,10 @@ const threadSchema = {
       default: 'private',
     },
     lastModifiedBy: { type: 'string', maxLength: 36, default: 'server' },
-    branchedFromTimestamp: { type: ['string', 'null'], default: null },
-    sourceChatId: { type: ['string', 'null'], maxLength: 36, default: null },
+    branchedFromMessageId: { type: ['string', 'null'], maxLength: 36, default: null },
+    branchedMessageIds: { type: 'array', default: [] },
+    branchResolution: { type: ['string', 'null'], maxLength: 10, default: null },
     userId: { type: 'object' },
-    streamId: { type: 'array' },
     chatMessageId: { type: 'array' },
   },
   required: ['id', 'title', 'createdAt', 'updatedAt', 'visibility'],
@@ -64,7 +64,7 @@ const messageSchema = {
 };
 
 // Database version - increment this when schema changes to force recreation
-const DB_VERSION = 8;
+const DB_VERSION = 10;
 const DB_NAME = 'tezz-local-v' + DB_VERSION;
 
 let dbInstance: Awaited<ReturnType<typeof createRxDatabase>> | null = null;
