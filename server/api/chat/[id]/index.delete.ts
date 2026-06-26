@@ -2,7 +2,8 @@ import { createJWTClient } from '~/server/appwrite/config';
 import { appwriteConfig } from '~/server/appwrite/config';
 import { COLLECTION_NAMES } from '~/server/appwrite/constant';
 import { ErrorCode, createAppError } from '~/server/utils/errors';
-import { Query } from 'node-appwrite';
+import { withRetry } from '~/server/utils/db';
+import { materializeLazyBranchesBeforeChatDelete } from '../lib/materializeBranches';
 
 export default defineEventHandler(async event => {
   try {
@@ -18,26 +19,26 @@ export default defineEventHandler(async event => {
       throw createAppError(ErrorCode.INVALID_REQUEST, 'Chat ID is required');
     }
 
-    // Soft delete the chat
+    await withRetry(() =>
+      databases.getDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId)
+    );
+
+    const { materializedBranchCount, materializedMessageCount, messagesToDelete } =
+      await materializeLazyBranchesBeforeChatDelete(databases, chatId, userId);
+
     await databases.updateDocument(appwriteConfig.databaseId, COLLECTION_NAMES.CHATS, chatId, {
       deleted: true,
       updatedAt: new Date().toISOString(),
     });
 
-    // Get all messages in the chat
-    const messages = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      COLLECTION_NAMES.CHAT_MESSAGES,
-      [Query.equal('chatId', chatId)]
-    );
-
-    // Delete all messages
     await Promise.all(
-      messages.documents.map(message =>
-        databases.deleteDocument(
-          appwriteConfig.databaseId,
-          COLLECTION_NAMES.CHAT_MESSAGES,
-          message.$id
+      messagesToDelete.map(message =>
+        withRetry(() =>
+          databases.deleteDocument(
+            appwriteConfig.databaseId,
+            COLLECTION_NAMES.CHAT_MESSAGES,
+            message.$id
+          )
         )
       )
     );
@@ -45,17 +46,17 @@ export default defineEventHandler(async event => {
     return {
       success: true,
       message: 'Chat and messages deleted successfully',
+      materializedBranchCount,
+      materializedMessageCount,
     };
   } catch (error) {
     console.error('Delete chat error:', error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'An error occurred',
-      }),
-      {
-        status: error instanceof Error && error.message.includes('Unauthorized') ? 401 : 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      throw error;
+    }
+    throw createAppError(
+      ErrorCode.INTERNAL_ERROR,
+      error instanceof Error ? error.message : 'An error occurred while deleting chat'
     );
   }
 });
