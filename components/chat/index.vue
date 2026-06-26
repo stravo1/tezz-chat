@@ -156,23 +156,13 @@ watch(status, newStatus => {
 console.log('Chat initialized with ID:', chatId, status.value);
 
 onMounted(() => {
-  if (messageStore.isBranched) {
-    console.log('Chat has been branched, setting messages from store');
-    // @ts-ignore
-    const branchedMessages = [...messageStore.messages];
-    messageStore.isBranched = false; // Reset the branched flag first
-    messageStore.messages = []; // Clear store before setMessages so the watch repopulates it cleanly
-    // @ts-ignore
-    setMessages(branchedMessages);
-  } else {
-    if (status.value == 'submitted') {
-      return;
-    }
-    console.log('No branching detected, using initial messages');
-    setMessages(props.initialMessages || []);
-    if (chatId && !messages.value.length) {
-      navigateTo('/chat');
-    }
+  if (status.value == 'submitted') {
+    return;
+  }
+  console.log('Loading initial messages');
+  setMessages(props.initialMessages || []);
+  if (chatId && !messages.value.length) {
+    navigateTo('/chat');
   }
   if (!props.isPublic) {
     setTimeout(() => {

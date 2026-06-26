@@ -136,7 +136,7 @@ const loadChats = async () => {
     arrayOfChats.value = threads.map((thread: RxDocument) => ({
       id: thread.get('id'),
       title: thread.get('title') || 'No summary available',
-      isBranched: thread.get('sourceChatId') ? true : false,
+      isBranched: Boolean(thread.get('branchedFromMessageId')),
       visibility: thread.get('visibility') || 'private',
       createdAt: thread.get('createdAt') || new Date().toISOString(),
     }));
@@ -148,7 +148,7 @@ const loadChats = async () => {
       arrayOfChats.value = threads.map((thread: RxDocument) => ({
         id: thread.get('id'),
         title: thread.get('title') || 'No summary available',
-        isBranched: thread.get('sourceChatId') ? true : false,
+        isBranched: Boolean(thread.get('branchedFromMessageId')),
         visibility: thread.get('visibility') || 'private',
         createdAt: thread.get('createdAt') || new Date().toISOString(),
       }));

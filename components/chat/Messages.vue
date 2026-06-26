@@ -73,7 +73,6 @@ const getCitationSources = (message: ExtendedUIMessage) => {
   return sources;
 };
 
-const messageStore = useMessageStore();
 const userStore = useUserStore();
 const modelStore = useModelStore();
 const intentStore = useIntentStore();
@@ -103,40 +102,39 @@ const handleMessagePrint = (messageId: string) => {
   handlePrint();
 };
 
-const handleBranch = async (id: string, createdAt: any) => {
+const handleBranch = async (id: string) => {
   loadingStore.setLoading(true);
   loadingStore.setLoadingMessage('Branching chat...');
-  // from the list of messages passed as props, remove all messages that are older than the createdAt timestamp
-  const filteredMessages = props.messages.filter(message => {
-    try {
-      return new Date(message.createdAt as any) <= new Date(createdAt);
-    } catch (error) {
-      console.error('Error comparing dates:', error);
-      return (message.createdAt as any) <= createdAt; // If there's an error, exclude the message
-    }
-  });
-  console.log('Filtered messages for branching:', filteredMessages);
 
-  // props.setMessages(filteredMessages);
-  const res = await $fetch('/api/chat/branch', {
+  const res = await $fetch<{ data: {
+    chatId: string;
+    branchFromMessageId: string;
+    branchedMessageIds: string[];
+    branchResolution: 'lazy';
+  } }>('/api/chat/branch', {
     method: 'POST',
     headers: {
       Authorization: 'Bearer ' + (await userStore.getJWT()),
     },
     body: {
       sourceChatId: props.chatId,
-      branchFromTimestamp: createdAt,
       branchFromMessageId: id,
     },
   });
-  console.log('Branching response:', res);
-  // @ts-ignore
-  messageStore.messages = filteredMessages;
-  messageStore.isBranched = true;
+
   loadingStore.setLoading(false);
   loadingStore.setLoadingMessage('');
-  // @ts-ignore
-  navigateTo(`/chat/${res.data.chatId}`);
+
+  await navigateTo({
+    path: `/chat/${res.data.chatId}`,
+    state: {
+      branchBootstrap: {
+        branchedFromMessageId: res.data.branchFromMessageId,
+        branchedMessageIds: res.data.branchedMessageIds,
+        branchResolution: res.data.branchResolution,
+      },
+    },
+  });
 };
 
 const getMessagesThrough = (targetMessage: ExtendedUIMessage) => {
@@ -354,7 +352,7 @@ console.log('Messages:', props.messages);
               :message-id="message.id"
               :is-editing="isBeingEdited"
               :handle-copy="() => handleCopy(getMessageContent(message))"
-              :handle-branch="() => handleBranch(message.id, message.createdAt)"
+              :handle-branch="() => handleBranch(message.id)"
               :handle-print="() => handleMessagePrint(message.id)"
               :handle-edit="
                 () => {

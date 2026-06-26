@@ -193,43 +193,6 @@ async function ChatMessageChatReference(){
     )
 }
 
-async function createStream(){
-    await databases.createCollection(
-        appwriteConfig.databaseId,
-        COLLECTION_NAMES.STREAMS,
-        "Streams",
-        ['read("any")'],
-        false,
-        false,
-    )
-
-    await databases.createDatetimeAttribute(
-        appwriteConfig.databaseId,
-        COLLECTION_NAMES.STREAMS,
-        "createdAt",
-        true
-    )
-    await databases.createDatetimeAttribute(
-        appwriteConfig.databaseId,
-        COLLECTION_NAMES.STREAMS,
-        "updatedAt",
-        true
-    )
-}
-
-async function createStreamChatReference(){
-    await databases.createRelationshipAttribute(
-        appwriteConfig.databaseId,
-        COLLECTION_NAMES.STREAMS,
-        COLLECTION_NAMES.CHATS,
-        RelationshipType.ManyToOne,
-        true,
-        "chatId",
-        "streamId",
-        RelationMutate.Cascade,
-    )
-}
-
 // Main function to create all schemas in the correct order
 export async function createAllSchemas() {
     try {
@@ -245,18 +208,12 @@ export async function createAllSchemas() {
         console.log('Creating ChatMessages collection...');
         await createChatMessage();
         
-        console.log('Creating Streams collection...');
-        await createStream();
-        
         // Step 2: Create relationships after collections exist
         console.log('Creating Chat-User relationship...');
         await createChatUserReference();
         
         console.log('Creating ChatMessage-Chat relationship...');
         await ChatMessageChatReference();
-        
-        console.log('Creating Stream-Chat relationship...');
-        await createStreamChatReference();
         
         console.log('All schemas created successfully! 🎉');
     } catch (error) {

@@ -1,4 +1,9 @@
 import useDatabase from './db';
+import {
+  resolveMessagesForThread,
+  type BranchBootstrap,
+  type ResolvedMessage,
+} from './resolveMessages';
 
 let dbCollections: any = null;
 
@@ -9,6 +14,9 @@ const initDb = async () => {
   }
   return dbCollections;
 };
+
+export type { BranchBootstrap, ResolvedMessage };
+
 export const getThreads = async () => {
   const db = await initDb();
   return db.threads.find({
@@ -34,8 +42,9 @@ export const getThreadDetails = async (threadId: string) => {
     chatMessageId: thread.get('chatMessageId') || [],
     visibility: thread.get('visibility') || 'private',
     lastModifiedBy: thread.get('lastModifiedBy') || 'server',
-    branchedFromTimestamp: thread.get('branchedFromTimestamp') || null,
-    sourceChatId: thread.get('sourceChatId') || null,
+    branchedFromMessageId: thread.get('branchedFromMessageId') || null,
+    branchedMessageIds: thread.get('branchedMessageIds') || [],
+    branchResolution: thread.get('branchResolution') || null,
   };
 };
 
@@ -72,81 +81,41 @@ export const getThreadDetailsQuery = async (threadId: string) => {
   });
 };
 
-const extractChatId = (chatId: any): string | null => {
-  if (!chatId) return null;
-  if (typeof chatId === 'string') return chatId;
-  if (typeof chatId === 'object' && chatId.$id) return chatId.$id;
-  return null;
-};
-
-const transformMessage = (message: any) => {
-  const data = message.toJSON ? message.toJSON() : message;
-  return {
-    $id: data.id,
-    role: data.role,
-    content: data.content,
-    parts: data.parts,
-    attachments: data.attachments,
-    createdAt: data.createdAt,
-    $createdAt: data.createdAt,
-  };
-};
-
-export const getMessagesByThreadId = async (threadId: string) => {
-  const db = await initDb();
-
-  const query = db.messages.find({
-    selector: {
-      _deleted: { $ne: true },
-    },
-    sort: [{ createdAt: 'asc' }],
-  });
-
-  const result = await query.exec();
-
-  const filteredMessages = result.filter((message: any) => {
-    const data = message.toJSON ? message.toJSON() : message;
-    const messageChatId = extractChatId(data.chatId);
-    return messageChatId === threadId;
-  });
-
-  console.log(
-    `[getMessagesByThreadId] Found ${filteredMessages.length} messages for thread ${threadId}`
-  );
-
-  const messages = filteredMessages
-    .map(transformMessage)
-    .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
+export const getMessagesByThreadId = async (
+  threadId: string,
+  bootstrap?: BranchBootstrap
+): Promise<ResolvedMessage[]> => {
+  const messages = await resolveMessagesForThread(threadId, bootstrap);
+  console.log(`[getMessagesByThreadId] Resolved ${messages.length} messages for thread ${threadId}`);
   return messages;
 };
 
 export const subscribeToMessages = async (
   threadId: string,
-  callback: (messages: any[]) => void
+  callback: (messages: ResolvedMessage[]) => void,
+  bootstrap?: BranchBootstrap
 ) => {
   const db = await initDb();
 
-  const query = db.messages.find({
-    selector: {
-      _deleted: { $ne: true },
-    },
-    sort: [{ createdAt: 'asc' }],
-  });
-
-  return query.$.subscribe((result: any[]) => {
-    const filteredMessages = result.filter((message: any) => {
-      const data = message.toJSON ? message.toJSON() : message;
-      const messageChatId = extractChatId(data.chatId);
-      return messageChatId === threadId;
-    });
-
-    const messages = filteredMessages
-      .map(transformMessage)
-      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
+  const publish = async () => {
+    const messages = await resolveMessagesForThread(threadId, bootstrap);
     callback(messages);
+  };
+
+  await publish();
+
+  const messagesSubscription = db.messages.find({ selector: { _deleted: { $ne: true } } }).$.subscribe(() => {
+    void publish();
   });
+
+  const threadsSubscription = db.threads.find({ selector: { id: threadId } }).$.subscribe(() => {
+    void publish();
+  });
+
+  return () => {
+    messagesSubscription.unsubscribe();
+    threadsSubscription.unsubscribe();
+  };
 };
 
 export const getTitle = async (threadId: string) => {

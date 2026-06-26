@@ -29,10 +29,3 @@ export type ChatMessage = Models.Document & {
     createdAt: Date;
     updatedAt: Date;
 }
-
-export type Stream = Models.Document & {
-    $id: string;
-    chatId: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
